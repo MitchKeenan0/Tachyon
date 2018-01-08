@@ -234,10 +234,10 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		if (Midpoint.Size() > 1.0f)
 		{
 			// Back away to accommodate distance
-			float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo) + (900 / FramingActors.Num());
-			float DesiredCameraDistance = FMath::Clamp(FMath::Sqrt(DistBetweenActors * 1.3f) * CameraDistance,
-				1000.0f,
-				CameraMaxDistance);
+			float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo) + (300 / FramingActors.Num());
+			float DesiredCameraDistance = FMath::Clamp(FMath::Sqrt(DistBetweenActors * 300.f) * CameraDistance,
+														300.0f,
+														CameraMaxDistance);
 
 			// Make it so
 			CameraBoom->SetWorldLocation(Midpoint);
@@ -398,7 +398,7 @@ void AGammaCharacter::SetAim(float x, float z)
 	if ((CurrentMove != PrevMoveInput) 
 		&& (CurrentMove != FVector::ZeroVector))
 	{
-		NewMoveKick();
+		//NewMoveKick();
 		UpdateMoveParticles(CurrentMove);
 		PlayerSound->SetPitchMultiplier(FMath::FRandRange(0.9f, 1.1f));
 		PlayerSound->Play();
