@@ -6,8 +6,6 @@
 #include "Particles/ParticleSystem.h"
 #include "PaperSpriteComponent.h"
 
-
-
 AGAttack::AGAttack()
 {
  	PrimaryActorTick.bCanEverTick = true;
@@ -70,7 +68,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	float DirRecalc = ShotDirection;
 	if (AngleSweep != 0.0f)
 	{
-		DirRecalc *= -3.14f;
+		DirRecalc *= -2.f;
 	}
 	FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
 	FRotator FireRotation = LocalForward.Rotation() + FRotator(21.0f * DirRecalc, 0.0f, 0.0f);
@@ -104,11 +102,12 @@ void AGAttack::UpdateAttack(float DeltaTime)
 {
 	LifeTimer += DeltaTime;
 
-	if (!bHit)
+	/*if (!bHit)
 	{
 		DetectHit(GetActorForwardVector());
-	}
+	}*/
 
+	DetectHit(GetActorForwardVector());
 }
 
 
@@ -153,16 +152,37 @@ void AGAttack::DetectHit(FVector RaycastVector)
 											FLinearColor::Red, FLinearColor::White, 0.15f);
 	if (HitResult)
 	{
+		AttackDamage += GetWorld()->DeltaTimeSeconds;
+		HitActor = Hit.Actor.Get();
+	}
+
+	float EndTime = DurationTime * (1.0f + AttackMagnitude);
+	if (HitActor && (LifeTimer >= EndTime * 0.99f))
+	{
 		// do some checks to make sure its a player
-		AActor* HitActor = Hit.Actor.Get();
 		if (!HitActor->ActorHasTag("Attack"))
 		{
-			bHit = true;
-			SpawnDamage(Hit.ImpactPoint, HitActor);
+			float FinalDamage = AttackDamage / EndTime;
+			SpawnDamage(HitActor->GetActorLocation(), HitActor);
 			ApplyKnockback(HitActor);
 			TakeGG();
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("DAMAAGIO  %f"), FinalDamage));
+			Destroy();
 		}
 	}
+
+	//else if (HitResult && (bHit == true))
+	//{
+	//	//// do some checks to make sure its a player
+	//	//AActor* HitActor = Hit.Actor.Get();
+	//	//if (!HitActor->ActorHasTag("Attack"))
+	//	//{
+	//	//	bHit = true;
+	//	//	SpawnDamage(Hit.ImpactPoint, HitActor);
+	//	//	ApplyKnockback(HitActor);
+	//	//	TakeGG();
+	//	//}
+	//}
 }
 
 
@@ -206,7 +226,11 @@ void AGAttack::GetLifetimeReplicatedProps(TArray <FLifetimeProperty> & OutLifeti
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AGAttack, bHit);
+	DOREPLIFETIME(AGAttack, bStillHitting);
+	DOREPLIFETIME(AGAttack, bDoneHitting);
 	DOREPLIFETIME(AGAttack, OwningShooter);
+	DOREPLIFETIME(AGAttack, HitActor);
 	DOREPLIFETIME(AGAttack, AttackMagnitude);
 	DOREPLIFETIME(AGAttack, ShotDirection);
+	DOREPLIFETIME(AGAttack, AttackDamage);
 }

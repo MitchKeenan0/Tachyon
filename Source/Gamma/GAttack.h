@@ -123,20 +123,30 @@ protected:
 	/*UPROPERTY(BlueprintReadWrite)
 	class AMatch* CurrentMatch = nullptr;*/
 
-	
-
 	// Replicated Variables
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	bool bHit = false;
 
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+	bool bStillHitting = false;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+	bool bDoneHitting = false;
+
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	class AActor* OwningShooter = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, Replicated)
+	class AActor* HitActor = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, Replicated, BlueprintReadWrite)
 	float AttackMagnitude = 0.0f;
 
 	UPROPERTY(BlueprintReadWrite, Replicated, BlueprintReadWrite)
 	float ShotDirection = 0.0f;
+
+	UPROPERTY(BlueprintReadWrite, Replicated, BlueprintReadWrite)
+	float AttackDamage = 0.0f;
 
 
 	
