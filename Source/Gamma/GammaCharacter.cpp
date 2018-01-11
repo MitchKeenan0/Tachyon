@@ -398,7 +398,7 @@ void AGammaCharacter::SetAim(float x, float z)
 	if ((CurrentMove != PrevMoveInput) 
 		&& (CurrentMove != FVector::ZeroVector))
 	{
-		//NewMoveKick();
+		NewMoveKick();
 		UpdateMoveParticles(CurrentMove);
 		PlayerSound->SetPitchMultiplier(FMath::FRandRange(0.9f, 1.1f));
 		PlayerSound->Play();

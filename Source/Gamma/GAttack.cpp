@@ -156,33 +156,25 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		HitActor = Hit.Actor.Get();
 	}
 
-	float EndTime = DurationTime * (1.0f + AttackMagnitude);
-	if (HitActor && (LifeTimer >= EndTime * 0.99f))
+	//float EndTime = DurationTime * (1.0f + AttackMagnitude);
+	if (HitActor) // && (LifeTimer >= EndTime * 0.99f))
 	{
 		// do some checks to make sure its a player
 		if (!HitActor->ActorHasTag("Attack"))
 		{
-			float FinalDamage = AttackDamage / EndTime;
-			SpawnDamage(HitActor->GetActorLocation(), HitActor);
-			ApplyKnockback(HitActor);
-			TakeGG();
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("DAMAAGIO  %f"), FinalDamage));
-			Destroy();
+
+			bHit = !bHit;
+			if (bHit)
+			{
+				//float FinalDamage = AttackDamage / EndTime;
+				SpawnDamage(HitActor->GetActorLocation(), HitActor);
+				ApplyKnockback(HitActor);
+				TakeGG();
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("DAMAAGIO  %f"), AttackDamage));
+			}
+			
 		}
 	}
-
-	//else if (HitResult && (bHit == true))
-	//{
-	//	//// do some checks to make sure its a player
-	//	//AActor* HitActor = Hit.Actor.Get();
-	//	//if (!HitActor->ActorHasTag("Attack"))
-	//	//{
-	//	//	bHit = true;
-	//	//	SpawnDamage(Hit.ImpactPoint, HitActor);
-	//	//	ApplyKnockback(HitActor);
-	//	//	TakeGG();
-	//	//}
-	//}
 }
 
 
@@ -191,7 +183,7 @@ void AGAttack::SpawnDamage(FVector HitPoint, AActor* HitActor)
 	if (DamageClass)
 	{
 		FActorSpawnParameters SpawnParams;
-		FRotator Forward = GetActorForwardVector().Rotation();
+		FRotator Forward = (HitActor->GetActorLocation() - OwningShooter->GetActorLocation()).Rotation();
 		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, HitPoint, Forward, SpawnParams));
 		DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
 	}
