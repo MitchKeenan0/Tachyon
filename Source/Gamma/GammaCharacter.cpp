@@ -280,6 +280,13 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	{
 		Charge = 0.0f;
 	}
+
+	// Tempo
+	if (bOnTempo)
+	{
+		BPMTimer += DeltaSeconds;
+	}
+
 }
 
 
@@ -398,18 +405,27 @@ void AGammaCharacter::SetAim(float x, float z)
 	if ((CurrentMove != PrevMoveInput) 
 		&& (CurrentMove != FVector::ZeroVector))
 	{
-		NewMoveKick();
-		UpdateMoveParticles(CurrentMove);
-		PlayerSound->SetPitchMultiplier(FMath::FRandRange(0.9f, 1.1f));
-		PlayerSound->Play();
+		// Respect tempo
+		CurrentMoveTime = GetWorld()->TimeSeconds;
+		float TimeDelta = (CurrentMoveTime - LastMoveTime);
+
+		if ((TimeDelta <= 0.314f) && (TimeDelta >= 0.11f))
+		{
+			NewMoveKick();
+			UpdateMoveParticles(CurrentMove);
+			PlayerSound->SetPitchMultiplier(TimeDelta);
+			PlayerSound->Play();
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("O N  T E M P O"));
+		}
 	}
+
+	LastMoveTime = CurrentMoveTime;
+	PrevMoveInput = CurrentMove;
 
 	if (Role == ROLE_AutonomousProxy) // (Role < ROLE_Authority)
 	{
 		ServerSetAim(x, z);
 	}
-
-	PrevMoveInput = CurrentMove;
 }
 void AGammaCharacter::ServerSetAim_Implementation(float x, float z)
 {

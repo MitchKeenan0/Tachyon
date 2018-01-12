@@ -36,6 +36,11 @@ class AGammaCharacter : public APaperCharacter
 	float AttackTimer = 0.0f;	/// stopwatch situation
 	float AttackTimeout = 0.0f; /// generated at fire time
 	float FrictionTimer = 0.0f;
+	float BPM = 0.0f;
+	float BPMTimer = 0.0f;
+	float LastMoveTime = 0.0f;
+	float CurrentMoveTime = 0.0f;
+	bool bOnTempo = false;
 	//float x = 0.0f;
 	//float z = 0.0f;				/// allows replicatiuon only 1pf for both
 	//float MoveFriction = 0.0f;
