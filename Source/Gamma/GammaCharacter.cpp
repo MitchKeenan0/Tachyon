@@ -415,7 +415,7 @@ void AGammaCharacter::SetAim(float x, float z)
 			UpdateMoveParticles(CurrentMove);
 			PlayerSound->SetPitchMultiplier(TimeDelta);
 			PlayerSound->Play();
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("O N  T E M P O"));
+			///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("O N  T E M P O"));
 		}
 	}
 
@@ -536,7 +536,7 @@ void AGammaCharacter::ReleaseAttack()
 				
 				if (ActiveAttack->LockedEmitPoint)
 				{
-					ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+					ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
 				}
 			}
 			else

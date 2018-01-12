@@ -50,7 +50,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	// set sounds
 	AttackSound->SetPitchMultiplier(AttackSound->PitchMultiplier - (AttackMagnitude / 1.5f));
 	AttackSound->SetVolumeMultiplier(1.0f + (AttackMagnitude * 1.25f));
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Pitch After: %f"), AttackSound->PitchMultiplier));
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Pitch After: %f"), AttackSound->PitchMultiplier));
 
 	// Lifespan
 	if (AttackMagnitude > 0.3f)
@@ -64,15 +64,15 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		ProjectileComponent->Velocity = GetActorForwardVector() * ProjectileSpeed * AttackMagnitude * ProjectileMaxSpeed;
 	}
 
-	// Last-second update to direction after fire
-	float DirRecalc = ShotDirection;
-	if (AngleSweep != 0.0f)
-	{
-		DirRecalc *= -1.5f;
-	}
-	FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
-	FRotator FireRotation = LocalForward.Rotation() + FRotator(21.0f * DirRecalc, 0.0f, 0.0f);
-	SetActorRotation(FireRotation);
+	//// Last-second update to direction after fire
+	//float DirRecalc = ShotDirection;
+	//if (AngleSweep != 0.0f)
+	//{
+	//	DirRecalc *= -1.5f;
+	//}
+	//FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
+	//FRotator FireRotation = LocalForward.Rotation() + FRotator(21.0f * DirRecalc, 0.0f, 0.0f);
+	//SetActorRotation(FireRotation);
 	
 	// Get match obj
 	/*TArray<AActor*> Actors;
@@ -178,7 +178,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		///TakeGG();
 		HitTimer = 0.0f;
 		bHit = false;
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("G O T T E M  %f"), AttackDamage));
+		///GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("G O T T E M  %f"), AttackDamage));
 	}
 }
 
