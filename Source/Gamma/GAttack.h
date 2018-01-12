@@ -14,8 +14,6 @@ class GAMMA_API AGAttack : public AActor
 	GENERATED_BODY()
 
 
-private:
-	float Lifetime = 0.0f;
 
 public:	
 	// Sets default values for this actor's properties
@@ -40,6 +38,9 @@ public:
 	float DurationTime = 0.2f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float HitsPerSecond = 5.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bLethal = true;
 
 
@@ -52,7 +53,7 @@ protected:
 
 	void DetectHit(FVector RaycastVector);
 
-	void SpawnDamage(FVector HitPoint, AActor* HitActor);
+	void SpawnDamage(AActor* HitActor, FVector HitPoint);
 
 	void ApplyKnockback(AActor* HitActor);
 
@@ -102,6 +103,9 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	float LifeTimer = 0.0f;
 
+	UPROPERTY(BlueprintReadWrite)
+	float HitTimer = 0.0f;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	class USceneComponent* AttackScene = nullptr;
 
@@ -146,7 +150,7 @@ protected:
 	float ShotDirection = 0.0f;
 
 	UPROPERTY(BlueprintReadWrite, Replicated, BlueprintReadWrite)
-	float AttackDamage = 0.0f;
+	float AttackDamage = 1.0f;
 
 
 	

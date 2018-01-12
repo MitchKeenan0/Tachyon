@@ -68,7 +68,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	float DirRecalc = ShotDirection;
 	if (AngleSweep != 0.0f)
 	{
-		DirRecalc *= -2.f;
+		DirRecalc *= -1.75f;
 	}
 	FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
 	FRotator FireRotation = LocalForward.Rotation() + FRotator(21.0f * DirRecalc, 0.0f, 0.0f);
@@ -101,6 +101,7 @@ void AGAttack::Tick(float DeltaTime)
 void AGAttack::UpdateAttack(float DeltaTime)
 {
 	LifeTimer += DeltaTime;
+	HitTimer += DeltaTime;
 
 	/*if (!bHit)
 	{
@@ -150,35 +151,39 @@ void AGAttack::DetectHit(FVector RaycastVector)
 											Hit,
 											true,
 											FLinearColor::Red, FLinearColor::White, 0.15f);
+	
 	if (HitResult)
 	{
-		AttackDamage += GetWorld()->DeltaTimeSeconds;
 		HitActor = Hit.Actor.Get();
+		if (HitActor)
+		{
+			// do some checks to make sure its a player
+			if (!HitActor->ActorHasTag("Attack"))
+			{
+				// good hit as they say
+				bHit = true;
+			}
+		}
+	}
+	else
+	{
+		bHit = false;
 	}
 
-	//float EndTime = DurationTime * (1.0f + AttackMagnitude);
-	if (HitActor) // && (LifeTimer >= EndTime * 0.99f))
+	// finally shooting
+	if (bHit && (HitTimer >= (1 / HitsPerSecond)))
 	{
-		// do some checks to make sure its a player
-		if (!HitActor->ActorHasTag("Attack"))
-		{
-
-			bHit = !bHit;
-			if (bHit)
-			{
-				//float FinalDamage = AttackDamage / EndTime;
-				SpawnDamage(HitActor->GetActorLocation(), HitActor);
-				ApplyKnockback(HitActor);
-				TakeGG();
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("DAMAAGIO  %f"), AttackDamage));
-			}
-			
-		}
+		SpawnDamage(HitActor, HitActor->GetActorLocation());
+		ApplyKnockback(HitActor);
+		///TakeGG();
+		HitTimer = 0.0f;
+		bHit = false;
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("G O T T E M  %f"), AttackDamage));
 	}
 }
 
 
-void AGAttack::SpawnDamage(FVector HitPoint, AActor* HitActor)
+void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 {
 	if (DamageClass)
 	{
