@@ -61,6 +61,14 @@ public:
 	// Returns CameraBoom subobject
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
+	/** Called for scoreboard */
+	UFUNCTION()
+	int GetScore() { return Score; }
+	void RaiseScore(int Val) { Score += Val; }
+
+	UFUNCTION()
+	float GetChargePercentage() { return Charge / ChargeMax; } // (Charge / ChargeMax)
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -159,7 +167,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
 	bool bCharging = false;
 
-	// Attack origin point
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+	int Score = 0;
+
+
+	// BLUEPRINT COMPONENTS ///////////////////////////////////////
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class USceneComponent* AttackScene = nullptr;
 

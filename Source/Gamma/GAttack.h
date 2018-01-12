@@ -22,13 +22,14 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	// Attack functions
 	UFUNCTION()
 	void InitAttack(AActor* Shooter, float Magnitude, float YScale);
-	
-	void TakeGG();
 
 	bool GetHit() { return bHit; }
 	bool GetLethal() { return bLethal; }
+
+	void TakeGG();
 
 	// Public gets
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -57,6 +58,9 @@ protected:
 
 	void ApplyKnockback(AActor* HitActor);
 
+	// Ref to match
+	UPROPERTY(BlueprintReadWrite)
+	class AGMatch* CurrentMatch = nullptr;
 
 	// Basic Variables
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

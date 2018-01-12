@@ -11,8 +11,11 @@ AGDamage::AGDamage()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	DamageScene = CreateDefaultSubobject<USceneComponent>(TEXT("DamageScene"));
+	SetRootComponent(DamageScene);
+
 	DamageParticles = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("DamageParticles"));
-	SetRootComponent(DamageParticles);
+	DamageParticles->SetupAttachment(RootComponent);
 
 	bReplicates = true;
 	bReplicateMovement = true;

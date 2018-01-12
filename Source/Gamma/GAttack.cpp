@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "GAttack.h"
+#include "GMatch.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "ParticleDefinitions.h"
 #include "Particles/ParticleSystem.h"
@@ -37,6 +38,8 @@ void AGAttack::BeginPlay()
 	Super::BeginPlay();
 
 	SetLifeSpan(DurationTime);
+
+	DetectHit(GetActorForwardVector());
 }
 
 
@@ -75,13 +78,15 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	//SetActorRotation(FireRotation);
 	
 	// Get match obj
-	/*TArray<AActor*> Actors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AMatch::StaticClass(), Actors);
-	CurrentMatch = Cast<AMatch>(Actors[0]);*/
+	TArray<AActor*> Actors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGMatch::StaticClass(), Actors);
+	CurrentMatch = Cast<AGMatch>(Actors[0]);
 
 	// Color & cosmetics
 	/*FlashMesh->SetMaterial(0, MainMaterial);
 	AttackMesh->SetMaterial(0, MainMaterial);*/
+
+	DetectHit(GetActorForwardVector());
 }
 
 
@@ -147,7 +152,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 											TraceObjects,
 											false,
 											IgnoredActors,
-											EDrawDebugTrace::None,
+											EDrawDebugTrace::ForDuration,
 											Hit,
 											true,
 											FLinearColor::Red, FLinearColor::White, 0.15f);
@@ -171,11 +176,11 @@ void AGAttack::DetectHit(FVector RaycastVector)
 	}
 
 	// finally shooting
-	if (bHit && (HitTimer >= (1 / HitsPerSecond)))
+	if (bHit && (HitTimer >= (1.0f / HitsPerSecond)))
 	{
 		SpawnDamage(HitActor, HitActor->GetActorLocation());
 		ApplyKnockback(HitActor);
-		///TakeGG();
+		TakeGG();
 		HitTimer = 0.0f;
 		bHit = false;
 		///GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("G O T T E M  %f"), AttackDamage));
@@ -212,8 +217,10 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 
 void AGAttack::TakeGG()
 {
-	//GEngine->AddOnScreenDebugMessage(-1, 2.2f, FColor::Blue, TEXT("Attack Hit!"));
-	
+	if (CurrentMatch)
+	{
+		CurrentMatch->ClaimGG(OwningShooter);
+	}
 }
 
 

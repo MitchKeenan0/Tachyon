@@ -510,7 +510,6 @@ bool AGammaCharacter::ServerInitAttack_Validate()
 // ATTACK
 void AGammaCharacter::ReleaseAttack()
 {
-
 	if (Charge > 0.0f && AttackClass && ActiveAttack == nullptr)
 	{
 		// Clean up previous flash
@@ -580,6 +579,7 @@ void AGammaCharacter::GetLifetimeReplicatedProps(TArray <FLifetimeProperty> & Ou
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AGammaCharacter, Health);
+	DOREPLIFETIME(AGammaCharacter, Score);
 
 	DOREPLIFETIME(AGammaCharacter, InputX);
 	DOREPLIFETIME(AGammaCharacter, InputZ);

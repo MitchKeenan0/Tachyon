@@ -26,6 +26,9 @@ protected:
 	class USceneComponent* DamageScene = nullptr;*/
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class USceneComponent* DamageScene = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UParticleSystemComponent* DamageParticles = nullptr;
 
 public:	
