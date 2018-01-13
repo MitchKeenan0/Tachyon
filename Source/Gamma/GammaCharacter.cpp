@@ -81,6 +81,9 @@ AGammaCharacter::AGammaCharacter()
 	MoveParticles->SetupAttachment(RootComponent);
 	MoveParticles->bAutoActivate = false;
 
+	/*AmbientParticles = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("AmbientParticles"));
+	AmbientParticles->SetupAttachment(RootComponent);*/
+
 	PlayerSound = CreateDefaultSubobject<UAudioComponent>(TEXT("PlayerSound"));
 	PlayerSound->SetIsReplicated(true);
 
@@ -281,6 +284,12 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		Charge = 0.0f;
 	}
 
+	/*if (Charge == 0.0f && ActiveChargeParticles)
+	{
+		ActiveChargeParticles->Destroy();
+		ActiveChargeParticles = nullptr;
+	}*/
+
 	// Tempo
 	if (bOnTempo)
 	{
@@ -380,8 +389,11 @@ void AGammaCharacter::UpdateMoveParticles(FVector Move)
 	// Direct particles away from vector of movement
 	//Move.X = GetActorScale().X * -1;
 	FRotator RecoilRotation = (Move).Rotation();
-	MoveParticles->SetWorldRotation(RecoilRotation);
-	MoveParticles->Activate();
+	if (MoveParticles)
+	{
+		MoveParticles->SetWorldRotation(RecoilRotation);
+		MoveParticles->Activate();
+	}
 
 	if (Role == ROLE_AutonomousProxy) // (Role < ROLE_Authority)
 	{
@@ -413,8 +425,11 @@ void AGammaCharacter::SetAim(float x, float z)
 		{
 			NewMoveKick();
 			UpdateMoveParticles(CurrentMove);
-			PlayerSound->SetPitchMultiplier(TimeDelta);
-			PlayerSound->Play();
+			if (PlayerSound != nullptr)
+			{
+				PlayerSound->SetPitchMultiplier(TimeDelta);
+				PlayerSound->Play();
+			}
 			///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("O N  T E M P O"));
 		}
 	}
@@ -450,8 +465,11 @@ void AGammaCharacter::RaiseCharge(float DeltaTime)
 	else if (!bFullCharge)
 	{
 		bFullCharge = true;
-		//PlayerSound->Play();
 	}
+
+	//// Scale up charge vfx
+	//float Scalar = Charge / ChargeMax;
+	//ActiveChargeParticles->SetActorRelativeScale3D(ActiveChargeParticles->GetActorRelativeScale3D() * Scalar);
 
 	if (Role < ROLE_Authority)
 	{
@@ -483,11 +501,17 @@ void AGammaCharacter::InitAttack()
 		FVector FirePosition = AttackScene->GetComponentLocation();
 		FVector FireDirection = AttackScene->GetForwardVector();
 		FRotator FireRotation = FireDirection.Rotation() + FRotator(21.0f * InputZ, 0.0f, 0.0f);
-		FActorSpawnParameters SpawnParams;
 
 		// Spawning
 		if (HasAuthority())
 		{
+			FActorSpawnParameters SpawnParams;
+			// Spawn charge vfx
+			ActiveChargeParticles = Cast<AActor>(GetWorld()->SpawnActor<AActor>
+				(ChargeParticles, GetActorLocation(), GetActorRotation(), SpawnParams));
+			ActiveChargeParticles->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+
+			// Spawn eye heat
 			ActiveFlash = Cast<AGFlash>(GetWorld()->SpawnActor<AGFlash>(FlashClass, FirePosition, FireRotation, SpawnParams));
 			ActiveFlash->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
 		}
@@ -517,6 +541,11 @@ void AGammaCharacter::ReleaseAttack()
 		{
 			ActiveFlash->Destroy();
 			ActiveFlash = nullptr;
+		}
+		if (ActiveChargeParticles)
+		{
+			ActiveChargeParticles->Destroy();
+			ActiveChargeParticles = nullptr;
 		}
 
 		// Direction & setting up

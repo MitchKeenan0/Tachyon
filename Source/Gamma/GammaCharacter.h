@@ -40,6 +40,8 @@ class AGammaCharacter : public APaperCharacter
 	float BPMTimer = 0.0f;
 	float LastMoveTime = 0.0f;
 	float CurrentMoveTime = 0.0f;
+	float ChargeFXTimer = 0.0f;
+
 	bool bOnTempo = false;
 	//float x = 0.0f;
 	//float z = 0.0f;				/// allows replicatiuon only 1pf for both
@@ -113,6 +115,10 @@ protected:
 	TSubclassOf<AGAttack> AttackClass = nullptr;
 	class AGAttack* ActiveAttack = nullptr;
 
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AActor> ChargeParticles = nullptr;
+	class AActor* ActiveChargeParticles = nullptr;
+
 	// Replicated functions
 	void SetX(float Value);
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
@@ -178,6 +184,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UParticleSystemComponent* MoveParticles = nullptr;
 
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UParticleSystemComponent* AmbientParticles = nullptr;*/
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UAudioComponent* PlayerSound = nullptr;
 
@@ -211,7 +220,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CameraSoloVelocityChase = 2.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CameraDistanceScalar = 25.0f;
+	float CameraDistanceScalar = 2.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CameraTiltClamp = 1.0f;
 

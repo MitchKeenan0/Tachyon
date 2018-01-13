@@ -30,10 +30,8 @@ void AGMatch::Tick(float DeltaTime)
 			GetPlayers();
 		}
 	}
-	else
-	{
-		HandleTimeScale(bGG, DeltaTime);
-	}
+	
+	HandleTimeScale(bGG, DeltaTime);
 }
 
 
@@ -69,19 +67,21 @@ void AGMatch::HandleTimeScale(bool Gg, float Delta)
 		// Drop timescale to glacial..
 		if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > GGTimescale)
 		{
-			float TimeT = FMath::FInterpConstantTo(UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()), 
-				GGTimescale, Delta, TimescaleDropSpeed);
+			float DeltaT = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+			float TimeT = FMath::FInterpConstantTo(DeltaT, GGTimescale, Delta, TimescaleDropSpeed);
 			SetTimeScale(TimeT);
 		}
 		else
 		{
 			bGG = false;
+			GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Orange, TEXT("bGG = false"));
 		}
 	}
 	else if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 1.0f)
 	{
 		// ..Rise timescale back to 1
-		float TimeT = FMath::FInterpConstantTo(UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()), 1.0f, Delta, TimescaleRecoverySpeed);
+		float DeltaT = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+		float TimeT = FMath::FInterpConstantTo(DeltaT, 1.0f, Delta, TimescaleRecoverySpeed);
 		SetTimeScale(TimeT);
 	}
 }
@@ -131,10 +131,9 @@ void AGMatch::GetPlayers()
 			ACharacter* TempChar = Cast<ACharacter>(TempPlayers[i]);
 			if (TempChar && TempChar->IsValidLowLevel() && TempChar->GetController())
 			{
-
+				APlayerController* TempCont = Cast<APlayerController>(TempChar->GetController());
 				// Check if controller is local
-				if (GEngine->GetGamePlayer(GetWorld(), 0)->PlayerController
-					== Cast<APlayerController>(TempChar->GetController()))
+				if (TempCont && TempCont->NetPlayerIndex == 0)
 				{
 					LocalPlayer = Cast<AGammaCharacter>(TempChar);
 					//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("GotLocalPlayer")));

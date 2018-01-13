@@ -22,9 +22,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Lifetime = 1.0f;
 
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class USceneComponent* DamageScene = nullptr;*/
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class USceneComponent* DamageScene = nullptr;
 

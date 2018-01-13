@@ -18,14 +18,13 @@ AGDamage::AGDamage()
 	DamageParticles->SetupAttachment(RootComponent);
 
 	bReplicates = true;
-	bReplicateMovement = true;
 }
 
 // Called when the game starts or when spawned
 void AGDamage::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	DamageParticles->RegisterComponent();
 	SetLifeSpan(Lifetime);
 }
 
