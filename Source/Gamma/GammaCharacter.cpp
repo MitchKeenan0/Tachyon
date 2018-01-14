@@ -191,7 +191,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 	{
 		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
 	}
-	if (FramingActors[0] != nullptr)
+	else if (FramingActors.Num() > 0)
 	{
 		AActor* Actor1 = FramingActors[0];
 		FVector Actor1Velocity = Actor1->GetVelocity();
@@ -228,7 +228,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		{
 			FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1->GetVelocity() * CameraSoloVelocityChase);
 			PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, CameraMoveSpeed);
-			CameraDistance *= (GetVelocity().Size() / 500.0f);
+			//CameraDistance += 500.0f;
 			CameraMaxDistance = 10111.0f;
 		}
 
@@ -275,7 +275,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	SetAim(0.f, 0.f);
 
 	// Charging
-	if (ActiveFlash != nullptr)
+	if (ActiveFlash != nullptr && HasAuthority())
 	{
 		RaiseCharge(DeltaSeconds);
 	}

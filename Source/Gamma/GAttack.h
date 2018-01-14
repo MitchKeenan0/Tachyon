@@ -39,6 +39,9 @@ public:
 	float DurationTime = 0.2f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float MagnitudeTimeScalar = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float HitsPerSecond = 5.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

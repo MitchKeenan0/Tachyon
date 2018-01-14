@@ -31,7 +31,10 @@ void AGMatch::Tick(float DeltaTime)
 		}
 	}
 	
-	HandleTimeScale(bGG, DeltaTime);
+	if (HasAuthority())
+	{
+		HandleTimeScale(bGG, DeltaTime);
+	}
 }
 
 

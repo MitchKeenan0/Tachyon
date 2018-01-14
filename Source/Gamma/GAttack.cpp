@@ -37,9 +37,11 @@ void AGAttack::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetLifeSpan(DurationTime);
-
-	DetectHit(GetActorForwardVector());
+	if (HasAuthority())
+	{
+		SetLifeSpan(DurationTime);
+		DetectHit(GetActorForwardVector());
+	}
 }
 
 
@@ -58,7 +60,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	// Lifespan
 	if (AttackMagnitude > 0.15f)
 	{
-		SetLifeSpan(DurationTime * (1.0f + AttackMagnitude));
+		SetLifeSpan(DurationTime * (1.0f + (AttackMagnitude * MagnitudeTimeScalar)));
 	}
 
 	// Projectile movement
@@ -68,13 +70,13 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	}
 
 	//// Last-second update to direction after fire
-	float DirRecalc = ShotDirection;
+	float DirRecalc = ShotDirection * ShootingAngle;
 	if (AngleSweep != 0.0f)
 	{
-		DirRecalc *= -3.0f;
+		DirRecalc *= -1.68f;
 	}
 	FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
-	FRotator FireRotation = LocalForward.Rotation() + FRotator(21.0f * DirRecalc, 0.0f, 0.0f);
+	FRotator FireRotation = LocalForward.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
 	SetActorRotation(FireRotation);
 	
 	// Get match obj
@@ -96,7 +98,7 @@ void AGAttack::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// Healthy attack activities
-	if (bLethal)
+	if (HasAuthority() && bLethal)
 	{
 		UpdateAttack(DeltaTime);
 	}
@@ -125,18 +127,23 @@ void AGAttack::DetectHit(FVector RaycastVector)
 	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
 	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
 	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_PhysicsBody));
+	
 	TArray<AActor*> IgnoredActors;
 	IgnoredActors.Add(OwningShooter);
+	
 	FVector Start = GetActorLocation() + GetActorForwardVector();
 	FVector End = Start + (RaycastVector * RaycastHitRange);
 	End.Y = 0.0f; /// strange y-axis drift
+	
 	FHitResult Hit;
 	
+	// Swords, etc, get tangible ray space
 	if (bRaycastOnMesh)
 	{
-		float DistX = (AttackSprite->Bounds.BoxExtent.X) * 2.f;
-		Start	= GetActorLocation();
-		End		= Start + (RaycastVector * DistX);
+		float AttackBodyLength = (AttackSprite->Bounds.BoxExtent.X) * RaycastHitRange;
+		float AttackBodyRearLength = AttackBodyLength * -0.25f;
+		Start	= GetActorLocation() + (GetActorForwardVector() * AttackBodyRearLength);
+		End		= GetActorLocation() + (RaycastVector * AttackBodyLength);
 	}
 	
 	// Pew pew
@@ -150,7 +157,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 											EDrawDebugTrace::ForDuration,
 											Hit,
 											true,
-											FLinearColor::Red, FLinearColor::White, 0.15f);
+											FLinearColor::White, FLinearColor::Red, 0.15f);
 	
 	if (Hit.Actor.Get())
 	{
@@ -170,12 +177,26 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		bHit = false;
 	}
 
-	// finally shooting
+	// Consequences
 	if (bHit && (HitTimer >= (1.0f / HitsPerSecond)))
 	{
+		// Damage vfx
 		SpawnDamage(HitActor, HitActor->GetActorLocation());
-		ApplyKnockback(HitActor);
-		TakeGG();
+		
+		// Silly temp denizen kill
+		if (HitActor->ActorHasTag("Denizen")) {
+			if ((FMath::FRand() * 10.0f) < 2.0f)
+			{
+				HitActor->Destroy();
+			}
+		}
+		else {
+			// Player killer
+			ApplyKnockback(HitActor);
+			TakeGG();
+		}
+		
+		// Clean-up for next frame
 		HitTimer = 0.0f;
 		bHit = false;
 	}
@@ -186,6 +207,7 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 {
 	if (DamageClass)
 	{
+		// Spawning actor
 		FActorSpawnParameters SpawnParams;
 		FRotator Forward = (HitActor->GetActorLocation() - OwningShooter->GetActorLocation()).Rotation();
 		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, HitPoint, Forward, SpawnParams));
@@ -199,18 +221,19 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 
 void AGAttack::ApplyKnockback(AActor* HitActor)
 {
+	// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
 	if (Chara)
 	{
 		FVector AwayFromShooter = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 		Chara->GetCharacterMovement()->AddImpulse(AwayFromShooter * KineticForce);
-	}
+	}// !! IMPORTANT !! clamp this, future me. oh hai
 }
 
 
 void AGAttack::TakeGG()
 {
-	if (CurrentMatch)
+	if (HasAuthority() && CurrentMatch)
 	{
 		CurrentMatch->ClaimGG(OwningShooter);
 	}

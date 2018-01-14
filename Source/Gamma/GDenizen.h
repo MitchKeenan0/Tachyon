@@ -20,7 +20,6 @@ public:
 
 	TArray<AActor*> TheCrowd;
 	TArray<AActor*> ActorsOfInterest;
-	// ** Add an array of actors later
 
 protected:
 	// Called when the game starts or when spawned
