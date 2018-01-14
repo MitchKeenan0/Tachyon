@@ -45,7 +45,6 @@ void AGMatch::ClaimGG(AActor* Winner)
 void AGMatch::ServerClaimGG_Implementation(AActor* Winner)
 {
 	bGG = true;
-	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("G G G"));
 
 	AGammaCharacter* Reciever = Cast<AGammaCharacter>(Winner);
 	if (Reciever)
@@ -74,7 +73,6 @@ void AGMatch::HandleTimeScale(bool Gg, float Delta)
 		else
 		{
 			bGG = false;
-			GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Orange, TEXT("bGG = false"));
 		}
 	}
 	else if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 1.0f)
@@ -98,11 +96,11 @@ float AGMatch::GetLocalChargePercent()
 {
 	if (LocalPlayer)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("reading"));
 		return LocalPlayer->GetChargePercentage();
 	}
 	else
 	{
+		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("match sees no local player"));
 		return -1.0f;
 	}
 }
@@ -114,6 +112,7 @@ float AGMatch::GetOpponentChargePercent()
 	}
 	else
 	{
+		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("match sees no opponent player"));
 		return -1.0f;
 	}
 }

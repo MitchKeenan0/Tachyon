@@ -417,11 +417,12 @@ void AGammaCharacter::SetAim(float x, float z)
 	if ((CurrentMove != PrevMoveInput) 
 		&& (CurrentMove != FVector::ZeroVector))
 	{
-		// Respect tempo
+		// Tempo timing
 		CurrentMoveTime = GetWorld()->TimeSeconds;
 		float TimeDelta = (CurrentMoveTime - LastMoveTime);
 
-		if ((TimeDelta <= 0.314f) && (TimeDelta >= 0.11f))
+		// Respect tempo
+		if (TimeDelta > 0.1f)
 		{
 			NewMoveKick();
 			UpdateMoveParticles(CurrentMove);
@@ -430,7 +431,6 @@ void AGammaCharacter::SetAim(float x, float z)
 				PlayerSound->SetPitchMultiplier(TimeDelta);
 				PlayerSound->Play();
 			}
-			///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("O N  T E M P O"));
 		}
 	}
 

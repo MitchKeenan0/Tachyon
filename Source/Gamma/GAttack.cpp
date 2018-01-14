@@ -56,7 +56,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Pitch After: %f"), AttackSound->PitchMultiplier));
 
 	// Lifespan
-	if (AttackMagnitude > 0.3f)
+	if (AttackMagnitude > 0.15f)
 	{
 		SetLifeSpan(DurationTime * (1.0f + AttackMagnitude));
 	}
@@ -68,14 +68,14 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	}
 
 	//// Last-second update to direction after fire
-	//float DirRecalc = ShotDirection;
-	//if (AngleSweep != 0.0f)
-	//{
-	//	DirRecalc *= -1.5f;
-	//}
-	//FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
-	//FRotator FireRotation = LocalForward.Rotation() + FRotator(21.0f * DirRecalc, 0.0f, 0.0f);
-	//SetActorRotation(FireRotation);
+	float DirRecalc = ShotDirection;
+	if (AngleSweep != 0.0f)
+	{
+		DirRecalc *= -3.0f;
+	}
+	FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
+	FRotator FireRotation = LocalForward.Rotation() + FRotator(21.0f * DirRecalc, 0.0f, 0.0f);
+	SetActorRotation(FireRotation);
 	
 	// Get match obj
 	TArray<AActor*> Actors;
@@ -121,14 +121,15 @@ void AGAttack::DetectHit(FVector RaycastVector)
 {
 	// Linecast ingredients
 	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
+	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
 	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
 	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
-	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
 	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_PhysicsBody));
 	TArray<AActor*> IgnoredActors;
 	IgnoredActors.Add(OwningShooter);
 	FVector Start = GetActorLocation() + GetActorForwardVector();
 	FVector End = Start + (RaycastVector * RaycastHitRange);
+	End.Y = 0.0f; /// strange y-axis drift
 	FHitResult Hit;
 	
 	if (bRaycastOnMesh)
@@ -137,13 +138,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		Start	= GetActorLocation();
 		End		= Start + (RaycastVector * DistX);
 	}
-	else
-	{
-		Start	= GetActorLocation() + GetActorForwardVector();
-		End		= Start + (RaycastVector * RaycastHitRange);
-	}
 	
-
 	// Pew pew
 	bool HitResult = UKismetSystemLibrary::LineTraceSingleForObjects(
 											this,
@@ -157,7 +152,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 											true,
 											FLinearColor::Red, FLinearColor::White, 0.15f);
 	
-	if (HitResult)
+	if (Hit.Actor.Get())
 	{
 		HitActor = Hit.Actor.Get();
 		if (HitActor)
@@ -183,7 +178,6 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		TakeGG();
 		HitTimer = 0.0f;
 		bHit = false;
-		///GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("G O T T E M  %f"), AttackDamage));
 	}
 }
 
