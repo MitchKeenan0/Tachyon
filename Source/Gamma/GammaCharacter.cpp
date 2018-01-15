@@ -210,20 +210,23 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		if (FramingActors.Num() > 1 && FramingActors[1])
 		{
 			Actor2 = FramingActors[1];
-			FVector Actor2Velocity = Actor2->GetVelocity();
-			Actor2Velocity.Z *= 0.5f;
-			FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase);
-			PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, CameraMoveSpeed);
+			if (Actor2)
+			{
+				FVector Actor2Velocity = Actor2->GetVelocity();
+				Actor2Velocity.Z *= 0.5f;
+				FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase);
+				PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, CameraMoveSpeed);
 
-			// Compare velocities for cam tilting
-			FVector Vel1 = Actor1->GetVelocity();
-			FVector Vel2 = Actor2->GetVelocity();
-			float Difference = Vel1.Size() - Vel2.Size();
+				// Compare velocities for cam tilting
+				FVector Vel1 = Actor1->GetVelocity();
+				FVector Vel2 = Actor2->GetVelocity();
+				float Difference = Vel1.Size() - Vel2.Size();
 
-			// Clamp and set camera tilt
-			CameraTilt = FMath::Clamp(Difference, -CameraTiltClamp, CameraTiltClamp);
-			CameraTilt = FMath::FInterpTo(SideViewCameraComponent->GetComponentRotation().Roll, CameraTilt, DeltaTime, 3.0f);
-			SideViewCameraComponent->SetRelativeRotation(FRotator(0.0f, 0.0f, CameraTilt));
+				// Clamp and set camera tilt
+				CameraTilt = FMath::Clamp(Difference, -CameraTiltClamp, CameraTiltClamp);
+				CameraTilt = FMath::FInterpTo(SideViewCameraComponent->GetComponentRotation().Roll, CameraTilt, DeltaTime, 3.0f);
+				SideViewCameraComponent->SetRelativeRotation(FRotator(0.0f, 0.0f, CameraTilt));
+			}
 
 			// TO DO: ^^ camera seems to tilt one direction for each player...
 		}
@@ -275,10 +278,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	UpdateCharacter(DeltaSeconds);
 
 	// Aiming
-	if (bNewMove)
-	{
-		SetAim(0.f, 0.f);
-	}
+	SetAim(0.f, 0.f);
 
 	//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, FString::Printf(TEXT("Delta Time   %f"), DeltaSeconds));
 
@@ -332,19 +332,11 @@ void AGammaCharacter::MoveUp(float Value)
 // SET X & Z
 void AGammaCharacter::SetX(float Value)
 {
-	/*InputX = Value;
-
-	if (Role < ROLE_Authority)
-	{
-		ServerSetX(Value);
-	}*/
 	ServerSetX(Value);
 }
 void AGammaCharacter::ServerSetX_Implementation(float Value)
 {
-	//SetX(Value);
 	InputX = Value;
-	bNewMove = true;
 }
 bool AGammaCharacter::ServerSetX_Validate(float Value)
 {
@@ -353,19 +345,11 @@ bool AGammaCharacter::ServerSetX_Validate(float Value)
 
 void AGammaCharacter::SetZ(float Value)
 {
-	/*InputZ = Value;
-	
-	if (Role < ROLE_Authority)
-	{
-		ServerSetZ(Value);
-	}*/
 	ServerSetZ(Value);
 }
 void AGammaCharacter::ServerSetZ_Implementation(float Value)
 {
-	//SetZ(Value);
 	InputZ = Value;
-	bNewMove = true;
 }
 bool AGammaCharacter::ServerSetZ_Validate(float Value)
 {
@@ -375,18 +359,13 @@ bool AGammaCharacter::ServerSetZ_Validate(float Value)
 // MOVE-KICK on fresh input
 void AGammaCharacter::NewMoveKick()
 {
-	// Add fresh velocity and clamp to max move speed
-	GetCharacterMovement()->AddForce(FVector(InputX, 0.0f, InputZ) * MoveFreshMultiplier * GetWorld()->DeltaTimeSeconds);
-	GetCharacterMovement()->Velocity = GetCharacterMovement()->Velocity.GetClampedToMaxSize(MaxMoveSpeed);
-
-	if (Role < ROLE_Authority) // (Role ==)
-	{
-		ServerNewMoveKick();
-	}
+	ServerNewMoveKick();
 }
 void AGammaCharacter::ServerNewMoveKick_Implementation()
 {
-	NewMoveKick();
+	FVector KickVector = FVector(InputX, 0.0f, InputZ) * MoveFreshMultiplier;
+	GetCharacterMovement()->AddImpulse(KickVector * GetWorld()->DeltaTimeSeconds);
+	GetCharacterMovement()->Velocity = GetCharacterMovement()->Velocity.GetClampedToMaxSize(MaxMoveSpeed);
 }
 bool AGammaCharacter::ServerNewMoveKick_Validate()
 {
@@ -405,7 +384,7 @@ void AGammaCharacter::UpdateMoveParticles(FVector Move)
 		MoveParticles->Activate();
 	}
 
-	if (Role < ROLE_Authority) // (Role < ROLE_Authority)
+	if (Role == ROLE_AutonomousProxy) // (Role < ROLE_Authority)
 	{
 		ServerUpdateMoveParticles(Move);
 	}
@@ -434,8 +413,11 @@ void AGammaCharacter::SetAim(float x, float z)
 		// Respect tempo
 		if (TimeDelta > 0.1f)
 		{
-			NewMoveKick();
+			/*if (HasAuthority())
+				NewMoveKick();*/
+
 			UpdateMoveParticles(CurrentMove);
+
 			if (PlayerSound != nullptr)
 			{
 				PlayerSound->SetPitchMultiplier(TimeDelta);
@@ -446,9 +428,9 @@ void AGammaCharacter::SetAim(float x, float z)
 
 	LastMoveTime = CurrentMoveTime;
 	PrevMoveInput = CurrentMove;
-	bNewMove = false;
+	//bNewMove = false;
 
-	if (Role < ROLE_Authority)
+	if (Role == ROLE_AutonomousProxy) //< ROLE_Authority
 	{
 		ServerSetAim(x, z);
 	}
