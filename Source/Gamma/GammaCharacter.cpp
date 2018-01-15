@@ -194,7 +194,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 	{
 		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
 	}
-	else if (FramingActors.Num() > 0)
+	if (FramingActors.Num() > 0)
 	{
 		AActor* Actor1 = FramingActors[0];
 		FVector Actor1Velocity = Actor1->GetVelocity();
@@ -413,8 +413,8 @@ void AGammaCharacter::SetAim(float x, float z)
 		// Respect tempo
 		if (TimeDelta > 0.1f)
 		{
-			/*if (HasAuthority())
-				NewMoveKick();*/
+			if (HasAuthority())
+				NewMoveKick();
 
 			UpdateMoveParticles(CurrentMove);
 
