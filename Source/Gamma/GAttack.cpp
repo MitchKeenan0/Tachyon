@@ -47,48 +47,51 @@ void AGAttack::BeginPlay()
 
 void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 {
-	// Set local variables
-	OwningShooter = Shooter;
-	AttackMagnitude = Magnitude;
-	ShotDirection = YScale;
+	//if (HasAuthority())
+	//{
+		// Set local variables
+		OwningShooter = Shooter;
+		AttackMagnitude = Magnitude;
+		ShotDirection = YScale;
 
-	// set sounds
-	AttackSound->SetPitchMultiplier(AttackSound->PitchMultiplier - (AttackMagnitude / 1.5f));
-	AttackSound->SetVolumeMultiplier(1.0f + (AttackMagnitude * 1.25f));
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Pitch After: %f"), AttackSound->PitchMultiplier));
+		// set sounds
+		AttackSound->SetPitchMultiplier(AttackSound->PitchMultiplier - (AttackMagnitude / 1.5f));
+		AttackSound->SetVolumeMultiplier(1.0f + (AttackMagnitude * 1.25f));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Pitch After: %f"), AttackSound->PitchMultiplier));
 
-	// Lifespan
-	if (AttackMagnitude > 0.15f)
-	{
-		SetLifeSpan(DurationTime * (1.0f + (AttackMagnitude * MagnitudeTimeScalar)));
-	}
+		// Lifespan
+		if (AttackMagnitude > 0.0001f)
+		{
+			SetLifeSpan(DurationTime * (1.0f + (AttackMagnitude * MagnitudeTimeScalar)));
+		}
 
-	// Projectile movement
-	if (ProjectileSpeed > 0.0f)
-	{
-		ProjectileComponent->Velocity = GetActorForwardVector() * ProjectileSpeed * AttackMagnitude * ProjectileMaxSpeed;
-	}
+		// Projectile movement
+		if (ProjectileSpeed > 0.0f)
+		{
+			ProjectileComponent->Velocity = GetActorForwardVector() * ProjectileSpeed * AttackMagnitude * ProjectileMaxSpeed;
+		}
 
-	//// Last-second update to direction after fire
-	float DirRecalc = ShotDirection * ShootingAngle;
-	if (AngleSweep != 0.0f)
-	{
-		DirRecalc *= -1.68f;
-	}
-	FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
-	FRotator FireRotation = LocalForward.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
-	SetActorRotation(FireRotation);
-	
-	// Get match obj
-	TArray<AActor*> Actors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGMatch::StaticClass(), Actors);
-	CurrentMatch = Cast<AGMatch>(Actors[0]);
+		//// Last-second update to direction after fire
+		float DirRecalc = ShotDirection * ShootingAngle;
+		if (AngleSweep != 0.0f)
+		{
+			DirRecalc *= -1.68f;
+		}
+		FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
+		FRotator FireRotation = LocalForward.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
+		SetActorRotation(FireRotation);
 
-	// Color & cosmetics
-	/*FlashMesh->SetMaterial(0, MainMaterial);
-	AttackMesh->SetMaterial(0, MainMaterial);*/
+		// Get match obj
+		TArray<AActor*> Actors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGMatch::StaticClass(), Actors);
+		CurrentMatch = Cast<AGMatch>(Actors[0]);
 
-	DetectHit(GetActorForwardVector());
+		// Color & cosmetics
+		/*FlashMesh->SetMaterial(0, MainMaterial);
+		AttackMesh->SetMaterial(0, MainMaterial);*/
+
+		DetectHit(GetActorForwardVector());
+	//}
 }
 
 
@@ -98,7 +101,7 @@ void AGAttack::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// Healthy attack activities
-	if (HasAuthority() && bLethal)
+	if (bLethal)
 	{
 		UpdateAttack(DeltaTime);
 	}
@@ -115,7 +118,10 @@ void AGAttack::UpdateAttack(float DeltaTime)
 		DetectHit(GetActorForwardVector());
 	}*/
 
-	DetectHit(GetActorForwardVector());
+	if (!bHit)
+	{
+		DetectHit(GetActorForwardVector());
+	}
 }
 
 
@@ -141,9 +147,8 @@ void AGAttack::DetectHit(FVector RaycastVector)
 	if (bRaycastOnMesh)
 	{
 		float AttackBodyLength = (AttackSprite->Bounds.BoxExtent.X) * RaycastHitRange;
-		float AttackBodyRearLength = AttackBodyLength * -0.25f;
-		Start	= GetActorLocation() + (GetActorForwardVector() * AttackBodyRearLength);
-		End		= GetActorLocation() + (RaycastVector * AttackBodyLength);
+		Start	= GetActorLocation() + (GetActorForwardVector());
+		End		= Start + (RaycastVector * AttackBodyLength);
 	}
 	
 	// Pew pew
@@ -154,12 +159,12 @@ void AGAttack::DetectHit(FVector RaycastVector)
 											TraceObjects,
 											false,
 											IgnoredActors,
-											EDrawDebugTrace::ForDuration,
+											EDrawDebugTrace::None,
 											Hit,
 											true,
 											FLinearColor::White, FLinearColor::Red, 0.15f);
 	
-	if (Hit.Actor.Get())
+	if (HitResult)
 	{
 		HitActor = Hit.Actor.Get();
 		if (HitActor)
@@ -183,6 +188,10 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		// Damage vfx
 		SpawnDamage(HitActor, HitActor->GetActorLocation());
 		
+		// Player killer
+		ApplyKnockback(HitActor);
+		TakeGG();
+
 		// Silly temp denizen kill
 		if (HitActor->ActorHasTag("Denizen")) {
 			if ((FMath::FRand() * 10.0f) < 2.0f)
@@ -190,15 +199,9 @@ void AGAttack::DetectHit(FVector RaycastVector)
 				HitActor->Destroy();
 			}
 		}
-		else {
-			// Player killer
-			ApplyKnockback(HitActor);
-			TakeGG();
-		}
 		
 		// Clean-up for next frame
 		HitTimer = 0.0f;
-		bHit = false;
 	}
 }
 
@@ -233,7 +236,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 
 void AGAttack::TakeGG()
 {
-	if (HasAuthority() && CurrentMatch)
+	if (CurrentMatch)
 	{
 		CurrentMatch->ClaimGG(OwningShooter);
 	}

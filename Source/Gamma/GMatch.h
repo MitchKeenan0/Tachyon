@@ -29,8 +29,8 @@ public:
 
 	// End-game slow-time functions
 	void ClaimGG(AActor* Winner);
-	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
-	void ServerClaimGG(AActor* Winner);
+	/*UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerClaimGG(AActor* Winner);*/
 
 	void HandleTimeScale(bool Gg, float Delta);
 

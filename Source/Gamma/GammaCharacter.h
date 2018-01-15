@@ -167,6 +167,8 @@ protected:
 	float x = 0.0f;
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
 	float z = 0.0f;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	bool bNewMove = false;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
 	float Charge = 0.0f;

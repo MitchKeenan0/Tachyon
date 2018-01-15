@@ -40,13 +40,6 @@ void AGMatch::Tick(float DeltaTime)
 
 void AGMatch::ClaimGG(AActor* Winner)
 {
-	if (Winner != nullptr)
-	{
-		ServerClaimGG(Winner);
-	}
-}
-void AGMatch::ServerClaimGG_Implementation(AActor* Winner)
-{
 	bGG = true;
 
 	AGammaCharacter* Reciever = Cast<AGammaCharacter>(Winner);
@@ -54,11 +47,25 @@ void AGMatch::ServerClaimGG_Implementation(AActor* Winner)
 	{
 		Reciever->RaiseScore(1);
 	}
+	/*if (Winner != nullptr)
+	{
+		ServerClaimGG(Winner);
+	}*/
 }
-bool AGMatch::ServerClaimGG_Validate(AActor* Winner)
-{
-	return true;
-}
+//void AGMatch::ServerClaimGG_Implementation(AActor* Winner)
+//{
+//	bGG = true;
+//
+//	AGammaCharacter* Reciever = Cast<AGammaCharacter>(Winner);
+//	if (Reciever)
+//	{
+//		Reciever->RaiseScore(1);
+//	}
+//}
+//bool AGMatch::ServerClaimGG_Validate(AActor* Winner)
+//{
+//	return true;
+//}
 
 
 void AGMatch::HandleTimeScale(bool Gg, float Delta)
@@ -81,8 +88,8 @@ void AGMatch::HandleTimeScale(bool Gg, float Delta)
 	else if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 1.0f)
 	{
 		// ..Rise timescale back to 1
-		float DeltaT = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-		float TimeT = FMath::FInterpConstantTo(DeltaT, 1.0f, Delta, TimescaleRecoverySpeed);
+		float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+		float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed);
 		SetTimeScale(TimeT);
 	}
 }

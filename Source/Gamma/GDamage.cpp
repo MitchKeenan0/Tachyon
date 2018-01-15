@@ -24,7 +24,10 @@ AGDamage::AGDamage()
 void AGDamage::BeginPlay()
 {
 	Super::BeginPlay();
-	DamageParticles->RegisterComponent();
+	if (!DamageParticles->IsRegistered())
+	{
+		DamageParticles->RegisterComponent();
+	}
 	SetLifeSpan(Lifetime);
 }
 

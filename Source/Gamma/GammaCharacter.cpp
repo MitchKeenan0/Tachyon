@@ -125,7 +125,7 @@ void AGammaCharacter::BeginPlay()
 	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed;
 
 	// To reduce jitter
-	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), TEXT("p.NetEnableMoveCombining 0")); /// is this needed?
+	//UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), TEXT("p.NetEnableMoveCombining 0")); /// is this needed?
 }
 
 
@@ -137,7 +137,10 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	//UpdateAnimation();
 
 	// Camera update
-	UpdateCamera(DeltaTime);
+	if (GetWorld()->TimeSeconds > 1) // has authority?
+	{
+		UpdateCamera(DeltaTime);
+	}
 
 	// Now setup the rotation of the controller based on the direction we are travelling
 	const FVector PlayerVelocity = GetVelocity();
@@ -204,7 +207,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		float CameraDistance = CameraDistanceScalar;
 		
 		// Prepare to locate centre of either 2 scenarios:
-		if (FramingActors.Num() > 1)
+		if (FramingActors.Num() > 1 && FramingActors[1])
 		{
 			Actor2 = FramingActors[1];
 			FVector Actor2Velocity = Actor2->GetVelocity();
@@ -272,7 +275,12 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	UpdateCharacter(DeltaSeconds);
 
 	// Aiming
-	SetAim(0.f, 0.f);
+	if (bNewMove)
+	{
+		SetAim(0.f, 0.f);
+	}
+
+	//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, FString::Printf(TEXT("Delta Time   %f"), DeltaSeconds));
 
 	// Charging
 	if (ActiveFlash != nullptr && HasAuthority())
@@ -336,6 +344,7 @@ void AGammaCharacter::ServerSetX_Implementation(float Value)
 {
 	//SetX(Value);
 	InputX = Value;
+	bNewMove = true;
 }
 bool AGammaCharacter::ServerSetX_Validate(float Value)
 {
@@ -356,6 +365,7 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 {
 	//SetZ(Value);
 	InputZ = Value;
+	bNewMove = true;
 }
 bool AGammaCharacter::ServerSetZ_Validate(float Value)
 {
@@ -366,10 +376,10 @@ bool AGammaCharacter::ServerSetZ_Validate(float Value)
 void AGammaCharacter::NewMoveKick()
 {
 	// Add fresh velocity and clamp to max move speed
-	GetCharacterMovement()->AddForce(FVector(InputX, 0.0f, InputZ) * MoveFreshMultiplier);
+	GetCharacterMovement()->AddForce(FVector(InputX, 0.0f, InputZ) * MoveFreshMultiplier * GetWorld()->DeltaTimeSeconds);
 	GetCharacterMovement()->Velocity = GetCharacterMovement()->Velocity.GetClampedToMaxSize(MaxMoveSpeed);
 
-	if (Role == ROLE_AutonomousProxy) // (Role < ROLE_Authority)
+	if (Role < ROLE_Authority) // (Role ==)
 	{
 		ServerNewMoveKick();
 	}
@@ -395,7 +405,7 @@ void AGammaCharacter::UpdateMoveParticles(FVector Move)
 		MoveParticles->Activate();
 	}
 
-	if (Role == ROLE_AutonomousProxy) // (Role < ROLE_Authority)
+	if (Role < ROLE_Authority) // (Role < ROLE_Authority)
 	{
 		ServerUpdateMoveParticles(Move);
 	}
@@ -436,8 +446,9 @@ void AGammaCharacter::SetAim(float x, float z)
 
 	LastMoveTime = CurrentMoveTime;
 	PrevMoveInput = CurrentMove;
+	bNewMove = false;
 
-	if (Role == ROLE_AutonomousProxy) // (Role < ROLE_Authority)
+	if (Role < ROLE_Authority)
 	{
 		ServerSetAim(x, z);
 	}
