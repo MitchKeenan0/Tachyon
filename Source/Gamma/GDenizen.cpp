@@ -57,5 +57,6 @@ void AGDenizen::FindActorsOfInterest()
 void AGDenizen::ApproachActorOfInterest(AActor* InterestActor)
 {
 	FVector ToActor = InterestActor->GetActorLocation() - GetActorLocation();
-	SetActorLocation(GetActorLocation() + (ToActor / 100));
+	FVector MoveVector = ToActor * MoveSpeed * GetWorld()->DeltaTimeSeconds;
+	SetActorLocation(GetActorLocation() + MoveVector);
 }

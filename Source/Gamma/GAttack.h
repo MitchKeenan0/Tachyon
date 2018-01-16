@@ -45,7 +45,7 @@ public:
 	float HitsPerSecond = 5.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool bLethal = true;
+	bool bLethal = false;
 
 
 protected:

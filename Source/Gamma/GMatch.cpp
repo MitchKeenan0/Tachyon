@@ -44,25 +44,7 @@ void AGMatch::ClaimGG(AActor* Winner)
 	{
 		Reciever->RaiseScore(1);
 	}
-	/*if (Winner != nullptr)
-	{
-		ServerClaimGG(Winner);
-	}*/
 }
-//void AGMatch::ServerClaimGG_Implementation(AActor* Winner)
-//{
-//	bGG = true;
-//
-//	AGammaCharacter* Reciever = Cast<AGammaCharacter>(Winner);
-//	if (Reciever)
-//	{
-//		Reciever->RaiseScore(1);
-//	}
-//}
-//bool AGMatch::ServerClaimGG_Validate(AActor* Winner)
-//{
-//	return true;
-//}
 
 
 void AGMatch::HandleTimeScale(bool Gg, float Delta)
@@ -86,7 +68,7 @@ void AGMatch::HandleTimeScale(bool Gg, float Delta)
 	{
 		// ..Rise timescale back to 1
 		float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-		float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed);
+		float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed * TimeDilat);
 		SetTimeScale(TimeT);
 	}
 }

@@ -26,7 +26,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MoveSpeed = 551.0f;
+	float MoveSpeed = 1.0f;
 
 	UFUNCTION()
 	void FindActorsOfInterest();

@@ -158,18 +158,9 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			Controller->SetControlRotation(FRotator(0.0f, 0.0f, 0.0f));
 		}
 
-		// Aiming
-		/* TRY THIS, FRAVE -- Check if Local
-		if (GEngine->GetGamePlayer(GetWorld(), 0)->PlayerController
-					== Cast<APlayerController>(TempChar->GetController()))
-		*/
-		/*if (InputComponent && HasAuthority())
-		{
-			float HorizontalInput = InputComponent->GetAxisValue(TEXT("MoveRight"));
-			float VerticalInput = InputComponent->GetAxisValue(TEXT("MoveUp"));
-			SetAim(HorizontalInput, VerticalInput);
-		}*/
-		
+		// Clamp velocity
+		float TimeScalar = (1 / UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()));
+		GetCharacterMovement()->Velocity = GetCharacterMovement()->Velocity.GetClampedToMaxSize(MaxMoveSpeed * TimeScalar);
 	}
 
 	// Attack stuff
@@ -197,60 +188,63 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 	if (FramingActors.Num() > 0)
 	{
 		AActor* Actor1 = FramingActors[0];
-		FVector Actor1Velocity = Actor1->GetVelocity();
-		Actor1Velocity.Z *= 0.5f;
-		AActor* Actor2 = nullptr; /// no guarantee
-		FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase);
-		PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, CameraMoveSpeed);
-		float CameraTilt = 0.0f;
-		float CameraMaxDistance = 5555.5f;
-		float CameraDistance = CameraDistanceScalar;
-		
-		// Prepare to locate centre of either 2 scenarios:
-		if (FramingActors.Num() > 1 && FramingActors[1])
+		if (Actor1 && !Actor1->IsUnreachable())
 		{
-			Actor2 = FramingActors[1];
-			if (Actor2)
+			FVector Actor1Velocity = Actor1->GetVelocity();
+			Actor1Velocity.Z *= 0.5f;
+			AActor* Actor2 = nullptr; /// no guarantee
+			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase);
+			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, CameraMoveSpeed);
+			float CameraTilt = 0.0f;
+			float CameraMaxDistance = 5555.5f;
+			float CameraDistance = CameraDistanceScalar;
+
+			// Prepare to locate centre of either 2 scenarios:
+			if (FramingActors.Num() > 1 && FramingActors[1])
 			{
-				FVector Actor2Velocity = Actor2->GetVelocity();
-				Actor2Velocity.Z *= 0.5f;
-				FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase);
-				PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, CameraMoveSpeed);
+				Actor2 = FramingActors[1];
+				if (Actor2 && !Actor2->IsUnreachable())
+				{
+					FVector Actor2Velocity = Actor2->GetVelocity();
+					Actor2Velocity.Z *= 0.5f;
+					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase);
+					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, CameraMoveSpeed);
 
-				// Compare velocities for cam tilting
-				FVector Vel1 = Actor1->GetVelocity();
-				FVector Vel2 = Actor2->GetVelocity();
-				float Difference = Vel1.Size() - Vel2.Size();
+					// Compare velocities for cam tilting
+					FVector Vel1 = Actor1->GetVelocity();
+					FVector Vel2 = Actor2->GetVelocity();
+					float Difference = Vel1.Size() - Vel2.Size();
 
-				// Clamp and set camera tilt
-				CameraTilt = FMath::Clamp(Difference, -CameraTiltClamp, CameraTiltClamp);
-				CameraTilt = FMath::FInterpTo(SideViewCameraComponent->GetComponentRotation().Roll, CameraTilt, DeltaTime, 3.0f);
-				SideViewCameraComponent->SetRelativeRotation(FRotator(0.0f, 0.0f, CameraTilt));
+					// Clamp and set camera tilt
+					CameraTilt = FMath::Clamp(Difference, -CameraTiltClamp, CameraTiltClamp);
+					CameraTilt = FMath::FInterpTo(SideViewCameraComponent->GetComponentRotation().Roll, CameraTilt, DeltaTime, 3.0f);
+					SideViewCameraComponent->SetRelativeRotation(FRotator(0.0f, 0.0f, CameraTilt));
+				}
+
+				// TO DO: ^^ camera seems to tilt one direction for each player...
+			}
+			else if (FramingActors.Num() == 1)
+			{
+				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1->GetVelocity() * CameraSoloVelocityChase);
+				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, CameraMoveSpeed);
+				//CameraDistance += 500.0f;
+				CameraMaxDistance = 10111.0f;
 			}
 
-			// TO DO: ^^ camera seems to tilt one direction for each player...
-		}
-		else if (FramingActors.Num() == 1)
-		{
-			FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1->GetVelocity() * CameraSoloVelocityChase);
-			PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, CameraMoveSpeed);
-			//CameraDistance += 500.0f;
-			CameraMaxDistance = 10111.0f;
-		}
+			// Set the midpoint
+			Midpoint = (PositionOne + PositionTwo) / 2.0f;
+			if (Midpoint.Size() > 1.0f)
+			{
+				// Back away to accommodate distance
+				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo) + (300 / FramingActors.Num());
+				float DesiredCameraDistance = FMath::Clamp(FMath::Sqrt(DistBetweenActors * 300.f) * CameraDistance,
+					300.0f,
+					CameraMaxDistance);
 
-		// Set the midpoint
-		Midpoint = (PositionOne + PositionTwo) / 2.0f;
-		if (Midpoint.Size() > 1.0f)
-		{
-			// Back away to accommodate distance
-			float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo) + (300 / FramingActors.Num());
-			float DesiredCameraDistance = FMath::Clamp(FMath::Sqrt(DistBetweenActors * 300.f) * CameraDistance,
-														300.0f,
-														CameraMaxDistance);
-
-			// Make it so
-			CameraBoom->SetWorldLocation(Midpoint);
-			CameraBoom->TargetArmLength = DesiredCameraDistance;
+				// Make it so
+				CameraBoom->SetWorldLocation(Midpoint);
+				CameraBoom->TargetArmLength = DesiredCameraDistance;
+			}
 		}
 	}
 }
@@ -359,13 +353,19 @@ bool AGammaCharacter::ServerSetZ_Validate(float Value)
 // MOVE-KICK on fresh input
 void AGammaCharacter::NewMoveKick()
 {
-	ServerNewMoveKick();
+	float TimeScalar = (1 / UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()))
+		* (1 + (1 / UGameplayStatics::GetGlobalTimeDilation(this->GetWorld())) * 0.25f);
+	FVector KickVector = FVector(InputX, 0.0f, InputZ) * MoveFreshMultiplier * TimeScalar;
+	GetCharacterMovement()->AddImpulse(KickVector * GetWorld()->DeltaTimeSeconds);
+	
+	if (Role < ROLE_Authority)
+	{
+		ServerNewMoveKick();
+	}
 }
 void AGammaCharacter::ServerNewMoveKick_Implementation()
 {
-	FVector KickVector = FVector(InputX, 0.0f, InputZ) * MoveFreshMultiplier;
-	GetCharacterMovement()->AddImpulse(KickVector * GetWorld()->DeltaTimeSeconds);
-	GetCharacterMovement()->Velocity = GetCharacterMovement()->Velocity.GetClampedToMaxSize(MaxMoveSpeed);
+	NewMoveKick();
 }
 bool AGammaCharacter::ServerNewMoveKick_Validate()
 {
@@ -411,7 +411,7 @@ void AGammaCharacter::SetAim(float x, float z)
 		float TimeDelta = (CurrentMoveTime - LastMoveTime);
 
 		// Respect tempo
-		if (TimeDelta > 0.1f)
+		if (TimeDelta > (0.1f * UGameplayStatics::GetGlobalTimeDilation(GetWorld())))
 		{
 			if (HasAuthority())
 				NewMoveKick();
