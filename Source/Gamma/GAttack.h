@@ -134,7 +134,10 @@ protected:
 	/*UPROPERTY(BlueprintReadWrite)
 	class AMatch* CurrentMatch = nullptr;*/
 
-	// Replicated Variables
+	// Replicated Variables /////////////////////////////////////////
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+	float DynamicLifetime = 0.0f;
+
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	bool bHit = false;
 

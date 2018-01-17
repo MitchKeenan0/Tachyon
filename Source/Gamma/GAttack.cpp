@@ -55,9 +55,10 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Pitch After: %f"), AttackSound->PitchMultiplier));
 
 	// Lifespan
-	if (AttackMagnitude > 0.0001f)
+	if (AttackMagnitude > 0.0f)
 	{
-		SetLifeSpan(DurationTime * (1.0f + (AttackMagnitude * MagnitudeTimeScalar)));
+		DynamicLifetime = DurationTime * (1.0f + (AttackMagnitude * MagnitudeTimeScalar));
+		SetLifeSpan(DynamicLifetime);
 	}
 
 	// Projectile movement
@@ -85,7 +86,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	/*FlashMesh->SetMaterial(0, MainMaterial);
 	AttackMesh->SetMaterial(0, MainMaterial);*/
 
-
+	// Init success
 	if (OwningShooter != nullptr)
 	{
 		bLethal = true;
@@ -101,19 +102,15 @@ void AGAttack::Tick(float DeltaTime)
 	LifeTimer += DeltaTime;
 	HitTimer += DeltaTime;
 
-	if (LifeTimer >= DurationTime)
+	if (LifeTimer >= DynamicLifetime * 0.95f)
 	{
-		Destroy();
+		AttackParticles->bSuppressSpawning = true;
 	}
 
 	// Healthy attack activities
 	if (bLethal)
 	{
 		UpdateAttack(DeltaTime);
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("not lethal"));
 	}
 }
 
@@ -242,6 +239,7 @@ void AGAttack::GetLifetimeReplicatedProps(TArray <FLifetimeProperty> & OutLifeti
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(AGAttack, DynamicLifetime);
 	DOREPLIFETIME(AGAttack, bHit);
 	DOREPLIFETIME(AGAttack, bStillHitting);
 	DOREPLIFETIME(AGAttack, bDoneHitting);

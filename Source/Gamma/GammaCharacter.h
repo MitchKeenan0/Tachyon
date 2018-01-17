@@ -136,9 +136,9 @@ protected:
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerUpdateMoveParticles(FVector Move);
 
-	void SetAim(float x, float z);
+	void SetAim();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
-	void ServerSetAim(float x, float z);
+	void ServerSetAim();
 
 	void InitAttack();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
@@ -153,33 +153,10 @@ protected:
 	void ServerReleaseAttack();
 
 
-	// VARIABLES //////////////////////////////////////////////	
-
-	// Replicated variables
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
-	float Health = 100.0f;
-
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
-	float InputX = 0.0f;
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
-	float InputZ = 0.0f;
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
-	float x = 0.0f;
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
-	float z = 0.0f;
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
-	bool bNewMove = false;
-
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
-	float Charge = 0.0f;
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
-	bool bCharging = false;
-
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
-	int Score = 0;
-
 
 	// BLUEPRINT COMPONENTS ///////////////////////////////////////
+	//
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class USceneComponent* AttackScene = nullptr;
 
@@ -196,23 +173,51 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class USphereComponent* ShieldCollider;
 
+
+
+	// VARIABLES //////////////////////////////////////////////	
+	//
+
+	// Replicated variables
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	float Health = 100.0f;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	float InputX = 0.0f;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	float InputZ = 0.0f;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	float x = 0.0f;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	float z = 0.0f;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	float MoveTimer = 0.0f;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	bool bMoved = false;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	float Charge = 0.0f;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	bool bCharging = false;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+	int Score = 0;
+
 	// Player movement
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MoveSpeed = 1000.0f;
+	float MoveSpeed = 500.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float TurnSpeed = 1000.0f;
+	float MovesPerSecond = 15.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MoveFreshMultiplier = 250.0f;
+	float TurnSpeed = 500.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float MoveFreshMultiplier = 22000.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float SlowmoMoveBoost = 5.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MaxMoveSpeed = 1000.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MoveAccelerationSpeed = 1500.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MoveFrictionGain = 5.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float RestFriction = 1.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MaxFriction = 5.0f;
+	float MoveAccelerationSpeed = 500.0f;
 
 	// Camera movement
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -220,9 +225,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CameraVelocityChase = 2.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CameraSoloVelocityChase = 2.0f;
+	float CameraSoloVelocityChase = 2.5f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CameraDistanceScalar = 2.0f;
+	float CameraDistanceScalar = 2.5f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CameraTiltClamp = 1.0f;
 

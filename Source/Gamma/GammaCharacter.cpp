@@ -125,7 +125,7 @@ void AGammaCharacter::BeginPlay()
 	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed;
 
 	// To reduce jitter
-	//UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), TEXT("p.NetEnableMoveCombining 0")); /// is this needed?
+	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), TEXT("p.NetEnableMoveCombining 0")); /// is this needed?
 }
 
 
@@ -137,7 +137,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	//UpdateAnimation();
 
 	// Camera update
-	if (GetWorld()->TimeSeconds > 1) // has authority?
+	if (GetWorld()->TimeSeconds > 1)
 	{
 		UpdateCamera(DeltaTime);
 	}
@@ -157,10 +157,15 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		{
 			Controller->SetControlRotation(FRotator(0.0f, 0.0f, 0.0f));
 		}
+	}
 
+	if (GetCharacterMovement() && HasAuthority() && !bMoved)
+	{
 		// Clamp velocity
 		float TimeScalar = (1 / UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()));
 		GetCharacterMovement()->Velocity = GetCharacterMovement()->Velocity.GetClampedToMaxSize(MaxMoveSpeed * TimeScalar);
+
+		MoveTimer += GetWorld()->DeltaTimeSeconds;
 	}
 
 	// Attack stuff
@@ -272,12 +277,15 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	UpdateCharacter(DeltaSeconds);
 
 	// Aiming
-	SetAim(0.f, 0.f);
+	if (bMoved)
+	{
+		SetAim();
+	}
 
 	//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, FString::Printf(TEXT("Delta Time   %f"), DeltaSeconds));
 
 	// Charging
-	if (ActiveFlash != nullptr && HasAuthority())
+	if (ActiveFlash != nullptr) //  && HasAuthority()
 	{
 		RaiseCharge(DeltaSeconds);
 	}
@@ -298,6 +306,14 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		BPMTimer += DeltaSeconds;
 	}
 
+	if (Controller != nullptr)
+	{
+		if (bMoved)
+		{
+			MoveTimer = 0.0f;
+			bMoved = false;
+		}
+	}
 }
 
 
@@ -308,16 +324,32 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 // MOVE
 void AGammaCharacter::MoveRight(float Value)
 {
-	AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
-	if (InputX != Value)
+	// Clamp moves per second for slowmo
+	if (MoveTimer >= (1 / MovesPerSecond)) // new 01-17
+	{
+		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
+		bMoved = true;
+	}
+
+	// Adjust aim to reflect move
+	if (InputX != Value &&
+		!(InputX == 0.0f && Value == 0.0f))
 	{
 		SetX(Value);
 	}
 }
 void AGammaCharacter::MoveUp(float Value)
 {
-	AddMovementInput(FVector(0.0f, 0.0f, 1.0f), Value);
-	if (InputZ != Value)
+	// Clamp moves per second for slowmo
+	if (MoveTimer >= (1 / MovesPerSecond)) // new 01-17
+	{
+		AddMovementInput(FVector(0.0f, 0.0f, 1.0f), Value);
+		bMoved = true;
+	}
+	
+	// Adjust aim to reflect move
+	if (InputZ != Value &&
+		!(InputZ == 0.0f && Value == 0.0f))
 	{
 		SetZ(Value);
 	}
@@ -353,15 +385,29 @@ bool AGammaCharacter::ServerSetZ_Validate(float Value)
 // MOVE-KICK on fresh input
 void AGammaCharacter::NewMoveKick()
 {
-	float TimeScalar = (1 / UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()))
-		* (1 + (1 / UGameplayStatics::GetGlobalTimeDilation(this->GetWorld())) * 0.25f);
-	FVector KickVector = FVector(InputX, 0.0f, InputZ) * MoveFreshMultiplier * TimeScalar;
-	GetCharacterMovement()->AddImpulse(KickVector * GetWorld()->DeltaTimeSeconds);
-	
 	if (Role < ROLE_Authority)
 	{
 		ServerNewMoveKick();
+		return;
 	}
+
+	// Algo scaling for time dilation. Slower time == more kick
+	float TimeScalar = 1.0f;
+	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+	if (TimeDilat < 1.0f) 
+	{
+		TimeScalar = SlowmoMoveBoost * (1 / TimeDilat);
+	}
+	
+	float TimeDelta = GetWorld()->DeltaTimeSeconds;
+	// Algo scaling for max velocity
+	float VelocityScalar = 1 / (((GetCharacterMovement()->Velocity.Size() + 1)  * MoveSpeed) / MaxMoveSpeed) * TimeDelta;
+	
+	FVector KickVector = FVector(InputX, 0.0f, InputZ) 
+						* MoveFreshMultiplier 
+						* TimeScalar 
+						* VelocityScalar;
+	GetCharacterMovement()->AddImpulse(KickVector * GetWorld()->DeltaTimeSeconds);
 }
 void AGammaCharacter::ServerNewMoveKick_Implementation()
 {
@@ -399,7 +445,7 @@ bool AGammaCharacter::ServerUpdateMoveParticles_Validate(FVector Move)
 }
 
 // AIM replicated
-void AGammaCharacter::SetAim(float x, float z)
+void AGammaCharacter::SetAim()
 {
 	// Fresh move 'kick it'
 	FVector CurrentMove = FVector(InputX, 0.0f, InputZ);
@@ -432,14 +478,14 @@ void AGammaCharacter::SetAim(float x, float z)
 
 	if (Role == ROLE_AutonomousProxy) //< ROLE_Authority
 	{
-		ServerSetAim(x, z);
+		ServerSetAim();
 	}
 }
-void AGammaCharacter::ServerSetAim_Implementation(float x, float z)
+void AGammaCharacter::ServerSetAim_Implementation()
 {
-	SetAim(x, z);
+	SetAim();
 }
-bool AGammaCharacter::ServerSetAim_Validate(float x, float z)
+bool AGammaCharacter::ServerSetAim_Validate()
 {
 	return true;
 }
@@ -607,6 +653,7 @@ void AGammaCharacter::GetLifetimeReplicatedProps(TArray <FLifetimeProperty> & Ou
 	DOREPLIFETIME(AGammaCharacter, InputZ);
 	DOREPLIFETIME(AGammaCharacter, x);
 	DOREPLIFETIME(AGammaCharacter, z);
+	DOREPLIFETIME(AGammaCharacter, MoveTimer);
 
 	DOREPLIFETIME(AGammaCharacter, Charge);
 	DOREPLIFETIME(AGammaCharacter, bCharging);
