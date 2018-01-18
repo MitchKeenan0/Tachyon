@@ -163,8 +163,9 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	if (GetCharacterMovement() && !bMoved) //  HasAuthority() && 
 	{
 		// Clamp velocity
-		//float TimeScalar = (1 / UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()));
-		//GetCharacterMovement()->Velocity = GetCharacterMovement()->Velocity.GetClampedToMaxSize(MaxMoveSpeed * TimeScalar);
+		float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+		float TimeScalar = FMath::Abs(SlowmoMoveBoost * (1 / TimeDilat));
+		GetCharacterMovement()->Velocity = GetCharacterMovement()->Velocity.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier * TimeScalar);
 
 		MoveTimer += GetWorld()->DeltaTimeSeconds;
 	}
@@ -315,8 +316,6 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 			bMoved = false;
 		}
 	}
-
-	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("time  %f"), GetWorld()->TimeSeconds));
 }
 
 
@@ -338,7 +337,6 @@ void AGammaCharacter::MoveRight(float Value)
 	if (MoveTimer >= (1 / MovesPerSecond)) // new 01-17
 	{
 		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
-		bMoved = true;
 	}
 }
 void AGammaCharacter::MoveUp(float Value)
@@ -354,7 +352,6 @@ void AGammaCharacter::MoveUp(float Value)
 	if (MoveTimer >= (1 / MovesPerSecond)) // new 01-17
 	{
 		AddMovementInput(FVector(0.0f, 0.0f, 1.0f), Value);
-		bMoved = true;
 	}
 }
 
@@ -366,6 +363,7 @@ void AGammaCharacter::SetX(float Value)
 void AGammaCharacter::ServerSetX_Implementation(float Value)
 {
 	InputX = Value;
+	bMoved = true;
 }
 bool AGammaCharacter::ServerSetX_Validate(float Value)
 {
@@ -379,6 +377,7 @@ void AGammaCharacter::SetZ(float Value)
 void AGammaCharacter::ServerSetZ_Implementation(float Value)
 {
 	InputZ = Value;
+	bMoved = true;
 }
 bool AGammaCharacter::ServerSetZ_Validate(float Value)
 {
@@ -399,20 +398,31 @@ void AGammaCharacter::NewMoveKick()
 	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
 	if (TimeDilat < 1.0f) 
 	{
-		TimeScalar = SlowmoMoveBoost * (1 / TimeDilat);
+		TimeScalar = FMath::Abs(SlowmoMoveBoost * (1 / TimeDilat));
 	}
 	
+	// Algo scaling for timescale & max velocity
+	FVector MoveInputVector = FVector(InputX, 0.0f, InputZ);
+	FVector CurrentVelocity = GetCharacterMovement()->Velocity;
 	float TimeDelta = GetWorld()->DeltaTimeSeconds;
-	// Algo scaling for max velocity
-	float VelocityScalar = 1 / (((GetCharacterMovement()->Velocity.Size() + 1)  * MoveSpeed) / MaxMoveSpeed) * TimeDelta;
+	float RelativityToMaxSpeed = (MaxMoveSpeed * MoveFreshMultiplier) - CurrentVelocity.Size();
+	float VelocityScalar = RelativityToMaxSpeed;// *TimeDelta;
+	float DotScalar = FMath::Abs(FVector::DotProduct(CurrentVelocity, MoveInputVector));
 	
-	FVector KickVector = FVector(InputX, 0.0f, InputZ) 
+	// Force, clamp, & effect chara movement
+	FVector KickVector = MoveInputVector
 						* MoveFreshMultiplier 
-						* TimeScalar 
-						* VelocityScalar;
+						* TimeScalar
+						* VelocityScalar
+						* DotScalar;
+	KickVector = KickVector.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier * TimeScalar);
 	GetCharacterMovement()->AddImpulse(KickVector * GetWorld()->DeltaTimeSeconds);
-	GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("kicking  %f"), KickVector.Size()));
+
+	bMoved = false;
+	MoveTimer = 0.0f;
+
 	
+	GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("kicking  %f"), KickVector.Size()));
 	//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
 	//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("vel  %f"), (GetCharacterMovement()->Velocity.Size())));
 	//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("timeDelta  %f"), TimeDelta));

@@ -211,7 +211,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float TurnSpeed = 500.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MoveFreshMultiplier = 22000.0f;
+	float MoveFreshMultiplier = 220000.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SlowmoMoveBoost = 5.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
