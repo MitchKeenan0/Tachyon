@@ -129,7 +129,7 @@ protected:
 	void ServerSetZ(float Value);
 
 	void NewMoveKick();
-	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation) // see chrome
 	void ServerNewMoveKick();
 
 	void UpdateMoveParticles(FVector Move);
