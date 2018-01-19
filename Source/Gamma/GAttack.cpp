@@ -64,7 +64,14 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	// Projectile movement
 	if (ProjectileSpeed > 0.0f)
 	{
-		ProjectileComponent->Velocity = GetActorForwardVector() * ProjectileSpeed * AttackMagnitude * ProjectileMaxSpeed;
+		if (ProjectileComponent)
+		{
+			ProjectileComponent->Velocity = GetActorForwardVector() * ProjectileSpeed * AttackMagnitude * ProjectileMaxSpeed;
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("no projectile comp"));
+		}
 	}
 
 	//// Last-second update to direction after fire

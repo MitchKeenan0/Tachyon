@@ -309,14 +309,14 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		BPMTimer += DeltaSeconds;
 	}
 
-	/*if (Controller != nullptr)
+	if (Controller != nullptr)
 	{
 		if (bMoved)
 		{
 			MoveTimer = 0.0f;
 			bMoved = false;
 		}
-	}*/
+	}
 }
 
 
