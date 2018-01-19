@@ -165,7 +165,8 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		// Clamp velocity
 		float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
 		float TimeScalar = FMath::Abs(SlowmoMoveBoost * (1 / TimeDilat));
-		GetCharacterMovement()->Velocity = GetCharacterMovement()->Velocity.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier * TimeScalar);
+		GetCharacterMovement()->Velocity = 
+			GetCharacterMovement()->Velocity.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier * TimeScalar);
 
 		MoveTimer += GetWorld()->DeltaTimeSeconds;
 	}
@@ -308,14 +309,14 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		BPMTimer += DeltaSeconds;
 	}
 
-	if (Controller != nullptr)
+	/*if (Controller != nullptr)
 	{
 		if (bMoved)
 		{
 			MoveTimer = 0.0f;
 			bMoved = false;
 		}
-	}
+	}*/
 }
 
 
@@ -396,9 +397,9 @@ void AGammaCharacter::NewMoveKick()
 	// Algo scaling for time dilation. Slower time == more kick
 	float TimeScalar = 1.0f;
 	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-	if (TimeDilat < 1.0f) 
+	if (TimeDilat < 0.95f)
 	{
-		TimeScalar = FMath::Abs(SlowmoMoveBoost * (1 / TimeDilat));
+		TimeScalar = FMath::Abs(SlowmoMoveBoost * (1.0f / TimeDilat)) / 2.0f;
 	}
 	
 	// Algo scaling for timescale & max velocity
@@ -407,7 +408,7 @@ void AGammaCharacter::NewMoveKick()
 	float TimeDelta = GetWorld()->DeltaTimeSeconds;
 	float RelativityToMaxSpeed = (MaxMoveSpeed * MoveFreshMultiplier) - CurrentVelocity.Size();
 	float VelocityScalar = RelativityToMaxSpeed;// *TimeDelta;
-	float DotScalar = FMath::Abs(FVector::DotProduct(CurrentVelocity, MoveInputVector));
+	float DotScalar = FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
 	
 	// Force, clamp, & effect chara movement
 	FVector KickVector = MoveInputVector
@@ -422,7 +423,7 @@ void AGammaCharacter::NewMoveKick()
 	MoveTimer = 0.0f;
 
 	
-	GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("kicking  %f"), KickVector.Size()));
+	//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
 	//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
 	//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("vel  %f"), (GetCharacterMovement()->Velocity.Size())));
 	//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("timeDelta  %f"), TimeDelta));
@@ -448,7 +449,7 @@ void AGammaCharacter::UpdateMoveParticles(FVector Move)
 		MoveParticles->Activate();
 	}
 
-	if (Role == ROLE_AutonomousProxy) // (Role < ROLE_Authority)
+	if (Role < ROLE_Authority) // (Role < ROLE_Authority) (Role == ROLE_AutonomousProxy)
 	{
 		ServerUpdateMoveParticles(Move);
 	}
