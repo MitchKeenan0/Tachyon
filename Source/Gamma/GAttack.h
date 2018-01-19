@@ -31,7 +31,8 @@ public:
 
 	void TakeGG();
 
-	// Public gets
+
+	// Public variables
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool LockedEmitPoint = true;
 
@@ -64,6 +65,7 @@ protected:
 	// Ref to match
 	UPROPERTY(BlueprintReadWrite)
 	class AGMatch* CurrentMatch = nullptr;
+
 
 	// Basic Variables
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -134,8 +136,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AGDamage> DamageClass = nullptr;
 
-	/*UPROPERTY(BlueprintReadWrite)
-	class AMatch* CurrentMatch = nullptr;*/
 
 	// Replicated Variables /////////////////////////////////////////
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
