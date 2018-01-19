@@ -119,7 +119,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UAudioComponent* AttackSound = nullptr;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	class UProjectileMovementComponent* ProjectileComponent = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
