@@ -61,19 +61,6 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		SetLifeSpan(DynamicLifetime);
 	}
 
-	// Projectile movement
-	if (ProjectileSpeed > 0.0f)
-	{
-		if (ProjectileComponent)
-		{
-			ProjectileComponent->Velocity = GetActorForwardVector() * ProjectileSpeed * AttackMagnitude * ProjectileMaxSpeed;
-		}
-		else
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("no projectile comp"));
-		}
-	}
-
 	//// Last-second update to direction after fire
 	float DirRecalc = ShotDirection * ShootingAngle;
 	if (AngleSweep != 0.0f)
@@ -83,6 +70,24 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
 	FRotator FireRotation = LocalForward.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
 	SetActorRotation(FireRotation);
+
+	// Projectile movement
+	if (ProjectileSpeed > 0.0f)
+	{
+		ProjectileComponent->Velocity = GetActorForwardVector() * ProjectileSpeed;
+
+		if (ProjectileComponent)
+		{
+			if (bScaleProjectileSpeed)
+			{
+				ProjectileComponent->Velocity = GetActorForwardVector() * ProjectileSpeed * AttackMagnitude * ProjectileMaxSpeed;
+			}
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("no projectile comp"));
+		}
+	}
 
 	// Get match obj
 	TArray<AActor*> Actors;

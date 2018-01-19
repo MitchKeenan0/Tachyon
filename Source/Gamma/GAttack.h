@@ -42,7 +42,7 @@ public:
 	float MagnitudeTimeScalar = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float HitsPerSecond = 5.0f;
+	float HitsPerSecond = 10000.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bLethal = false;
@@ -71,6 +71,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ProjectileSpeed = 0.01f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bScaleProjectileSpeed = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ProjectileMaxSpeed = 12000.0f;

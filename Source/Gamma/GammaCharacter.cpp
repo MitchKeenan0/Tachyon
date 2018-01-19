@@ -103,7 +103,6 @@ AGammaCharacter::AGammaCharacter()
 
 //////////////////////////////////////////////////////////////////////////
 // Input
-
 void AGammaCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(InputComponent);
