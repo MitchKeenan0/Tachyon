@@ -109,6 +109,8 @@ void AGammaCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AGammaCharacter::InitAttack);
 	PlayerInputComponent->BindAction("Attack", IE_Released, this, &AGammaCharacter::ReleaseAttack);
 
+	PlayerInputComponent->BindAction("Secondary", IE_Pressed, this, &AGammaCharacter::FireSecondary);
+
 	PlayerInputComponent->BindAxis("MoveRight", this, &AGammaCharacter::MoveRight);
 	PlayerInputComponent->BindAxis("MoveUp", this, &AGammaCharacter::MoveUp);
 }
@@ -645,6 +647,58 @@ bool AGammaCharacter::ServerReleaseAttack_Validate()
 	return true;
 }
 
+// SECONDARY
+void AGammaCharacter::FireSecondary()
+{
+	if (!bSecondaryActive)
+	{
+		// Direction & setting up
+		FVector FirePosition = AttackScene->GetComponentLocation();
+		FVector LocalForward = AttackScene->GetForwardVector();
+		FRotator FireRotation = LocalForward.Rotation() + FRotator(21.0f * InputZ, 0.0f, 0.0f);
+		FActorSpawnParameters SpawnParams;
+
+		// Spawning
+		if (HasAuthority())
+		{
+			if (SecondaryClass != nullptr)
+			{
+				ActiveSecondary = GetWorld()->SpawnActor<AActor>(SecondaryClass, FirePosition, FireRotation, SpawnParams); //  Cast<AActor>());
+				if (ActiveSecondary)
+				{
+					//bSecondaryActive = true;
+
+					AGAttack* PotentialAttack = Cast<AGAttack>(ActiveSecondary);
+					if (PotentialAttack)
+					{
+						PotentialAttack->InitAttack(this, 1, InputZ);
+						if (PotentialAttack->LockedEmitPoint)
+						{
+							PotentialAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
+						}
+					}
+				}
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No secondary class to spawn"));
+			}
+		}
+	}
+
+	if (Role < ROLE_Authority)
+	{
+		ServerFireSecondary();
+	}
+}
+void AGammaCharacter::ServerFireSecondary_Implementation()
+{
+	FireSecondary();
+}
+bool AGammaCharacter::ServerFireSecondary_Validate()
+{
+	return true;
+}
 
 // Shield Collision
 void AGammaCharacter::OnShieldBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

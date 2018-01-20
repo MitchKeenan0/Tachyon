@@ -35,6 +35,7 @@ class AGammaCharacter : public APaperCharacter
 
 	float AttackTimer = 0.0f;	/// stopwatch situation
 	float AttackTimeout = 0.0f; /// generated at fire time
+	float SecondaryTimer = 0.0f;
 	float FrictionTimer = 0.0f;
 	float BPM = 0.0f;
 	float BPMTimer = 0.0f;
@@ -115,6 +116,13 @@ protected:
 	TSubclassOf<AGAttack> AttackClass = nullptr;
 	class AGAttack* ActiveAttack = nullptr;
 
+	// Secondary objects
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AActor> SecondaryClass = nullptr;
+	class AActor* ActiveSecondary = nullptr;
+
+	// Shield object
+
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AActor> ChargeParticles = nullptr;
 	class AActor* ActiveChargeParticles = nullptr;
@@ -151,6 +159,10 @@ protected:
 	void ReleaseAttack();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerReleaseAttack();
+
+	void FireSecondary();
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerFireSecondary();
 
 
 
@@ -202,6 +214,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	int Score = 0;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	bool bSecondaryActive = false;
 
 	// Player movement
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
