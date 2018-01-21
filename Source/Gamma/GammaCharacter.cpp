@@ -314,6 +314,8 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	{
 		if (bMoved)
 		{
+			FVector CurrentMove = FVector(InputX, 0.0f, InputZ);
+			UpdateMoveParticles(CurrentMove);
 			MoveTimer = 0.0f;
 			bMoved = false;
 		}
@@ -482,7 +484,7 @@ void AGammaCharacter::SetAim()
 			// if (HasAuthority())
 			NewMoveKick();
 
-			UpdateMoveParticles(CurrentMove);
+			//UpdateMoveParticles(CurrentMove);
 
 			if (PlayerSound != nullptr)
 			{
