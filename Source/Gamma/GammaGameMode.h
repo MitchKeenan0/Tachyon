@@ -19,4 +19,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<APawn> PlayerCharacter;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<ACharacter*> Roster;
+
 };
