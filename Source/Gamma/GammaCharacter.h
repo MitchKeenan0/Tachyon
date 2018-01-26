@@ -69,6 +69,13 @@ public:
 	int GetScore() { return Score; }
 	void RaiseScore(int Val) { Score += Val; }
 
+	UFUNCTION(BlueprintCallable)
+	void NullifySecondary() { ActiveSecondary = nullptr; }
+	
+	UFUNCTION(BlueprintCallable)
+	void NullifyAttack() { ActiveAttack = nullptr; }
+
+
 	UFUNCTION()
 	float GetChargePercentage() { return Charge / ChargeMax; } // (Charge / ChargeMax)
 
@@ -220,19 +227,19 @@ protected:
 
 	// Player movement
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MoveSpeed = 500.0f;
+	float MoveSpeed = 100.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MovesPerSecond = 15.0f;
+	float MovesPerSecond = 3.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float TurnSpeed = 500.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MoveFreshMultiplier = 220000.0f;
+	float MoveFreshMultiplier = 1000.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SlowmoMoveBoost = 5.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MaxMoveSpeed = 1000.0f;
+	float MaxMoveSpeed = 500.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MoveAccelerationSpeed = 500.0f;
+	float MoveAccelerationSpeed = 100.0f;
 
 	// Camera movement
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

@@ -171,19 +171,6 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 		MoveTimer += GetWorld()->DeltaTimeSeconds;
 	}
-
-	// Attack stuff
-	if (ActiveAttack != nullptr && ActiveAttack->GetLethal())
-	{
-		// Wipe pointer if attack is gone or duration elapsed
-		AttackTimer += DeltaTime;
-		if (!ActiveAttack->IsValidLowLevel() || (AttackTimer > AttackTimeout))
-		{
-			ActiveAttack = nullptr;
-			AttackTimer = 0.0f;
-			//SweepingYScale = 0.0f;
-		}
-	}
 }
 
 
@@ -285,6 +272,8 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	{
 		SetAim();
 	}
+
+	
 
 	//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, FString::Printf(TEXT("Delta Time   %f"), DeltaSeconds));
 
@@ -595,7 +584,7 @@ bool AGammaCharacter::ServerInitAttack_Validate()
 // ATTACK
 void AGammaCharacter::ReleaseAttack()
 {
-	if (Charge > 0.0f && AttackClass && ActiveAttack == nullptr)
+	if (!ActiveAttack && Charge > 0.0f && AttackClass && ActiveAttack == nullptr)
 	{
 		// Clean up previous flash
 		if (ActiveFlash)
@@ -652,7 +641,7 @@ bool AGammaCharacter::ServerReleaseAttack_Validate()
 // SECONDARY
 void AGammaCharacter::FireSecondary()
 {
-	if (!bSecondaryActive)
+	if (!ActiveAttack && !ActiveSecondary)
 	{
 		// Direction & setting up
 		FVector FirePosition = AttackScene->GetComponentLocation();
