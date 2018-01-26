@@ -75,7 +75,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void NullifyAttack() { ActiveAttack = nullptr; }
 
-
 	UFUNCTION()
 	float GetChargePercentage() { return Charge / ChargeMax; } // (Charge / ChargeMax)
 
