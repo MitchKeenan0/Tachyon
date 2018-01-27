@@ -147,7 +147,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	const FVector PlayerVelocity = GetVelocity();
 	float TravelDirection = InputX;
 	
-	// Set the rotation so that the character faces his direction of travel.
+	// Set rotation so character faces direction of travel
 	if (Controller != nullptr)
 	{
 		if (TravelDirection < 0.0f)
@@ -655,6 +655,7 @@ void AGammaCharacter::FireSecondary()
 			if (SecondaryClass != nullptr)
 			{
 				ActiveSecondary = GetWorld()->SpawnActor<AActor>(SecondaryClass, FirePosition, FireRotation, SpawnParams); //  Cast<AActor>());
+				
 				if (ActiveSecondary)
 				{
 					//bSecondaryActive = true;
@@ -663,9 +664,10 @@ void AGammaCharacter::FireSecondary()
 					if (PotentialAttack)
 					{
 						PotentialAttack->InitAttack(this, 1, InputZ);
+
 						if (PotentialAttack->LockedEmitPoint)
 						{
-							PotentialAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
+							PotentialAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
 						}
 					}
 				}
