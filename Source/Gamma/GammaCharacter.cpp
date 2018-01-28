@@ -267,14 +267,6 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	UpdateCharacter(DeltaSeconds);
 
-	// Aiming
-	if (bMoved)
-	{
-		SetAim();
-	}
-
-	
-
 	//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, FString::Printf(TEXT("Delta Time   %f"), DeltaSeconds));
 
 	// Charging
@@ -299,7 +291,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		BPMTimer += DeltaSeconds;
 	}
 
-	if (Controller != nullptr)
+	/*if (Controller != nullptr)
 	{
 		if (bMoved)
 		{
@@ -308,6 +300,23 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 			MoveTimer = 0.0f;
 			bMoved = false;
 		}
+	}*/
+
+	/*if (bMoved)
+	{
+		FVector CurrentMove = FVector(InputX, 0.0f, InputZ);
+		UpdateMoveParticles(CurrentMove);
+		MoveTimer = 0.0f;
+		bMoved = false;
+	}*/
+
+
+	// TO DO - treat moves like attacks with magnitude for kick
+
+	// Aiming
+	if (bMoved)
+	{
+		SetAim();
 	}
 }
 
@@ -389,9 +398,9 @@ void AGammaCharacter::NewMoveKick()
 	// Algo scaling for time dilation. Slower time == more kick
 	float TimeScalar = 1.0f;
 	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-	if (TimeDilat < 0.95f)
+	if (TimeDilat < 0.33f)
 	{
-		TimeScalar = FMath::Abs(SlowmoMoveBoost * (1.0f / TimeDilat)) / 2.0f;
+		TimeScalar = SlowmoMoveBoost * (1 + (1.0f / TimeDilat)); //  FMath::Abs(SlowmoMoveBoost * (1.0f / TimeDilat)) / 10.0f;
 	}
 	
 	// Algo scaling for timescale & max velocity
@@ -399,26 +408,24 @@ void AGammaCharacter::NewMoveKick()
 	FVector CurrentVelocity = GetCharacterMovement()->Velocity;
 	float TimeDelta = GetWorld()->DeltaTimeSeconds;
 	float RelativityToMaxSpeed = (MaxMoveSpeed * MoveFreshMultiplier) - CurrentVelocity.Size();
-	float VelocityScalar = RelativityToMaxSpeed;// *TimeDelta;
-	float DotScalar = FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
+	float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
 	
 	// Force, clamp, & effect chara movement
 	FVector KickVector = MoveInputVector
 						* MoveFreshMultiplier 
 						* TimeScalar
-						* VelocityScalar
+						* RelativityToMaxSpeed
 						* DotScalar;
 	KickVector = KickVector.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier * TimeScalar);
-	GetCharacterMovement()->AddImpulse(KickVector * GetWorld()->DeltaTimeSeconds);
+	GetCharacterMovement()->AddImpulse(KickVector * TimeDelta);
 
 	bMoved = false;
 	MoveTimer = 0.0f;
-
 	
 	//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
 	//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
 	//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("vel  %f"), (GetCharacterMovement()->Velocity.Size())));
-	//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("timeDelta  %f"), TimeDelta));
+	//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("time scalar   %f"), TimeScalar));
 }
 void AGammaCharacter::ServerNewMoveKick_Implementation()
 {
@@ -432,13 +439,14 @@ bool AGammaCharacter::ServerNewMoveKick_Validate()
 // KICK-PARTICLES
 void AGammaCharacter::UpdateMoveParticles(FVector Move)
 {
-	// Direct particles away from vector of movement
-	//Move.X = GetActorScale().X * -1;
-	FRotator RecoilRotation = (Move).Rotation();
+	// Direct particles on vector of movement
+	FVector TempVec = Move;
+	FRotator RecoilRotation = TempVec.Rotation();
 	if (MoveParticles)
 	{
 		MoveParticles->SetWorldRotation(RecoilRotation);
 		MoveParticles->Activate();
+		GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("x %f  z %f"), InputX, InputZ));
 	}
 
 	if (Role < ROLE_Authority) // (Role < ROLE_Authority) (Role == ROLE_AutonomousProxy)
@@ -473,7 +481,7 @@ void AGammaCharacter::SetAim()
 			// if (HasAuthority())
 			NewMoveKick();
 
-			//UpdateMoveParticles(CurrentMove);
+			UpdateMoveParticles(CurrentMove);
 
 			if (PlayerSound != nullptr)
 			{
