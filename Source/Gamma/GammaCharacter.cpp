@@ -368,9 +368,9 @@ void AGammaCharacter::NewMoveKick()
 	// Algo scaling for time dilation. Slower time == more kick
 	float TimeScalar = 1.0f;
 	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-	if (TimeDilat < 0.33f)
+	if (TimeDilat < 0.7f)
 	{
-		TimeScalar = SlowmoMoveBoost * (1 + (1.0f / TimeDilat)); //  FMath::Abs(SlowmoMoveBoost * (1.0f / TimeDilat)) / 10.0f;
+		TimeScalar = (SlowmoMoveBoost * (1 + (1.0f / TimeDilat))) * (1.0f / TimeDilat); //  FMath::Abs(SlowmoMoveBoost * (1.0f / TimeDilat)) / 10.0f;
 	}
 	
 	// Algo scaling for timescale & max velocity
@@ -480,6 +480,12 @@ bool AGammaCharacter::ServerSetAim_Validate()
 // RAISE CHARGE for attack 
 void AGammaCharacter::RaiseCharge()
 {
+	if (Role < ROLE_Authority)
+	{
+		ServerRaiseCharge();
+		return;
+	}
+
 	if (Charge < ChargeMax)
 	{
 		Charge += ChargeGainSpeed;
@@ -509,11 +515,6 @@ void AGammaCharacter::RaiseCharge()
 	//// Scale up charge vfx
 	//float Scalar = Charge / ChargeMax;
 	//ActiveChargeParticles->SetActorRelativeScale3D(ActiveChargeParticles->GetActorRelativeScale3D() * Scalar);
-
-	if (Role < ROLE_Authority)
-	{
-		ServerRaiseCharge();
-	}
 }
 void AGammaCharacter::ServerRaiseCharge_Implementation()
 {
