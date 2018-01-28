@@ -527,6 +527,9 @@ bool AGammaCharacter::ServerRaiseCharge_Validate()
 // PRE-ATTACK flash spawning
 void AGammaCharacter::InitAttack()
 {
+	// Clean burn
+	MoveParticles->bSuppressSpawning = true;
+
 	if (FlashClass && ActiveFlash == nullptr)
 	{
 		// Clean up previous attack
@@ -573,6 +576,9 @@ bool AGammaCharacter::ServerInitAttack_Validate()
 // ATTACK
 void AGammaCharacter::ReleaseAttack()
 {
+	// Less-clean burn
+	MoveParticles->bSuppressSpawning = false;
+
 	if (!ActiveAttack && Charge > 0.0f && AttackClass && ActiveAttack == nullptr)
 	{
 		// Clean up previous flash

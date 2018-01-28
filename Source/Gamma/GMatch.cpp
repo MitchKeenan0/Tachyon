@@ -117,11 +117,11 @@ void AGMatch::GetPlayers()
 		{
 
 			ACharacter* TempChar = Cast<ACharacter>(TempPlayers[i]);
-			if (TempChar && TempChar->IsValidLowLevel() && TempChar->GetController())
+			if (TempChar && TempChar->IsValidLowLevel()) // && TempChar->GetController())
 			{
 				APlayerController* TempCont = Cast<APlayerController>(TempChar->GetController());
 				// Check if controller is local
-				if (TempCont && TempCont->NetPlayerIndex == 0)
+				if (TempCont && (TempCont->NetPlayerIndex == 0))
 				{
 					LocalPlayer = Cast<AGammaCharacter>(TempChar);
 					//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("GotLocalPlayer")));
@@ -129,8 +129,9 @@ void AGMatch::GetPlayers()
 				else /// or opponent
 				{
 					OpponentPlayer = Cast<AGammaCharacter>(TempChar);
-					//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("GotOpponentPlayer")));
+					GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Got OpponentPlayer")));
 				}
+				
 			}
 			else /// ...or client's opponent
 			{
