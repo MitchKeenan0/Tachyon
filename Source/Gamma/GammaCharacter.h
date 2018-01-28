@@ -158,9 +158,9 @@ protected:
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerInitAttack();
 
-	void RaiseCharge(float DeltaTime);
+	void RaiseCharge();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
-	void ServerRaiseCharge(float DeltaTime);
+	void ServerRaiseCharge();
 
 	void ReleaseAttack();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)

@@ -8,6 +8,8 @@
 #include "GDamage.h"
 #include "GAttack.generated.h"
 
+class AGammaCharacter;
+
 UCLASS()
 class GAMMA_API AGAttack : public AActor
 {

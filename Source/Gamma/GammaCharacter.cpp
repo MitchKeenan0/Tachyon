@@ -109,6 +109,8 @@ void AGammaCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AGammaCharacter::InitAttack);
 	PlayerInputComponent->BindAction("Attack", IE_Released, this, &AGammaCharacter::ReleaseAttack);
 
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AGammaCharacter::RaiseCharge);
+
 	PlayerInputComponent->BindAction("Secondary", IE_Pressed, this, &AGammaCharacter::FireSecondary);
 
 	PlayerInputComponent->BindAxis("MoveRight", this, &AGammaCharacter::MoveRight);
@@ -272,51 +274,17 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	// Charging
 	if (ActiveFlash != nullptr) //  && HasAuthority()
 	{
-		RaiseCharge(DeltaSeconds);
+		//RaiseCharge();
 	}
 	else if (Charge != 0.0f)
 	{
 		Charge = 0.0f;
 	}
 
-	/*if (Charge == 0.0f && ActiveChargeParticles)
-	{
-		ActiveChargeParticles->Destroy();
-		ActiveChargeParticles = nullptr;
-	}*/
-
 	// Tempo
 	if (bOnTempo)
 	{
 		BPMTimer += DeltaSeconds;
-	}
-
-	/*if (Controller != nullptr)
-	{
-		if (bMoved)
-		{
-			FVector CurrentMove = FVector(InputX, 0.0f, InputZ);
-			UpdateMoveParticles(CurrentMove);
-			MoveTimer = 0.0f;
-			bMoved = false;
-		}
-	}*/
-
-	/*if (bMoved)
-	{
-		FVector CurrentMove = FVector(InputX, 0.0f, InputZ);
-		UpdateMoveParticles(CurrentMove);
-		MoveTimer = 0.0f;
-		bMoved = false;
-	}*/
-
-
-	// TO DO - treat moves like attacks with magnitude for kick
-
-	// Aiming
-	if (bMoved)
-	{
-		SetAim();
 	}
 }
 
@@ -325,7 +293,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 //////////////////////////////////////////////////////////////////////
 // MOVEMENT & FIGHTING
 
-// MOVE
+// MOVE	LEFT / RIGHT
 void AGammaCharacter::MoveRight(float Value)
 {
 	// Adjust aim to reflect move
@@ -335,12 +303,14 @@ void AGammaCharacter::MoveRight(float Value)
 		SetX(Value);
 	}
 
-	// Clamp moves per second for slowmo
-	if (MoveTimer >= (1 / MovesPerSecond)) // new 01-17
+	// Abide moves per second
+	if (MoveTimer >= (1 / MovesPerSecond))
 	{
 		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
 	}
 }
+
+// MOVE UP / DOWN
 void AGammaCharacter::MoveUp(float Value)
 {
 	// Adjust aim to reflect move
@@ -350,14 +320,14 @@ void AGammaCharacter::MoveUp(float Value)
 		SetZ(Value);
 	}
 
-	// Clamp moves per second for slowmo
-	if (MoveTimer >= (1 / MovesPerSecond)) // new 01-17
+	// Abide moves per second
+	if (MoveTimer >= (1 / MovesPerSecond))
 	{
 		AddMovementInput(FVector(0.0f, 0.0f, 1.0f), Value);
 	}
 }
 
-// SET X & Z
+// SET X & Z SERVERSIDE
 void AGammaCharacter::SetX(float Value)
 {
 	ServerSetX(Value);
@@ -365,7 +335,7 @@ void AGammaCharacter::SetX(float Value)
 void AGammaCharacter::ServerSetX_Implementation(float Value)
 {
 	InputX = Value;
-	bMoved = true;
+	//bMoved = true;
 }
 bool AGammaCharacter::ServerSetX_Validate(float Value)
 {
@@ -379,14 +349,14 @@ void AGammaCharacter::SetZ(float Value)
 void AGammaCharacter::ServerSetZ_Implementation(float Value)
 {
 	InputZ = Value;
-	bMoved = true;
+	//bMoved = true;
 }
 bool AGammaCharacter::ServerSetZ_Validate(float Value)
 {
 	return true;
 }
 
-// MOVE-KICK on fresh input
+// BOOST KICK HUSTLE DASH
 void AGammaCharacter::NewMoveKick()
 {
 	if (Role == ROLE_AutonomousProxy) // < ROLE_Authority
@@ -463,7 +433,7 @@ bool AGammaCharacter::ServerUpdateMoveParticles_Validate(FVector Move)
 	return true;
 }
 
-// AIM replicated
+// AIM
 void AGammaCharacter::SetAim()
 {
 	// Fresh move 'kick it'
@@ -478,10 +448,8 @@ void AGammaCharacter::SetAim()
 		// Respect tempo
 		if (TimeDelta > (0.1f * UGameplayStatics::GetGlobalTimeDilation(GetWorld())))
 		{
-			// if (HasAuthority())
-			NewMoveKick();
-
-			UpdateMoveParticles(CurrentMove);
+			//NewMoveKick();
+			//UpdateMoveParticles(CurrentMove);
 
 			if (PlayerSound != nullptr)
 			{
@@ -510,11 +478,11 @@ bool AGammaCharacter::ServerSetAim_Validate()
 }
 
 // RAISE CHARGE for attack 
-void AGammaCharacter::RaiseCharge(float DeltaTime)
+void AGammaCharacter::RaiseCharge()
 {
 	if (Charge < ChargeMax)
 	{
-		Charge += (ChargeGainSpeed * DeltaTime);
+		Charge += (ChargeGainSpeed * GetWorld()->DeltaTimeSeconds);
 		if (bFullCharge)
 		{
 			bFullCharge = false;
@@ -525,20 +493,33 @@ void AGammaCharacter::RaiseCharge(float DeltaTime)
 		bFullCharge = true;
 	}
 
+	// Move boost o.o
+	NewMoveKick();
+
+	// Sound fx -.-
+	if (PlayerSound != nullptr)
+	{
+		PlayerSound->SetPitchMultiplier(Charge / 10.0f); /// Charges currently 1-10
+		PlayerSound->Play();
+	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 0.68f, FColor::White, FString::Printf(TEXT("%f % CHARGE"), Charge), true, FVector2D::UnitVector * 2);
+
+
 	//// Scale up charge vfx
 	//float Scalar = Charge / ChargeMax;
 	//ActiveChargeParticles->SetActorRelativeScale3D(ActiveChargeParticles->GetActorRelativeScale3D() * Scalar);
 
 	if (Role < ROLE_Authority)
 	{
-		ServerRaiseCharge(DeltaTime);
+		ServerRaiseCharge();
 	}
 }
-void AGammaCharacter::ServerRaiseCharge_Implementation(float DeltaTime)
+void AGammaCharacter::ServerRaiseCharge_Implementation()
 {
-	RaiseCharge(DeltaTime);
+	RaiseCharge();
 }
-bool AGammaCharacter::ServerRaiseCharge_Validate(float DeltaTime)
+bool AGammaCharacter::ServerRaiseCharge_Validate()
 {
 	return true;
 }

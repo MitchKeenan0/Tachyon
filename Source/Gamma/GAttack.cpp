@@ -51,15 +51,16 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 
 	// set sounds
 	AttackSound->SetPitchMultiplier(AttackSound->PitchMultiplier - (AttackMagnitude / 1.5f));
-	AttackSound->SetVolumeMultiplier(1.0f + (AttackMagnitude * 1.25f));
+	AttackSound->SetVolumeMultiplier(FMath::Clamp(1.0f + (AttackMagnitude * 1.25f), 0.1f, 1.5f));
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Pitch After: %f"), AttackSound->PitchMultiplier));
 
 	// Lifespan
-	if (AttackMagnitude > 0.0f)
+	if (MagnitudeTimeScalar != 0.0f)
 	{
 		DynamicLifetime = DurationTime * (1.0f + (AttackMagnitude * MagnitudeTimeScalar));
 		SetLifeSpan(DynamicLifetime);
 	}
+	else { DynamicLifetime = DurationTime; }
 
 	//// Last-second update to direction after fire
 	float DirRecalc = ShotDirection * ShootingAngle;
@@ -114,15 +115,27 @@ void AGAttack::Tick(float DeltaTime)
 	LifeTimer += DeltaTime;
 	HitTimer += DeltaTime;
 
-	if (LifeTimer >= DynamicLifetime * 0.95f)
-	{
-		AttackParticles->bSuppressSpawning = true;
-	}
-
 	// Healthy attack activities
 	if (bLethal)
 	{
 		UpdateAttack(DeltaTime);
+	}
+
+	// End-of-life activities
+	float CloseEnough = DynamicLifetime * 0.95f;
+	if (LifeTimer >= CloseEnough)
+	{
+		AttackParticles->bSuppressSpawning = true;
+		
+		if (LifeTimer > CloseEnough + 0.03f)
+		{
+			AGammaCharacter* PotentialGamma = Cast<AGammaCharacter>(OwningShooter);
+			if (PotentialGamma)
+			{
+				PotentialGamma->NullifyAttack();
+				Destroy();
+			}
+		}
 	}
 }
 
