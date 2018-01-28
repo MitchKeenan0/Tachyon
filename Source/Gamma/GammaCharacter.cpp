@@ -482,7 +482,7 @@ void AGammaCharacter::RaiseCharge()
 {
 	if (Charge < ChargeMax)
 	{
-		Charge += (ChargeGainSpeed * GetWorld()->DeltaTimeSeconds);
+		Charge += ChargeGainSpeed;
 		if (bFullCharge)
 		{
 			bFullCharge = false;
