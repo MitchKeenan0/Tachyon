@@ -61,7 +61,16 @@ void AGMatch::HandleTimeScale(bool Gg, float Delta)
 		}
 		else
 		{
-			bGG = false;
+			
+			// Pause for hit confirm
+			//SetTimeScale(0.01f);
+			GGTimer += Delta * (1 / UGameplayStatics::GetGlobalTimeDilation(GetWorld()));
+			if (GGTimer >= HitFreezeTime)
+			{
+				//GEngine->AddOnScreenDebugMessage(-1, 11.f, FColor::Blue, TEXT("hit freeze complete!!"));
+				bGG = false;
+				GGTimer = 0.0f;
+			}
 		}
 	}
 	else if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 1.0f)
@@ -70,6 +79,7 @@ void AGMatch::HandleTimeScale(bool Gg, float Delta)
 		float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
 		float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed * TimeDilat);
 		SetTimeScale(TimeT);
+		//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("returning to 1"));
 	}
 }
 

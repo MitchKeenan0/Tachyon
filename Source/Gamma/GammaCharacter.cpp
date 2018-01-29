@@ -661,8 +661,11 @@ void AGammaCharacter::FireSecondary()
 {
 	if (!ActiveAttack && !ActiveSecondary)
 	{
+		// Clean burn
+		MoveParticles->bSuppressSpawning = true;
+
 		// Direction & setting up
-		FVector FirePosition = AttackScene->GetComponentLocation();
+		FVector FirePosition = GetActorLocation();
 		FVector LocalForward = AttackScene->GetForwardVector();
 		FRotator FireRotation = LocalForward.Rotation() + FRotator(21.0f * InputZ, 0.0f, 0.0f);
 		FActorSpawnParameters SpawnParams;

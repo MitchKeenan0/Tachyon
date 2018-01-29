@@ -44,6 +44,9 @@ protected:
 	float GGTimescale = 0.1f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float HitFreezeTime = 0.2f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float TimescaleDropSpeed = 15.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -60,6 +63,8 @@ protected:
 private:
 	int LocalScore = 0;
 	int OpponentScore = 0;
+
+	//float GGTimer = 0.0f;
 
 	bool bPlayersIn = false;
 	void GetPlayers();

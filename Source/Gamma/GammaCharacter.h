@@ -70,10 +70,10 @@ public:
 	void RaiseScore(int Val) { Score += Val; }
 
 	UFUNCTION(BlueprintCallable)
-	void NullifySecondary() { ActiveSecondary = nullptr; }
+	void NullifySecondary() { ActiveSecondary = nullptr; MoveParticles->bSuppressSpawning = false; }
 	
 	UFUNCTION(BlueprintCallable)
-	void NullifyAttack() { ActiveAttack = nullptr; }
+	void NullifyAttack() { ActiveAttack = nullptr; MoveParticles->bSuppressSpawning = false; }
 
 	UFUNCTION()
 	float GetChargePercentage() { return Charge / ChargeMax; } // (Charge / ChargeMax)
