@@ -182,34 +182,39 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 void AGammaCharacter::UpdateCamera(float DeltaTime)
 {
-	// Framing for 2
-	/*if (FramingActors.Num() < 2)
-	{
-		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
-	}*/
+	// Interpolating camera position to the centre of 2 framing points.
+	// TODO - add defense on running get?
+	
+	// Poll for framing actors
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
 
 	if (FramingActors.Num() > 0)
 	{
+
+		// Start by checking valid actor
 		AActor* Actor1 = FramingActors[0];
 		if (Actor1 && Actor1->IsValidLowLevelFast() && !Actor1->IsUnreachable())
 		{
+
+			// Framing up first actor
 			FVector Actor1Velocity = Actor1->GetVelocity();
-			Actor1Velocity.Z *= 0.5f;
-			Actor1Velocity.X *= 0.9f;
-			AActor* Actor2 = nullptr; /// no guarantee
+			Actor1Velocity.Z *= 0.5f; /// vertical kerning
+			Actor1Velocity.X *= 0.9f; /// lateral kerning
+			
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase);
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, CameraMoveSpeed);
 			float CameraTilt = 0.0f;
 			float CameraMaxDistance = 5555.5f;
 			float CameraDistance = CameraDistanceScalar;
 
-			// Prepare to locate centre of either 2 scenarios:
+			// Position two may be another actor
 			if (FramingActors.Num() > 1 && FramingActors[1])
 			{
-				Actor2 = FramingActors[1];
+				AActor* Actor2 = FramingActors[1];
 				if (Actor2 && !Actor2->IsUnreachable())
 				{
+
+					// Framing up with second actor
 					FVector Actor2Velocity = Actor2->GetVelocity();
 					Actor2Velocity.Z *= 0.5f;
 					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase);
@@ -220,23 +225,27 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					FVector Vel2 = Actor2->GetVelocity();
 					float Difference = Vel1.Size() - Vel2.Size();
 
-					// Clamp and set camera tilt
+					// Set camera tilt
 					CameraTilt = FMath::Clamp(Difference, -CameraTiltClamp, CameraTiltClamp);
 					CameraTilt = FMath::FInterpTo(SideViewCameraComponent->GetComponentRotation().Roll, CameraTilt, DeltaTime, 3.0f);
 					SideViewCameraComponent->SetRelativeRotation(FRotator(0.0f, 0.0f, CameraTilt));
 				}
 
-				// TO DO: ^^ camera seems to tilt one direction for each player...
+				/// TO DO: ^^ camera seems to tilt one direction for each player...
 			}
 			else if (FramingActors.Num() == 1)
 			{
+
+				// Framing lone player by their velocity
 				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1->GetVelocity() * CameraSoloVelocityChase);
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, CameraMoveSpeed);
 				//CameraDistance += 500.0f;
 				CameraMaxDistance = 10111.0f;
 			}
 
-			// Set the midpoint
+
+			// Positions done
+			// Find the midpoint
 			Midpoint = (PositionOne + PositionTwo) / 2.0f;
 			if (Midpoint.Size() > 1.0f)
 			{
@@ -260,8 +269,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 void AGammaCharacter::UpdateAnimation()
 {
-	const FVector PlayerVelocity = GetVelocity();
-	const float PlayerSpeedSqr = PlayerVelocity.SizeSquared();
+	//const FVector PlayerVelocity = GetVelocity();
+	//const float PlayerSpeedSqr = PlayerVelocity.SizeSquared();
 
 	//// Are we moving or standing still?
 	//UPaperFlipbook* DesiredAnimation = (PlayerSpeedSqr > 0.0f) ? RunningAnimation : IdleAnimation;
@@ -277,9 +286,9 @@ void AGammaCharacter::UpdateAnimation()
 void AGammaCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	
+	// Main update
 	UpdateCharacter(DeltaSeconds);
-
-	//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, FString::Printf(TEXT("Delta Time   %f"), DeltaSeconds));
 
 	// Charging
 	if (ActiveFlash != nullptr) //  && HasAuthority()
