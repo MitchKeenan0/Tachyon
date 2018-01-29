@@ -6,6 +6,6 @@
 AGammaGameMode::AGammaGameMode()
 {
 	// Set default pawn class to our character
-	DefaultPawnClass = PlayerCharacter;
+	//DefaultPawnClass = PlayerCharacter;
 
 }

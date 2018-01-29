@@ -98,6 +98,8 @@ AGammaCharacter::AGammaCharacter()
 	bReplicates = true;
 
 	// TextRender->SetNetAddressable();
+
+	//GetCameraBoom()->TargetArmLength = 1000.0f;
 }
 
 
@@ -129,6 +131,8 @@ void AGammaCharacter::BeginPlay()
 
 	// To reduce jitter
 	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), TEXT("p.NetEnableMoveCombining 0")); /// is this needed?
+
+	//GetCameraBoom()->TargetArmLength = 10000.0f;
 }
 
 
@@ -140,7 +144,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	//UpdateAnimation();
 
 	// Camera update
-	if (GetWorld()->TimeSeconds > 1)
+	if (GetWorld()->TimeSeconds > 0.2f)
 	{
 		UpdateCamera(DeltaTime);
 	}
@@ -179,17 +183,20 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 void AGammaCharacter::UpdateCamera(float DeltaTime)
 {
 	// Framing for 2
-	if (FramingActors.Num() < 2)
+	/*if (FramingActors.Num() < 2)
 	{
 		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
-	}
+	}*/
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
+
 	if (FramingActors.Num() > 0)
 	{
 		AActor* Actor1 = FramingActors[0];
-		if (Actor1 && !Actor1->IsUnreachable())
+		if (Actor1 && Actor1->IsValidLowLevelFast() && !Actor1->IsUnreachable())
 		{
 			FVector Actor1Velocity = Actor1->GetVelocity();
 			Actor1Velocity.Z *= 0.5f;
+			Actor1Velocity.X *= 0.9f;
 			AActor* Actor2 = nullptr; /// no guarantee
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase);
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, CameraMoveSpeed);
@@ -235,9 +242,12 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				// Back away to accommodate distance
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo) + (300 / FramingActors.Num());
-				float DesiredCameraDistance = FMath::Clamp(FMath::Sqrt(DistBetweenActors * 300.f) * CameraDistance,
+				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(DistBetweenActors * 300.f) * CameraDistance,
 					300.0f,
 					CameraMaxDistance);
+				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength, 
+					TargetLengthClamped, DeltaTime, CameraMoveSpeed * 3.0f);
+					
 
 				// Make it so
 				CameraBoom->SetWorldLocation(Midpoint);
@@ -416,7 +426,6 @@ void AGammaCharacter::UpdateMoveParticles(FVector Move)
 	{
 		MoveParticles->SetWorldRotation(RecoilRotation);
 		MoveParticles->Activate();
-		GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("x %f  z %f"), InputX, InputZ));
 	}
 
 	if (Role < ROLE_Authority) // (Role < ROLE_Authority) (Role == ROLE_AutonomousProxy)
@@ -500,7 +509,11 @@ void AGammaCharacter::RaiseCharge()
 	}
 
 	// Move boost o.o
-	NewMoveKick();
+	if (FVector(InputX, 0.0f, InputZ) != FVector::ZeroVector)
+	{
+		NewMoveKick();
+		//UpdateMoveParticles(FVector(InputX, 0.0f, InputZ));
+	}
 
 	// Sound fx -.-
 	if (PlayerSound != nullptr)

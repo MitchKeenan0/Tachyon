@@ -6,6 +6,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "GammaGameMode.generated.h"
 
+class AGammaCharacter;
+
 /**
  * The GameMode defines the game being played. It governs the game rules, scoring, what actors
  * are allowed to exist in this game type, and who may enter the game.
@@ -18,9 +20,12 @@ public:
 	AGammaGameMode();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<APawn> PlayerCharacter;
+	TSubclassOf<AGammaCharacter> Karaoke;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<ACharacter*> Roster;
+	TSubclassOf<AGammaCharacter> PeaceGiant;
+
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<AGammaCharacter*> Roster;*/
 
 };
