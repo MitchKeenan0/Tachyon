@@ -316,8 +316,9 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 void AGammaCharacter::MoveRight(float Value)
 {
 	// Adjust aim to reflect move
-	if (InputX != Value &&
-		!(InputX == 0.0f && Value == 0.0f))
+	if (InputX != Value 
+		/// Ignoring no inputs
+		&& !(InputX == 0.0f && Value == 0.0f))
 	{
 		SetX(Value);
 	}
@@ -333,8 +334,9 @@ void AGammaCharacter::MoveRight(float Value)
 void AGammaCharacter::MoveUp(float Value)
 {
 	// Adjust aim to reflect move
-	if (InputZ != Value &&
-		!(InputZ == 0.0f && Value == 0.0f))
+	if (InputZ != Value 
+		/// Ignoring no inputs
+		&& !(InputZ == 0.0f && Value == 0.0f))
 	{
 		SetZ(Value);
 	}
