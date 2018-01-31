@@ -134,7 +134,7 @@ void AGMatch::GetPlayers()
 				if (TempCont && (TempCont->NetPlayerIndex == 0))
 				{
 					LocalPlayer = Cast<AGammaCharacter>(TempChar);
-					//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("GotLocalPlayer")));
+					GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("GotLocalPlayer")));
 				}
 				else /// or opponent
 				{
