@@ -2,6 +2,7 @@
 
 #include "GAttack.h"
 #include "GMatch.h"
+#include "Components/CapsuleComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "ParticleDefinitions.h"
 #include "Particles/ParticleSystem.h"
@@ -13,6 +14,13 @@ AGAttack::AGAttack()
 
 	AttackScene = CreateDefaultSubobject<USceneComponent>(TEXT("AttackScene"));
 	SetRootComponent(AttackScene);
+
+	CapsuleRoot = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleRoot"));
+	CapsuleRoot->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	CapsuleRoot->OnComponentBeginOverlap.AddDynamic(this, &AGAttack::OnAttackBeginOverlap);
+	//ShieldCollider->OnComponentBeginOverlap.AddDynamic(this, &AGammaCharacter::OnShieldBeginOverlap);
+
+	
 
 	AttackSound = CreateDefaultSubobject<UAudioComponent>(TEXT("AttackSound"));
 	AttackSound->SetIsReplicated(true);
@@ -256,6 +264,34 @@ void AGAttack::TakeGG()
 	{
 		CurrentMatch->ClaimGG(OwningShooter);
 	}
+}
+
+
+// COLLISION BEGIN
+void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (bLethal && (OtherActor != OwningShooter))
+	{
+		if (OtherComp->ComponentHasTag("Player"))
+		{
+			///GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("oh look a bridge"));
+		}
+
+		// Consequences
+		if (!bHit)// && (HitTimer >= (1.0f / HitsPerSecond)))
+		{
+			bHit = true;
+
+			// Damage vfx
+			SpawnDamage(OtherActor, OtherActor->GetActorLocation());
+
+			// Player killer
+			ApplyKnockback(OtherActor);
+			TakeGG();
+		}
+	}
+
+	// attack should check for shield to make reflect fx
 }
 
 

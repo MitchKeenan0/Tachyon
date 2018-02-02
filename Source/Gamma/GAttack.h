@@ -64,6 +64,21 @@ protected:
 
 	void ApplyKnockback(AActor* HitActor);
 
+
+	// Collision hit detec
+	// Shield collision
+	UFUNCTION()
+	void OnAttackBeginOverlap
+	(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult
+	);
+
+
 	// Ref to match
 	UPROPERTY(BlueprintReadWrite)
 	class AGMatch* CurrentMatch = nullptr;
@@ -119,6 +134,9 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite)
 	float HitTimer = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	class UCapsuleComponent* CapsuleRoot = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	class USceneComponent* AttackScene = nullptr;
