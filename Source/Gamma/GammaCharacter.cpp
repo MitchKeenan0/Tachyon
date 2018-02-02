@@ -204,8 +204,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase);
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, CameraMoveSpeed);
 			float CameraTilt = 0.0f;
-			float CameraMaxDistance = 5555.5f;
-			float CameraDistance = CameraDistanceScalar;
+			float CameraMaxDistance = 15555.5f;
+			float CameraDistance = CameraDistanceScalar * 1.25f;
 
 			// Position two may be another actor
 			if (FramingActors.Num() > 1 && FramingActors[1])
@@ -323,10 +323,27 @@ void AGammaCharacter::MoveRight(float Value)
 		SetX(Value);
 	}
 
+	FVector MoveInput = FVector(InputX, 0.0f, InputZ);
+	FVector CurrentV = GetMovementComponent()->Velocity;
+
+	float MoveByDot = 0.0f;
+	float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
+	if (MoveInput != FVector::ZeroVector 
+		&& DotToInput <= 0.99f)
+	{
+		MoveByDot = 120000.0f;
+		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Blue, TEXT("boostin"));
+	}
+	else if (DotToInput > 0.99f)
+	{
+		MoveByDot = 1.0f;
+	}
+	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, FString::Printf(TEXT("Dot: %f"), DotToInput));
+
 	// Abide moves per second
 	if (MoveTimer >= (1 / MovesPerSecond))
 	{
-		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
+		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value * MoveByDot);
 	}
 }
 
@@ -344,7 +361,21 @@ void AGammaCharacter::MoveUp(float Value)
 	// Abide moves per second
 	if (MoveTimer >= (1 / MovesPerSecond))
 	{
-		AddMovementInput(FVector(0.0f, 0.0f, 1.0f), Value);
+		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
+		FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
+
+		float MoveByDot = 0.0f;
+		float DotToInput = FVector::DotProduct(CurrentV, MoveInput);
+		if (MoveInput != FVector::ZeroVector && DotToInput <= 0.99f)
+		{
+			MoveByDot = 120000.0f;
+		}
+		else if (DotToInput > 0.99f)
+		{
+			MoveByDot = 1.0f;
+		}
+		
+		AddMovementInput(FVector(0.0f, 0.0f, 1.0f), Value * MoveByDot);
 	}
 }
 
