@@ -24,7 +24,7 @@ void AGMatch::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// On gg wait for gg delay before freezing time
-	if (bGG && GGDelayTimer < 0.2f)
+	if (bGG && GGDelayTimer < GGDelayTime)
 	{
 		GGDelayTimer += DeltaTime;
 	}
@@ -67,7 +67,7 @@ void AGMatch::HandleTimeScale(bool Gg, float Delta)
 	}
 
 	// Handle gameover scenario - timing and score handouts
-	if (Gg && GGDelayTimer >= 0.2f)
+	if (Gg && GGDelayTimer >= GGDelayTime)
 	{
 		// Drop timescale to glacial..
 		if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > GGTimescale)

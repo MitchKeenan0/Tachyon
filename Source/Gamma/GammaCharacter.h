@@ -124,8 +124,8 @@ protected:
 
 	// Secondary objects
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AActor> SecondaryClass = nullptr;
-	class AActor* ActiveSecondary = nullptr;
+	TSubclassOf<AGAttack> SecondaryClass = nullptr;
+	class AGAttack* ActiveSecondary = nullptr;
 
 	// Shield object
 
@@ -134,6 +134,10 @@ protected:
 	class AActor* ActiveChargeParticles = nullptr;
 
 	// Replicated functions
+	void Rematch();
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerRematch();
+
 	void SetX(float Value);
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerSetX(float Value);

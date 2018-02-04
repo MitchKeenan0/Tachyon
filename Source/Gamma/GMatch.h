@@ -44,6 +44,9 @@ protected:
 	float GGTimescale = 0.1f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float GGDelayTime = 0.15f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float HitFreezeTime = 0.2f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

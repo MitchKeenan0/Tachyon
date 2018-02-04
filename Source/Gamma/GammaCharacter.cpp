@@ -110,10 +110,9 @@ void AGammaCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 	Super::SetupPlayerInputComponent(InputComponent);
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AGammaCharacter::InitAttack);
 	PlayerInputComponent->BindAction("Attack", IE_Released, this, &AGammaCharacter::ReleaseAttack);
-
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AGammaCharacter::RaiseCharge);
-
 	PlayerInputComponent->BindAction("Secondary", IE_Pressed, this, &AGammaCharacter::FireSecondary);
+	PlayerInputComponent->BindAction("Rematch", IE_Pressed, this, &AGammaCharacter::Rematch);
 
 	PlayerInputComponent->BindAxis("MoveRight", this, &AGammaCharacter::MoveRight);
 	PlayerInputComponent->BindAxis("MoveUp", this, &AGammaCharacter::MoveUp);
@@ -417,37 +416,40 @@ void AGammaCharacter::NewMoveKick()
 		return;
 	}
 
-	// Algo scaling for time dilation. Slower time == more kick
-	float TimeScalar = 1.0f;
-	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-	if (TimeDilat < 0.7f)
+	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.5f)
 	{
-		TimeScalar = (SlowmoMoveBoost * (1 + (1.0f / TimeDilat))) * (1.0f / TimeDilat); //  FMath::Abs(SlowmoMoveBoost * (1.0f / TimeDilat)) / 10.0f;
-	}
-	
-	// Algo scaling for timescale & max velocity
-	FVector MoveInputVector = FVector(InputX, 0.0f, InputZ);
-	FVector CurrentVelocity = GetCharacterMovement()->Velocity;
-	float TimeDelta = GetWorld()->DeltaTimeSeconds;
-	float RelativityToMaxSpeed = (MaxMoveSpeed * MoveFreshMultiplier) - CurrentVelocity.Size();
-	float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
-	
-	// Force, clamp, & effect chara movement
-	FVector KickVector = MoveInputVector
-						* MoveFreshMultiplier 
-						* TimeScalar
-						* RelativityToMaxSpeed
-						* DotScalar;
-	KickVector = KickVector.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier * TimeScalar);
-	GetCharacterMovement()->AddImpulse(KickVector * TimeDelta);
+		// Algo scaling for time dilation. Slower time == more kick
+		float TimeScalar = 1.0f;
+		float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+		if (TimeDilat < 0.7f)
+		{
+			TimeScalar = (SlowmoMoveBoost * (1 + (1.0f / TimeDilat))) * (1.0f / TimeDilat); //  FMath::Abs(SlowmoMoveBoost * (1.0f / TimeDilat)) / 10.0f;
+		}
 
-	bMoved = false;
-	MoveTimer = 0.0f;
-	
-	//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
-	//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
-	//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("vel  %f"), (GetCharacterMovement()->Velocity.Size())));
-	//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("time scalar   %f"), TimeScalar));
+		// Algo scaling for timescale & max velocity
+		FVector MoveInputVector = FVector(InputX, 0.0f, InputZ);
+		FVector CurrentVelocity = GetCharacterMovement()->Velocity;
+		float TimeDelta = GetWorld()->DeltaTimeSeconds;
+		float RelativityToMaxSpeed = (MaxMoveSpeed * MoveFreshMultiplier) - CurrentVelocity.Size();
+		float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
+
+		// Force, clamp, & effect chara movement
+		FVector KickVector = MoveInputVector
+			* MoveFreshMultiplier
+			* TimeScalar
+			* RelativityToMaxSpeed
+			* DotScalar;
+		KickVector = KickVector.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier * TimeScalar);
+		GetCharacterMovement()->AddImpulse(KickVector * TimeDelta);
+
+		bMoved = false;
+		MoveTimer = 0.0f;
+
+		//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
+		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
+		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("vel  %f"), (GetCharacterMovement()->Velocity.Size())));
+		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("time scalar   %f"), TimeScalar));
+	}
 }
 void AGammaCharacter::ServerNewMoveKick_Implementation()
 {
@@ -586,7 +588,8 @@ void AGammaCharacter::InitAttack()
 	// Clean burn
 	MoveParticles->bSuppressSpawning = true;
 
-	if (FlashClass && ActiveFlash == nullptr)
+	if (FlashClass && ActiveFlash == nullptr 
+		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.5f))
 	{
 		// Clean up previous attack
 		if (ActiveAttack)
@@ -692,7 +695,8 @@ bool AGammaCharacter::ServerReleaseAttack_Validate()
 // SECONDARY
 void AGammaCharacter::FireSecondary()
 {
-	if (!ActiveAttack && !ActiveSecondary)
+	if (!ActiveAttack && !ActiveSecondary
+		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.5f))
 	{
 		// Clean burn
 		MoveParticles->bSuppressSpawning = true;
@@ -708,7 +712,7 @@ void AGammaCharacter::FireSecondary()
 		{
 			if (SecondaryClass != nullptr)
 			{
-				ActiveSecondary = GetWorld()->SpawnActor<AActor>(SecondaryClass, FirePosition, FireRotation, SpawnParams); //  Cast<AActor>());
+				ActiveSecondary = GetWorld()->SpawnActor<AGAttack>(SecondaryClass, FirePosition, FireRotation, SpawnParams); //  Cast<AActor>());
 				
 				if (ActiveSecondary)
 				{
@@ -743,6 +747,25 @@ void AGammaCharacter::ServerFireSecondary_Implementation()
 	FireSecondary();
 }
 bool AGammaCharacter::ServerFireSecondary_Validate()
+{
+	return true;
+}
+
+// REMATCH
+void AGammaCharacter::Rematch()
+{
+	
+
+	if (Role < ROLE_Authority)
+	{
+		ServerRematch();
+	}
+}
+void AGammaCharacter::ServerRematch_Implementation()
+{
+	Rematch();
+}
+bool AGammaCharacter::ServerRematch_Validate()
 {
 	return true;
 }

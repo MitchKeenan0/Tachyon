@@ -33,6 +33,9 @@ public:
 
 	void TakeGG();
 
+	UFUNCTION(BlueprintCallable)
+	void Nullify();
+
 
 	// Public variables
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
