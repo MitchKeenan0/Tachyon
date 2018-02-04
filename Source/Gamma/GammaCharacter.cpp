@@ -131,6 +131,9 @@ void AGammaCharacter::BeginPlay()
 	// To reduce jitter
 	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), TEXT("p.NetEnableMoveCombining 0")); /// is this needed?
 
+	AddMovementInput(FVector(0.0f, 0.0f, 1.0f), 1.0f);
+	GetCharacterMovement()->AddImpulse(FVector::UpVector * 100.0f);
+
 	//GetCameraBoom()->TargetArmLength = 10000.0f;
 }
 
@@ -142,18 +145,15 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	// Update animation to match the motion
 	//UpdateAnimation();
 
-	// Camera update
-	if (GetWorld()->TimeSeconds > 0.2f)
-	{
-		UpdateCamera(DeltaTime);
-	}
+	UpdateCamera(DeltaTime);
 
 	// Now setup the rotation of the controller based on the direction we are travelling
 	const FVector PlayerVelocity = GetVelocity();
 	float TravelDirection = InputX;
 	
 	// Set rotation so character faces direction of travel
-	if (Controller != nullptr)
+	if (Controller != nullptr
+		&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
 	{
 		if (TravelDirection < 0.0f)
 		{
@@ -202,7 +202,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase);
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, CameraMoveSpeed);
-			float CameraTilt = 0.0f;
 			float CameraMaxDistance = 15555.5f;
 			float CameraDistance = CameraDistanceScalar * 1.25f;
 
@@ -218,16 +217,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					Actor2Velocity.Z *= 0.5f;
 					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase);
 					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, CameraMoveSpeed);
-
-					// Compare velocities for cam tilting
-					FVector Vel1 = Actor1->GetVelocity();
-					FVector Vel2 = Actor2->GetVelocity();
-					float Difference = Vel1.Size() - Vel2.Size();
-
-					// Set camera tilt
-					CameraTilt = FMath::Clamp(Difference, -CameraTiltClamp, CameraTiltClamp);
-					CameraTilt = FMath::FInterpTo(SideViewCameraComponent->GetComponentRotation().Roll, CameraTilt, DeltaTime, 3.0f);
-					SideViewCameraComponent->SetRelativeRotation(FRotator(0.0f, 0.0f, CameraTilt));
 				}
 
 				/// TO DO: ^^ camera seems to tilt one direction for each player...
@@ -261,6 +250,12 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				CameraBoom->SetWorldLocation(Midpoint);
 				CameraBoom->TargetArmLength = DesiredCameraDistance;
 			}
+
+
+			// Camera tilt
+			CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * 3, DeltaTime, 0.68f); // pitch
+			CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * 3, DeltaTime, 0.68f); // yaw
+			SideViewCameraComponent->SetRelativeRotation(FRotator(CameraTiltX, CameraTiltZ, 0.0f) * 3);
 		}
 	}
 }
@@ -322,8 +317,8 @@ void AGammaCharacter::MoveRight(float Value)
 		SetX(Value);
 	}
 
-	FVector MoveInput = FVector(InputX, 0.0f, InputZ);
-	FVector CurrentV = GetMovementComponent()->Velocity;
+	FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
+	FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
 
 	float MoveByDot = 0.0f;
 	float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
@@ -331,13 +326,11 @@ void AGammaCharacter::MoveRight(float Value)
 		&& DotToInput <= 0.99f)
 	{
 		MoveByDot = 120000.0f;
-		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Blue, TEXT("boostin"));
 	}
 	else if (DotToInput > 0.99f)
 	{
 		MoveByDot = 1.0f;
 	}
-	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, FString::Printf(TEXT("Dot: %f"), DotToInput));
 
 	// Abide moves per second
 	if (MoveTimer >= (1 / MovesPerSecond))

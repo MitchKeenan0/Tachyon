@@ -42,6 +42,8 @@ class AGammaCharacter : public APaperCharacter
 	float LastMoveTime = 0.0f;
 	float CurrentMoveTime = 0.0f;
 	float ChargeFXTimer = 0.0f;
+	float CameraTiltX = 0.0f;
+	float CameraTiltZ = 0.0f;
 
 	bool bOnTempo = false;
 	//float x = 0.0f;
@@ -242,7 +244,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MaxMoveSpeed = 500.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MoveAccelerationSpeed = 100.0f;
+	float MoveAccelerationSpeed = 4200.0f;
 
 	// Camera movement
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
