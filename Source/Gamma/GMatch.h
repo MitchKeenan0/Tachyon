@@ -68,8 +68,10 @@ private:
 
 	bool bPlayersIn = false;
 	void GetPlayers();
+	float GGDelayTimer = 0.0f;
 	TArray<AActor*> TempPlayers;
 	AGammaCharacter* LocalPlayer = nullptr;
 	AGammaCharacter* OpponentPlayer = nullptr;
+	AActor* Winner = nullptr;
 	
 };

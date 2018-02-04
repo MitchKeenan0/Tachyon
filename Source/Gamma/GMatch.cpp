@@ -23,6 +23,12 @@ void AGMatch::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// On gg wait for gg delay before freezing time
+	if (bGG && GGDelayTimer < 0.2f)
+	{
+		GGDelayTimer += DeltaTime;
+	}
+
 	if (!LocalPlayer || !OpponentPlayer)
 	{
 		if (GetWorld()->GetTimeSeconds() > 1.0f)
@@ -42,6 +48,7 @@ void AGMatch::ClaimGG(AActor* Winner)
 	AGammaCharacter* Reciever = Cast<AGammaCharacter>(Winner);
 	if (Reciever)
 	{
+		Winner = Reciever;
 		Reciever->RaiseScore(1);
 	}
 }
@@ -49,8 +56,18 @@ void AGMatch::ClaimGG(AActor* Winner)
 
 void AGMatch::HandleTimeScale(bool Gg, float Delta)
 {
+	bool bReturn = true;
+
+	if (Winner)
+	{
+		if (Winner->ActorHasTag("Player"))
+		{
+			bReturn = false;
+		}
+	}
+
 	// Handle gameover scenario - timing and score handouts
-	if (Gg)
+	if (Gg && GGDelayTimer >= 0.2f)
 	{
 		// Drop timescale to glacial..
 		if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > GGTimescale)
@@ -73,14 +90,14 @@ void AGMatch::HandleTimeScale(bool Gg, float Delta)
 			}
 		}
 	}
-	else if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 1.0f)
-	{
-		// ..Rise timescale back to 1
-		float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-		float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed * TimeDilat);
-		SetTimeScale(TimeT);
-		//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("returning to 1"));
-	}
+	//else if (bReturn && UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 1.0f)
+	//{
+	//	// ..Rise timescale back to 1
+	//	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+	//	float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed * TimeDilat);
+	//	SetTimeScale(TimeT);
+	//	//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("returning to 1"));
+	//}
 }
 
 void AGMatch::SetTimeScale(float Time)
