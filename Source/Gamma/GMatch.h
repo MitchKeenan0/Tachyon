@@ -56,7 +56,7 @@ protected:
 	float TimescaleRecoverySpeed = 0.33f;
 
 	// Network-replicated variables
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	bool bGG = false;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)

@@ -78,16 +78,7 @@ void AGMatch::HandleTimeScale(bool Gg, float Delta)
 		}
 		else
 		{
-			
-			// Pause for hit confirm
-			//SetTimeScale(0.01f);
-			GGTimer += Delta * (1 / UGameplayStatics::GetGlobalTimeDilation(GetWorld()));
-			if (GGTimer >= HitFreezeTime)
-			{
-				//GEngine->AddOnScreenDebugMessage(-1, 11.f, FColor::Blue, TEXT("hit freeze complete!!"));
-				bGG = false;
-				GGTimer = 0.0f;
-			}
+			GGDelayTimer = 0.0f;
 		}
 	}
 	//else if (bReturn && UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 1.0f)
