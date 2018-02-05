@@ -120,22 +120,22 @@ protected:
 	// ATTACK STUFF ////////////////////////////////////////////////
 	// Attack objects
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AGFlash> FlashClass = nullptr;
+	TSubclassOf<AGFlash> FlashClass;
 	class AGFlash* ActiveFlash = nullptr;
 
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AGAttack> AttackClass = nullptr;
+	TSubclassOf<AGAttack> AttackClass;
 	class AGAttack* ActiveAttack = nullptr;
 
 	// Secondary objects
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AGAttack> SecondaryClass = nullptr;
+	TSubclassOf<AGAttack> SecondaryClass;
 	class AGAttack* ActiveSecondary = nullptr;
 
 	// Shield object
 
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AActor> ChargeParticles = nullptr;
+	TSubclassOf<AActor> ChargeParticles;
 	class AActor* ActiveChargeParticles = nullptr;
 
 	// Replicated functions
@@ -258,6 +258,10 @@ protected:
 	float CameraSoloVelocityChase = 2.5f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CameraDistanceScalar = 2.5f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float CameraTiltValue = 3.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float CameraTiltSpeed = 0.68f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CameraTiltClamp = 1.0f;
 

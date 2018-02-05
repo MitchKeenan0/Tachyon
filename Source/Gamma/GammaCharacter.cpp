@@ -253,9 +253,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 
 			// Camera tilt
-			CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * 3, DeltaTime, 0.68f); // pitch
-			CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * 3, DeltaTime, 0.68f); // yaw
-			SideViewCameraComponent->SetRelativeRotation(FRotator(CameraTiltX, CameraTiltZ, 0.0f) * 3);
+			CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue, DeltaTime, CameraTiltSpeed); // pitch
+			CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * CameraTiltValue, DeltaTime, CameraTiltSpeed); // yaw
+			SideViewCameraComponent->SetRelativeRotation(FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue);
 		}
 	}
 }
