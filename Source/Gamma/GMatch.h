@@ -27,6 +27,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetOpponentChargePercent();
 
+	UFUNCTION(BlueprintCallable)
+	void ClearPlayers() { LocalPlayer = OpponentPlayer = nullptr; }
+
 	// End-game slow-time functions
 	void ClaimGG(AActor* Winner);
 	/*UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
@@ -35,6 +38,8 @@ public:
 	void HandleTimeScale(bool Gg, float Delta);
 
 	void SetTimeScale(float Time);
+
+	bool PlayersAccountedFor();
 
 protected:
 	// Called when the game starts or when spawned

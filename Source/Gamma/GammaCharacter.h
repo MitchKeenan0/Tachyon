@@ -77,8 +77,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void NullifyAttack() { ActiveAttack = nullptr; MoveParticles->bSuppressSpawning = false; }
 
-	UFUNCTION()
-	float GetChargePercentage() { return Charge / ChargeMax; } // (Charge / ChargeMax)
+	UFUNCTION(BlueprintCallable)
+	void EraseCharge() { Charge = 0.0f; }
+
+	UFUNCTION(BlueprintCallable)
+	float GetChargePercentage();
 
 
 protected:
@@ -260,9 +263,9 @@ protected:
 
 	// Charge properties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float ChargeMax = 1.0f;
+	float ChargeMax = 4.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float ChargeGainSpeed = 1.0f;
+	float ChargeGain = 1.0f;
 
 	
 

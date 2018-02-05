@@ -29,15 +29,27 @@ void AGMatch::Tick(float DeltaTime)
 		GGDelayTimer += DeltaTime;
 	}
 
-	if (!LocalPlayer || !OpponentPlayer)
+	if (!PlayersAccountedFor())
 	{
-		if (GetWorld()->GetTimeSeconds() > 1.0f)
-		{
-			GetPlayers();
-		}
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("Looking for players..."));
+		GetPlayers();
 	}
 	
 	HandleTimeScale(bGG, DeltaTime);
+}
+
+
+bool AGMatch::PlayersAccountedFor()
+{
+	bool Result = false;
+	
+	if ((LocalPlayer && LocalPlayer->GetOwner() && LocalPlayer->IsValidLowLevel())
+		&& (OpponentPlayer && OpponentPlayer->GetOwner() && OpponentPlayer->IsValidLowLevel()))
+	{
+		Result = true;
+	}
+
+	return Result;
 }
 
 
@@ -103,7 +115,9 @@ float AGMatch::GetLocalChargePercent()
 {
 	if (LocalPlayer)
 	{
-		return LocalPlayer->GetChargePercentage();
+		float LocalCharge = LocalPlayer->GetChargePercentage();
+		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, FString::Printf(TEXT("Charge: %f"), LocalCharge));
+		return LocalCharge;
 	}
 	else
 	{
@@ -128,7 +142,7 @@ float AGMatch::GetOpponentChargePercent()
 void AGMatch::GetPlayers()
 {
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), TempPlayers);
-	if (GetWorld() && TempPlayers.Num() > 1)
+	if (GetWorld() && TempPlayers.Num() == 2)
 	{
 		// Loop through to deliberate local and opponent
 		for (int i = 0; i < TempPlayers.Num(); ++i)
@@ -139,22 +153,22 @@ void AGMatch::GetPlayers()
 			{
 				APlayerController* TempCont = Cast<APlayerController>(TempChar->GetController());
 				// Check if controller is local
-				if (TempCont && (TempCont->NetPlayerIndex == 0))
+				if (TempCont && TempCont->IsLocalController()) //&& (TempCont->NetPlayerIndex == 0))
 				{
 					LocalPlayer = Cast<AGammaCharacter>(TempChar);
-					GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("GotLocalPlayer")));
+					GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("GotLocalPlayer")));
 				}
 				else /// or opponent
 				{
 					OpponentPlayer = Cast<AGammaCharacter>(TempChar);
-					GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Got OpponentPlayer")));
+					GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("Got OpponentPlayer")));
 				}
 				
 			}
 			else /// ...or client's opponent
 			{
 				OpponentPlayer = Cast<AGammaCharacter>(TempChar);
-				//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("GotOpponentPlayer")));
+				GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("GotOpponentPlayer")));
 			}
 		}
 	}

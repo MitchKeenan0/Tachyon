@@ -275,6 +275,17 @@ void AGammaCharacter::UpdateAnimation()
 }
 
 
+float AGammaCharacter::GetChargePercentage()
+{
+	float Percentage = 0.0f;
+	if (Charge > 0)
+	{
+		Percentage = Charge / ChargeMax;
+	}
+	return Percentage;
+}
+
+
 /////////////////////////////////////////////////////////////////////////
 // TICK
 void AGammaCharacter::Tick(float DeltaSeconds)
@@ -283,22 +294,6 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	
 	// Main update
 	UpdateCharacter(DeltaSeconds);
-
-	// Charging
-	if (ActiveFlash != nullptr) //  && HasAuthority()
-	{
-		//RaiseCharge();
-	}
-	else if (Charge != 0.0f)
-	{
-		Charge = 0.0f;
-	}
-
-	// Tempo
-	if (bOnTempo)
-	{
-		BPMTimer += DeltaSeconds;
-	}
 }
 
 
@@ -526,23 +521,15 @@ bool AGammaCharacter::ServerSetAim_Validate()
 // RAISE CHARGE for attack 
 void AGammaCharacter::RaiseCharge()
 {
+	if (Charge < ChargeMax)
+	{
+		Charge += ChargeGain;
+	}
+
 	if (Role < ROLE_Authority)
 	{
 		ServerRaiseCharge();
 		return;
-	}
-
-	if (Charge < ChargeMax)
-	{
-		Charge += ChargeGainSpeed;
-		if (bFullCharge)
-		{
-			bFullCharge = false;
-		}
-	}
-	else if (!bFullCharge)
-	{
-		bFullCharge = true;
 	}
 
 	// Move boost o.o
@@ -668,6 +655,8 @@ void AGammaCharacter::ReleaseAttack()
 			{
 				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No attack class to spawn"));
 			}
+
+			Charge -= ChargeGain;
 		}
 	}
 
