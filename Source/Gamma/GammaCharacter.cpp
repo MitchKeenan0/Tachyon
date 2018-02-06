@@ -546,7 +546,7 @@ void AGammaCharacter::RaiseCharge()
 		PlayerSound->Play();
 	}
 
-	GEngine->AddOnScreenDebugMessage(-1, 0.68f, FColor::White, FString::Printf(TEXT("%f % CHARGE"), Charge), true, FVector2D::UnitVector * 2);
+	//GEngine->AddOnScreenDebugMessage(-1, 0.68f, FColor::White, FString::Printf(TEXT("%f % CHARGE"), Charge), true, FVector2D::UnitVector * 2);
 
 
 	//// Scale up charge vfx

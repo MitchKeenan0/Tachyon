@@ -126,7 +126,7 @@ float AGMatch::GetLocalChargePercent()
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("match sees no local player"));
+		//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("match sees no local player"));
 		return -1.0f;
 	}
 }
@@ -138,7 +138,7 @@ float AGMatch::GetOpponentChargePercent()
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("match sees no opponent player"));
+		//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("match sees no opponent player"));
 		return -1.0f;
 	}
 }
