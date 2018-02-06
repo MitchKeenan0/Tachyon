@@ -27,7 +27,7 @@ void AGDenizen::Tick(float DeltaTime)
 	{
 		FindActorsOfInterest();
 	}
-	else
+	else if (Difficulty > 0.0f)
 	{
 		AActor* FirstBoye = ActorsOfInterest[0];
 		ApproachActorOfInterest(FirstBoye);

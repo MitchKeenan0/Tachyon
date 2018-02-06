@@ -60,13 +60,13 @@ bool AGMatch::PlayersAccountedFor()
 
 void AGMatch::ClaimGG(AActor* Winner)
 {
-	bGG = true;
-
+	// Do the flashy GAME thing if the shooter is a player
 	AGammaCharacter* Reciever = Cast<AGammaCharacter>(Winner);
 	if (Reciever)
 	{
 		Winner = Reciever;
 		Reciever->RaiseScore(1);
+		bGG = true;
 	}
 }
 
@@ -147,7 +147,7 @@ float AGMatch::GetOpponentChargePercent()
 void AGMatch::GetPlayers()
 {
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), TempPlayers);
-	if (GetWorld() && TempPlayers.Num() == 2)
+	if (GetWorld() && TempPlayers.Num() > 0)
 	{
 		// Loop through to deliberate local and opponent
 		for (int i = 0; i < TempPlayers.Num(); ++i)

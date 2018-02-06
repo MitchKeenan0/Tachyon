@@ -28,6 +28,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MoveSpeed = 1.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Difficulty = 0.1f;
+
 	UFUNCTION()
 	void FindActorsOfInterest();
 	

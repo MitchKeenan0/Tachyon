@@ -241,11 +241,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float TurnSpeed = 500.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MoveFreshMultiplier = 1000.0f;
+	float MoveFreshMultiplier = 750.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SlowmoMoveBoost = 5.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MaxMoveSpeed = 500.0f;
+	float MaxMoveSpeed = 610.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MoveAccelerationSpeed = 4200.0f;
 
@@ -255,11 +255,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CameraVelocityChase = 2.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CameraSoloVelocityChase = 2.5f;
+	float CameraSoloVelocityChase = 1.5f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CameraDistanceScalar = 2.5f;
+	float CameraDistanceScalar = 1.5f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CameraTiltValue = 3.0f;
+	float CameraTiltValue = 4.2f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CameraTiltSpeed = 0.68f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

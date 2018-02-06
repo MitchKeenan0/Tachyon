@@ -222,7 +222,11 @@ void AGAttack::DetectHit(FVector RaycastVector)
 
 		// Player killer
 		ApplyKnockback(HitActor);
-		TakeGG();
+		
+		if (HitActor->ActorHasTag("Player"))
+		{
+			TakeGG();
+		}
 
 		// Clean-up for next frame
 		HitTimer = 0.0f;
@@ -248,13 +252,32 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 
 void AGAttack::ApplyKnockback(AActor* HitActor)
 {
+	// The knock itself
+	FVector AwayFromShooter = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+
 	// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
 	if (Chara)
 	{
-		FVector AwayFromShooter = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 		Chara->GetCharacterMovement()->AddImpulse(AwayFromShooter * KineticForce);
-	}// !! IMPORTANT !! clamp this, future me. oh hai
+	}
+	else
+	{
+		// Or get general static mesh
+		UStaticMeshComponent* HitMeshComponent = nullptr;
+		TArray<UStaticMeshComponent*> Components;
+		HitActor->GetComponents<UStaticMeshComponent>(Components);
+		for (int32 i = 0; i < Components.Num(); ++i)
+		{
+			HitMeshComponent = Components[i];
+		}
+
+		// Apply force to it
+		if (HitMeshComponent != nullptr)
+		{
+			HitMeshComponent->AddImpulse(AwayFromShooter * KineticForce);
+		}
+	}
 }
 
 
@@ -286,13 +309,8 @@ void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 {
 	if (bLethal && (OtherActor != OwningShooter))
 	{
-		if (OtherComp->ComponentHasTag("Player"))
-		{
-			///GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("oh look a bridge"));
-		}
-
 		// Consequences
-		if (!bHit)// && (HitTimer >= (1.0f / HitsPerSecond)))
+		if (!bHit && (!OtherActor->ActorHasTag("Attack")))// && (HitTimer >= (1.0f / HitsPerSecond)))
 		{
 			bHit = true;
 
@@ -301,7 +319,13 @@ void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 
 			// Player killer
 			ApplyKnockback(OtherActor);
-			TakeGG();
+			
+			if (OtherActor->ActorHasTag("Player"))
+			{
+				TakeGG();
+			}
+
+			HitTimer = 0.0f;
 		}
 	}
 
