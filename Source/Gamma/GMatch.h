@@ -46,7 +46,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float GGTimescale = 0.1f;
+	float GGTimescale = 0.001f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float GGDelayTime = 0.15f;
@@ -55,7 +55,7 @@ protected:
 	float HitFreezeTime = 0.2f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float TimescaleDropSpeed = 15.0f;
+	float TimescaleDropSpeed = 50.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float TimescaleRecoverySpeed = 0.33f;
@@ -67,6 +67,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
 	float GGTimer = 0.0f;
 
+	UPROPERTY(BlueprintReadOnly)
+	float GGDelayTimer = 0.0f;
+
 
 private:
 	int LocalScore = 0;
@@ -76,7 +79,6 @@ private:
 
 	bool bPlayersIn = false;
 	void GetPlayers();
-	float GGDelayTimer = 0.0f;
 	TArray<AActor*> TempPlayers;
 	AGammaCharacter* LocalPlayer = nullptr;
 	AGammaCharacter* OpponentPlayer = nullptr;
