@@ -83,6 +83,16 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetChargePercentage();
 
+	UFUNCTION(BlueprintCallable)
+	void ClearFlash() 
+	{ 
+		if (ActiveFlash)
+		{
+			ActiveFlash->SetActorHiddenInGame(true); // Deactivate
+			ActiveFlash = nullptr;
+		}
+	}
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -253,7 +263,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CameraMoveSpeed = 0.68f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CameraVelocityChase = 2.0f;
+	float CameraVelocityChase = 1.5f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CameraSoloVelocityChase = 1.5f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

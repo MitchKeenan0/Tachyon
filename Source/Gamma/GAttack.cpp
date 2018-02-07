@@ -107,9 +107,16 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	/*FlashMesh->SetMaterial(0, MainMaterial);
 	AttackMesh->SetMaterial(0, MainMaterial);*/
 
-	// Init success
+	// Init success & recoil
 	if (OwningShooter != nullptr)
 	{
+		ACharacter* Chara = Cast<ACharacter>(OwningShooter);
+		if (Chara)
+		{
+			float RecoilScalar = KineticForce * -0.5f;
+			Chara->GetCharacterMovement()->AddImpulse(GetActorForwardVector() * RecoilScalar);
+		}
+
 		bLethal = true;
 		DetectHit(GetActorForwardVector());
 	}

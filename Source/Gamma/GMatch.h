@@ -28,6 +28,9 @@ public:
 	float GetOpponentChargePercent();
 
 	UFUNCTION(BlueprintCallable)
+	AGammaCharacter* GetOpponentPlayer() { return OpponentPlayer; }
+
+	UFUNCTION(BlueprintCallable)
 	void ClearPlayers() { LocalPlayer = OpponentPlayer = nullptr; }
 
 	// End-game slow-time functions
