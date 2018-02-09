@@ -31,6 +31,7 @@ class AGammaCharacter : public APaperCharacter
 	class USpringArmComponent* CameraBoom;
 
 	UTextRenderComponent* TextComponent;
+	
 	virtual void Tick(float DeltaSeconds) override;
 
 	float AttackTimer = 0.0f;	/// stopwatch situation
