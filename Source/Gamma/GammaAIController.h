@@ -41,6 +41,9 @@ protected:
 	float MoveSpeed = 300.0f;
 
 	UPROPERTY(EditDefaultsOnly)
+	float MoveRange = 10.0f;
+
+	UPROPERTY(EditDefaultsOnly)
 	float Aggression = 0.5f;
 
 private:

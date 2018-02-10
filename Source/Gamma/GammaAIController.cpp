@@ -28,7 +28,6 @@ void AGammaAIController::Tick(float DeltaSeconds)
 		if (LocationTarget == FVector::ZeroVector)
 		{
 			GetNewLocationTarget();
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("new move target"));
 		}
 		else
 		{
@@ -47,8 +46,9 @@ FVector AGammaAIController::GetNewLocationTarget()
 	
 	// Getting spicy
 	FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
-	FVector RandomOffset = (FMath::VRand() * MoveSpeed) * Aggression * 2;
+	FVector RandomOffset = (FMath::VRand() * MoveRange) * Aggression;
 	Result = PlayerAtSpeed + RandomOffset;
+	Result.Z *= 0.68f;
 
 	// And serve
 	bCourseLayedIn = true;
@@ -63,10 +63,8 @@ void AGammaAIController::NavigateTo(FVector Target)
 	FVector MyLocation = GetPawn()->GetActorLocation();
 	FVector ToTarget = (Target - MyLocation);
 
-	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, FString::Printf(TEXT("LocationTarget: %f"), ToTarget.Size()));
-
 	// Have we reached target?
-	if (ToTarget.Size() < 150.0f)
+	if (ToTarget.Size() < 50.0f)
 	{
 		LocationTarget = FVector::ZeroVector;
 		bCourseLayedIn = false;
@@ -77,21 +75,41 @@ void AGammaAIController::NavigateTo(FVector Target)
 		// Compare movement priorites by distance
 		float VerticalDistance = FMath::Abs(ToTarget.Z);
 		float LateralDistance = FMath::Abs(ToTarget.X);
-		
-		//if (FVector::DotProduct())
+		float ValueX = 0.0f;
+		float ValueZ = 0.0f;
+		bool bMoved = false;
 
 		// Simulating decision between vertical and lateral
-		if (LateralDistance > VerticalDistance)
+		if (LateralDistance > 100)
 		{
-			float ValueX = FMath::Clamp(ToTarget.X, -1.0f, 1.0f);
+			ValueX = FMath::Clamp(ToTarget.X, -1.0f, 1.0f);
 			MoveInput = FVector::ForwardVector;
 			GetPawn()->AddMovementInput(MoveInput, MoveSpeed * ValueX);
+			bMoved = true;
 		}
-		else
+		if (VerticalDistance > 100)
 		{
-			float ValueZ = FMath::Clamp(ToTarget.Z, -1.0f, 1.0f);
+			ValueZ = FMath::Clamp(ToTarget.Z, -1.0f, 1.0f);
 			MoveInput = FVector::UpVector;
 			GetPawn()->AddMovementInput(MoveInput, MoveSpeed * ValueZ);
+			bMoved = true;
+		}
+
+		if (!bMoved)
+		{
+			// Cancel move
+			LocationTarget = FVector::ZeroVector;
+			bCourseLayedIn = false;
+		}
+
+		// Sprite flipping
+		if (ValueX < 0.0f)
+		{
+			SetControlRotation(FRotator(0.0, 180.0f, 0.0f));
+		}
+		else if (ValueX > 0.0f)
+		{
+			SetControlRotation(FRotator(0.0f, 0.0f, 0.0f));
 		}
 	}
 }
