@@ -149,6 +149,10 @@ protected:
 	TSubclassOf<AActor> ChargeParticles;
 	class AActor* ActiveChargeParticles = nullptr;
 
+	// Boost object
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AActor> BoostClass;
+
 	// Replicated functions
 	void Rematch();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)

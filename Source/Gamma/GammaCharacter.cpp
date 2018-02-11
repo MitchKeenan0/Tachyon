@@ -433,6 +433,18 @@ void AGammaCharacter::NewMoveKick()
 		bMoved = false;
 		MoveTimer = 0.0f;
 
+		// Spawn visuals
+		FActorSpawnParameters SpawnParams;
+		FVector PlayerVelocity = GetCharacterMovement()->Velocity;
+		FRotator PlayerVelRotator = PlayerVelocity.Rotation();
+
+		PlayerVelocity.Z *= 0.01f;
+		FVector SpawnLocation = GetActorLocation(); // +(PlayerVelocity / 3);
+		
+		GetWorld()->SpawnActor<AActor>
+			(BoostClass, SpawnLocation, PlayerVelRotator, SpawnParams);
+		//Boost->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+
 		//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
 		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
 		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("vel  %f"), (GetCharacterMovement()->Velocity.Size())));
