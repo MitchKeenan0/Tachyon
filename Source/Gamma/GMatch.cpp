@@ -62,7 +62,7 @@ void AGMatch::ClaimGG(AActor* Winner)
 {
 	// Do the flashy GAME thing if the shooter is a player
 	AGammaCharacter* Reciever = Cast<AGammaCharacter>(Winner);
-	if (Reciever)
+	if (Winner->ActorHasTag("Player")) //Reciever)
 	{
 		Winner = Reciever;
 		Reciever->RaiseScore(1);
