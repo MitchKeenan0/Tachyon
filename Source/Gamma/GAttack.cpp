@@ -293,7 +293,6 @@ void AGAttack::TakeGG()
 {
 	if (CurrentMatch)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::White, TEXT("Match got a GG call"));
 		bLethal = false;
 		CurrentMatch->ClaimGG(OwningShooter);
 	}
@@ -306,7 +305,6 @@ void AGAttack::Nullify()
 	if (PossibleCharacter)
 	{
 		PossibleCharacter->NullifySecondary();
-		GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::White, TEXT("gone null"));
 		this->Destroy();
 	}
 }
