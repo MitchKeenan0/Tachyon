@@ -137,8 +137,12 @@ void AGammaCharacter::BeginPlay()
 	// To reduce jitter
 	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), TEXT("p.NetEnableMoveCombining 0")); /// is this needed?
 
-	AddMovementInput(FVector(0.0f, 0.0f, 1.0f), 1.0f);
-	GetCharacterMovement()->AddImpulse(FVector::UpVector * 100.0f);
+	// Camera needs some movement to wake up
+	if (Controller && Controller->IsLocalController())
+	{
+		AddMovementInput(FVector(0.0f, 0.0f, 1.0f), 1.0f);
+		GetCharacterMovement()->AddImpulse(FVector::UpVector * 100.0f);
+	}
 
 	ResetLocator();
 
@@ -171,6 +175,12 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		{
 			Controller->SetControlRotation(FRotator(0.0f, 0.0f, 0.0f));
 		}
+
+		// Locator scaling
+		if (Controller->IsLocalController())
+		{
+			LocatorScaling();
+		}
 	}
 
 	// Move timing and clamp
@@ -183,12 +193,6 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			GetCharacterMovement()->Velocity.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier * TimeScalar);
 
 		MoveTimer += GetWorld()->DeltaTimeSeconds;
-	}
-
-	if (GetController())
-	{
-		// Locator
-		LocatorScaling();
 	}
 }
 
@@ -365,11 +369,12 @@ void AGammaCharacter::MoveRight(float Value)
 		MoveByDot = 1.0f;
 	}
 
+	AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value * MoveByDot);
 	// Abide moves per second
-	if (MoveTimer >= (1 / MovesPerSecond))
+	/*if (MoveTimer >= (1 / MovesPerSecond))
 	{
 		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value * MoveByDot);
-	}
+	}*/
 }
 
 // MOVE UP / DOWN
@@ -668,7 +673,8 @@ void AGammaCharacter::ReleaseAttack()
 	// Less-clean burn
 	MoveParticles->bSuppressSpawning = false;
 
-	if (AttackClass && (ActiveAttack == nullptr || bMultipleAttacks) && (Charge > 0.0f))
+	if (AttackClass && (ActiveAttack == nullptr || bMultipleAttacks) && (Charge > 0.0f)
+		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.5f))
 	{
 		// Clean up previous flash
 		if (ActiveFlash)
@@ -786,8 +792,6 @@ bool AGammaCharacter::ServerFireSecondary_Validate()
 // REMATCH
 void AGammaCharacter::Rematch()
 {
-	
-
 	if (Role < ROLE_Authority)
 	{
 		ServerRematch();
