@@ -77,6 +77,12 @@ AGammaCharacter::AGammaCharacter()
 	AttackScene = CreateDefaultSubobject<USceneComponent>(TEXT("AttackScene"));
 	AttackScene->SetupAttachment(RootComponent);
 
+	Locator = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("Locator"));
+	Locator->SetupAttachment(RootComponent);
+	Locator->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Locator->CanCharacterStepUpOn = ECanBeCharacterBase::ECB_No;
+	Locator->bGenerateOverlapEvents = 0;
+
 	MoveParticles = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("MoveParticles"));
 	MoveParticles->SetupAttachment(RootComponent);
 	MoveParticles->bAutoActivate = false;
@@ -134,6 +140,8 @@ void AGammaCharacter::BeginPlay()
 	AddMovementInput(FVector(0.0f, 0.0f, 1.0f), 1.0f);
 	GetCharacterMovement()->AddImpulse(FVector::UpVector * 100.0f);
 
+	ResetLocator();
+
 	//GetCameraBoom()->TargetArmLength = 10000.0f;
 }
 
@@ -175,6 +183,12 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			GetCharacterMovement()->Velocity.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier * TimeScalar);
 
 		MoveTimer += GetWorld()->DeltaTimeSeconds;
+	}
+
+	if (GetController())
+	{
+		// Locator
+		LocatorScaling();
 	}
 }
 
@@ -257,6 +271,30 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * CameraTiltValue, DeltaTime, CameraTiltSpeed); // yaw
 			SideViewCameraComponent->SetRelativeRotation(FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue);
 		}
+	}
+}
+
+
+void AGammaCharacter::ResetLocator()
+{
+	Locator->SetRelativeScale3D(FVector(25.0f, 25.0f, 25.0f));
+}
+
+void AGammaCharacter::LocatorScaling()
+{
+	// Player locator
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) >= 0.7f)
+	{
+		// Scaling down
+		if (Locator->RelativeScale3D.Size() >= 0.1f)
+		{
+			FVector ShrinkingSize = Locator->RelativeScale3D * 0.9f;
+			Locator->SetRelativeScale3D(ShrinkingSize);
+		}
+	}
+	else
+	{
+		ResetLocator();
 	}
 }
 
@@ -584,7 +622,7 @@ void AGammaCharacter::InitAttack()
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.5f))
 	{
 		// Clean up previous attack
-		if (ActiveAttack)
+		if (ActiveAttack && !bMultipleAttacks)
 		{
 			ActiveAttack->Destroy();
 			ActiveAttack = nullptr;
@@ -630,7 +668,7 @@ void AGammaCharacter::ReleaseAttack()
 	// Less-clean burn
 	MoveParticles->bSuppressSpawning = false;
 
-	if (!ActiveAttack && Charge > 0.0f && AttackClass && ActiveAttack == nullptr)
+	if ((ActiveAttack == nullptr || bMultipleAttacks) && Charge > 0.0f && AttackClass)
 	{
 		// Clean up previous flash
 		if (ActiveFlash)
@@ -653,10 +691,10 @@ void AGammaCharacter::ReleaseAttack()
 		// Spawning
 		if (HasAuthority())
 		{
-			if (AttackClass != nullptr)
+			if (AttackClass != nullptr || bMultipleAttacks)
 			{
 				ActiveAttack = Cast<AGAttack>(GetWorld()->SpawnActor<AGAttack>(AttackClass, FirePosition, FireRotation, SpawnParams));
-				ActiveAttack->InitAttack(this, Charge, InputZ);
+				ActiveAttack->InitAttack(this, 1, InputZ);
 				
 				if (ActiveAttack->LockedEmitPoint)
 				{

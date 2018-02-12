@@ -108,6 +108,10 @@ protected:
 	void MoveRight(float Value);
 	void MoveUp(float Value);
 
+	// Locator handling
+	void ResetLocator();
+	void LocatorScaling();
+
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
 
@@ -130,6 +134,9 @@ protected:
 
 	// ATTACK STUFF ////////////////////////////////////////////////
 	// Attack objects
+	UPROPERTY(EditDefaultsOnly)
+	bool bMultipleAttacks = false;
+
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AGFlash> FlashClass;
 	class AGFlash* ActiveFlash = nullptr;
@@ -201,6 +208,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class USceneComponent* AttackScene = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UPaperSpriteComponent* Locator = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UParticleSystemComponent* MoveParticles = nullptr;
