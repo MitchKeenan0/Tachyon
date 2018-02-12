@@ -4,6 +4,7 @@
 
 #include "Engine.h"
 #include "AIController.h"
+#include "GAttack.h"
 #include "GammaCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GammaAIController.generated.h"
@@ -29,6 +30,18 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void NavigateTo(FVector Target);
+
+	UFUNCTION(BlueprintCallable)
+	void Tactical(FVector Target);
+
+	UFUNCTION(BlueprintCallable)
+	bool ReactionTiming(float DeltaTime);
+
+	/*UFUNCTION(BlueprintCallable)
+	void InitAttack();
+
+	UFUNCTION(BlueprintCallable)
+	void FireAttack();*/
 	
 protected:
 	// Called when the game starts or when spawned
@@ -46,8 +59,15 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	float Aggression = 0.5f;
 
+	UPROPERTY(EditDefaultsOnly)
+	float ReactionTime = 0.2f;
+
+	UPROPERTY(EditDefaultsOnly)
+	float ShootingAngle = 45.0f;
+
 private:
 	// Quiet variables
+	float ReactionTimer = 0.0f;
 	bool bCourseLayedIn = false;
 	FVector LocationTarget = FVector::ZeroVector;
 	FVector MoveInput = FVector::ZeroVector;

@@ -82,6 +82,9 @@ public:
 	void EraseCharge() { Charge = 0.0f; }
 
 	UFUNCTION(BlueprintCallable)
+	float GetCharge() { return Charge; }
+
+	UFUNCTION(BlueprintCallable)
 	float GetChargePercentage();
 
 	UFUNCTION(BlueprintCallable)
@@ -169,7 +172,9 @@ protected:
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerSetX(float Value);
 	
+	public:
 	void SetZ(float Value);
+	protected:
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerSetZ(float Value);
 
@@ -184,6 +189,9 @@ protected:
 	void SetAim();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerSetAim();
+
+public:
+	AActor* GetActiveFlash() { return ActiveFlash; }
 
 	void InitAttack();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
@@ -202,10 +210,9 @@ protected:
 	void ServerFireSecondary();
 
 
-
+protected:
 	// BLUEPRINT COMPONENTS ///////////////////////////////////////
 	//
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class USceneComponent* AttackScene = nullptr;
 

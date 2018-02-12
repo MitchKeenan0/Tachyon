@@ -704,6 +704,8 @@ void AGammaCharacter::ReleaseAttack()
 				ActiveAttack = Cast<AGAttack>(GetWorld()->SpawnActor<AGAttack>(AttackClass, FirePosition, FireRotation, SpawnParams));
 				ActiveAttack->InitAttack(this, 1, InputZ);
 				
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("B A N G"));
+
 				if (ActiveAttack->LockedEmitPoint)
 				{
 					ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World

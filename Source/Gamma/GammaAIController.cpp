@@ -14,16 +14,18 @@ void AGammaAIController::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	// Locating player
-	if (!Player)
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
+	if (PlayersArray.Num() > 0)
 	{
-		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
-		if (PlayersArray.Num() > 0)
-		{
-			Player = Cast<AGammaCharacter>(PlayersArray[0]);
-		}
+		Player = Cast<AGammaCharacter>(PlayersArray[0]);
 	}
-	else
+	if (Player->IsValidLowLevel())
 	{
+		if (ReactionTiming(DeltaSeconds))
+		{
+			Tactical(FVector::ZeroVector);
+		}
+
 		// Get some moves
 		if (LocationTarget == FVector::ZeroVector)
 		{
@@ -34,6 +36,57 @@ void AGammaAIController::Tick(float DeltaSeconds)
 			NavigateTo(LocationTarget);
 		}
 	}
+}
+
+
+bool AGammaAIController::ReactionTiming(float DeltaTime)
+{
+	bool Result = false;
+	ReactionTimer += DeltaTime;
+	if (ReactionTimer >= ReactionTime)
+	{
+		Result = true;
+		float RandomOffset = FMath::FRandRange(-ReactionTime, 0.0f);
+		ReactionTimer = RandomOffset;
+	}
+
+	return Result;
+}
+
+
+void AGammaAIController::Tactical(FVector Target)
+{
+	// Get our Gamma Character
+	APawn* MyPawn = GetPawn();
+	AGammaCharacter* MyCharacter = Cast<AGammaCharacter>(MyPawn);
+
+	if (MyCharacter->GetCharge() < 4)
+	{
+		MyCharacter->RaiseCharge();
+	}
+
+	// Shooting
+
+	// Try forward
+	FVector ToPlayer = Player->GetActorLocation() - GetPawn()->GetActorLocation();
+	float VerticalDir = FMath::FloorToFloat(FMath::Clamp(ToPlayer.Z, -1.0f, 1.0f));
+	float DotToPlayer = FVector::DotProduct(MyPawn->GetActorForwardVector(), ToPlayer);
+	float AngleToPlayer = FMath::Acos(DotToPlayer);
+	if (AngleToPlayer < ShootingAngle)
+	{
+		if (MyCharacter->GetActiveFlash() != nullptr)
+		{
+			MyCharacter->SetZ(VerticalDir);
+			MyCharacter->InitAttack();
+		}
+		else
+		{
+			MyCharacter->ReleaseAttack();
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("Shooting !!!"));
+		}
+	}
+
+	
 }
 
 

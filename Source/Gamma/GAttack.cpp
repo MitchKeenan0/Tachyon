@@ -137,19 +137,16 @@ void AGAttack::Tick(float DeltaTime)
 	}
 
 	// End-of-life activities
-	float CloseEnough = DynamicLifetime * 0.95f;
-	if (LifeTimer >= CloseEnough)
+	float CloseEnough = DynamicLifetime * 0.99f;
+	if (LifeTimer >= CloseEnough || this->IsPendingKillOrUnreachable())
 	{
 		AttackParticles->bSuppressSpawning = true;
 		
-		if (LifeTimer > CloseEnough + 0.03f)
+		AGammaCharacter* PotentialGamma = Cast<AGammaCharacter>(OwningShooter);
+		if (PotentialGamma)
 		{
-			AGammaCharacter* PotentialGamma = Cast<AGammaCharacter>(OwningShooter);
-			if (PotentialGamma)
-			{
-				PotentialGamma->NullifyAttack();
-				Destroy();
-			}
+			PotentialGamma->NullifyAttack();
+			Destroy();
 		}
 	}
 }
@@ -208,6 +205,11 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		HitActor = Hit.Actor.Get();
 		if (HitActor)
 		{
+			if (HitActor->ActorHasTag("Shield"))
+			{
+				bLethal = false;
+			}
+
 			// do some checks to make sure its a player
 			if (!HitActor->ActorHasTag("Attack"))
 			{
