@@ -618,7 +618,7 @@ void AGammaCharacter::InitAttack()
 	// Clean burn
 	MoveParticles->bSuppressSpawning = true;
 
-	if (FlashClass && ActiveFlash == nullptr 
+	if ((Charge > 0.0f) && FlashClass && (ActiveFlash == nullptr)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.5f))
 	{
 		// Clean up previous attack
@@ -668,7 +668,7 @@ void AGammaCharacter::ReleaseAttack()
 	// Less-clean burn
 	MoveParticles->bSuppressSpawning = false;
 
-	if ((ActiveAttack == nullptr || bMultipleAttacks) && Charge > 0.0f && AttackClass)
+	if (AttackClass && (ActiveAttack == nullptr || bMultipleAttacks) && (Charge > 0.0f))
 	{
 		// Clean up previous flash
 		if (ActiveFlash)

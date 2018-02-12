@@ -25,6 +25,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AGammaCharacter> PeaceGiant;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<AGammaCharacter> Baetylus;
+
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<AGammaCharacter*> Roster;*/
 
