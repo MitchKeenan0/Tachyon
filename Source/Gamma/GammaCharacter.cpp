@@ -354,27 +354,26 @@ void AGammaCharacter::MoveRight(float Value)
 		SetX(Value);
 	}
 
-	FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
-	FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
+	if (MoveTimer >= (1 / MovesPerSecond))
+	{
+		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
+		FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
 
-	float MoveByDot = 0.0f;
-	float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
-	if (MoveInput != FVector::ZeroVector 
-		&& DotToInput <= 0.99f)
-	{
-		MoveByDot = 120000.0f;
-	}
-	else if (DotToInput > 0.99f)
-	{
-		MoveByDot = 1.0f;
-	}
+		float MoveByDot = 0.0f;
+		float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
+		if (MoveInput != FVector::ZeroVector
+			&& DotToInput <= 0.99f)
+		{
+			MoveByDot = 120000.0f;
+		}
+		else if (DotToInput > 0.99f)
+		{
+			MoveByDot = 1.0f;
+		}
 
-	AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value * MoveByDot);
-	// Abide moves per second
-	/*if (MoveTimer >= (1 / MovesPerSecond))
-	{
 		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value * MoveByDot);
-	}*/
+	}
+	ForceNetUpdate();
 }
 
 // MOVE UP / DOWN
@@ -407,6 +406,8 @@ void AGammaCharacter::MoveUp(float Value)
 		
 		AddMovementInput(FVector(0.0f, 0.0f, 1.0f), Value * MoveByDot);
 	}
+
+	ForceNetUpdate();
 }
 
 // SET X & Z SERVERSIDE
@@ -486,7 +487,8 @@ void AGammaCharacter::NewMoveKick()
 		
 		GetWorld()->SpawnActor<AActor>
 			(BoostClass, SpawnLocation, PlayerVelRotator, SpawnParams);
-		//Boost->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+		
+		ForceNetUpdate();
 
 		//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
 		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
