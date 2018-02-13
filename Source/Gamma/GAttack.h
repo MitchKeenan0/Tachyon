@@ -159,6 +159,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AGDamage> DamageClass = nullptr;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UMaterial* DamageMaterial = nullptr;
+
 
 	// Replicated Variables /////////////////////////////////////////
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)

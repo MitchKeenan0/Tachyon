@@ -7,6 +7,7 @@
 #include "ParticleDefinitions.h"
 #include "Particles/ParticleSystem.h"
 #include "PaperSpriteComponent.h"
+#include "PaperFlipbookComponent.h"
 
 AGAttack::AGAttack()
 {
@@ -224,7 +225,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 	}
 
 	// Consequences
-	if (bHit)// && (HitTimer >= (1.0f / HitsPerSecond)))
+	if (bHit)
 	{
 		// Damage vfx
 		SpawnDamage(HitActor, HitActor->GetActorLocation());
@@ -245,9 +246,20 @@ void AGAttack::DetectHit(FVector RaycastVector)
 
 void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 {
-	if (DamageClass)
+	if (DamageClass && DamageMaterial)
 	{
-		// Spawning actor
+		// Calcify HitActor
+		UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
+			(HitActor->FindComponentByClass<UPaperFlipbookComponent>());
+		if (ActorFlipbook)
+		{
+			float CurrentPosition = FMath::FloorToInt(ActorFlipbook->GetPlaybackPosition());
+			//ActorFlipbook->SetPlayRate(1);
+			ActorFlipbook->SetPlaybackPositionInFrames(1, true);
+			///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("Got Flipbook"));
+		}
+
+		// Spawning damage fx
 		FActorSpawnParameters SpawnParams;
 		FRotator Forward = (HitActor->GetActorLocation() - OwningShooter->GetActorLocation()).Rotation();
 		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, HitPoint, Forward, SpawnParams));

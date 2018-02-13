@@ -737,7 +737,7 @@ bool AGammaCharacter::ServerReleaseAttack_Validate()
 // SECONDARY
 void AGammaCharacter::FireSecondary()
 {
-	if (!ActiveAttack && !ActiveSecondary
+	if (!ActiveSecondary && SecondaryClass
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.5f))
 	{
 		// Clean burn
@@ -819,6 +819,19 @@ void AGammaCharacter::OnShieldBeginOverlap(UPrimitiveComponent* OverlappedCompon
 	}
 	
 	// attack should check for shield to make reflect fx
+}
+
+
+void AGammaCharacter::ResetFlipbook()
+{
+	// Calcify HitActor
+	UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
+		(this->FindComponentByClass<UPaperFlipbookComponent>());
+	if (ActorFlipbook)
+	{
+		ActorFlipbook->SetPlaybackPositionInFrames(0, true);
+		ActorFlipbook->SetPlayRate(1);
+	}
 }
 
 

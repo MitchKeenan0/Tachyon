@@ -88,6 +88,9 @@ public:
 	float GetChargePercentage();
 
 	UFUNCTION(BlueprintCallable)
+	void ResetFlipbook();
+
+	UFUNCTION(BlueprintCallable)
 	void ClearFlash() 
 	{ 
 		if (ActiveFlash)
