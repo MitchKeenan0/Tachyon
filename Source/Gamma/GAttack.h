@@ -31,6 +31,7 @@ public:
 	bool GetHit() { return bHit; }
 	bool GetLethal() { return bLethal; }
 
+	UFUNCTION(BlueprintCallable)
 	void TakeGG();
 
 	UFUNCTION(BlueprintCallable)
@@ -38,6 +39,9 @@ public:
 
 
 	// Public variables
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bSecondary = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool LockedEmitPoint = true;
 
@@ -63,8 +67,10 @@ protected:
 
 	void DetectHit(FVector RaycastVector);
 
+	UFUNCTION(BlueprintCallable)
 	void SpawnDamage(AActor* HitActor, FVector HitPoint);
 
+	UFUNCTION(BlueprintCallable)
 	void ApplyKnockback(AActor* HitActor);
 
 

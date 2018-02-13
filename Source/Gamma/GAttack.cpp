@@ -67,9 +67,12 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	if (MagnitudeTimeScalar != 0.0f)
 	{
 		DynamicLifetime = DurationTime * (1.0f + (AttackMagnitude * MagnitudeTimeScalar));
-		SetLifeSpan(DynamicLifetime);
 	}
-	else { DynamicLifetime = DurationTime; }
+	else 
+	{ 
+		DynamicLifetime = DurationTime;
+	}
+	SetLifeSpan(DynamicLifetime);
 
 	//// Last-second update to direction after fire
 	float DirRecalc = ShotDirection * ShootingAngle;
@@ -131,24 +134,33 @@ void AGAttack::Tick(float DeltaTime)
 	LifeTimer += DeltaTime;
 	HitTimer += DeltaTime;
 
+	// End-of-life activities
+	float CloseEnough = DynamicLifetime * 0.97f;
+	if (LifeTimer >= CloseEnough || this->IsPendingKillOrUnreachable())
+	{
+		AttackParticles->bSuppressSpawning = true;
+
+		AGammaCharacter* PotentialGamma = Cast<AGammaCharacter>(OwningShooter);
+		if (PotentialGamma)
+		{
+			// Clean up shooter's pointer
+			if (bSecondary)
+			{
+				PotentialGamma->NullifySecondary();
+			}
+			else
+			{
+				PotentialGamma->NullifyAttack();
+			}
+			
+			Destroy();
+		}
+	}
+
 	// Healthy attack activities
 	if (bLethal)
 	{
 		UpdateAttack(DeltaTime);
-	}
-
-	// End-of-life activities
-	float CloseEnough = DynamicLifetime * 0.99f;
-	if (LifeTimer >= CloseEnough || this->IsPendingKillOrUnreachable())
-	{
-		AttackParticles->bSuppressSpawning = true;
-		
-		AGammaCharacter* PotentialGamma = Cast<AGammaCharacter>(OwningShooter);
-		if (PotentialGamma)
-		{
-			PotentialGamma->NullifyAttack();
-			Destroy();
-		}
 	}
 }
 

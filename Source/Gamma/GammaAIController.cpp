@@ -60,33 +60,38 @@ void AGammaAIController::Tactical(FVector Target)
 	APawn* MyPawn = GetPawn();
 	AGammaCharacter* MyCharacter = Cast<AGammaCharacter>(MyPawn);
 
-	if (MyCharacter->GetCharge() < 4)
+	float RandomDc = FMath::FRandRange(0.0f, 10.0f);
+
+	// Charge
+	if (RandomDc < 3.9f)
 	{
-		MyCharacter->RaiseCharge();
+		if (MyCharacter->GetCharge() < 4)
+		{
+			MyCharacter->RaiseCharge();
+		}
 	}
 
 	// Shooting
-
-	// Try forward
-	FVector ToPlayer = Player->GetActorLocation() - GetPawn()->GetActorLocation();
-	float VerticalDir = FMath::FloorToFloat(FMath::Clamp(ToPlayer.Z, -1.0f, 1.0f));
-	float DotToPlayer = FVector::DotProduct(MyPawn->GetActorForwardVector(), ToPlayer);
-	float AngleToPlayer = FMath::Acos(DotToPlayer);
-	if (AngleToPlayer < ShootingAngle)
+	else
 	{
-		if (MyCharacter->GetActiveFlash() != nullptr)
+		FVector ToPlayer = Player->GetActorLocation() - GetPawn()->GetActorLocation();
+		float VerticalDir = FMath::FloorToFloat(FMath::Clamp(ToPlayer.Z, -1.0f, 1.0f));
+		float DotToPlayer = FVector::DotProduct(MyPawn->GetActorForwardVector(), ToPlayer);
+		float AngleToPlayer = FMath::Acos(DotToPlayer);
+		if (AngleToPlayer < ShootingAngle)
 		{
-			MyCharacter->SetZ(VerticalDir);
-			MyCharacter->InitAttack();
-		}
-		else
-		{
-			MyCharacter->ReleaseAttack();
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("Shooting !!!"));
+			if (MyCharacter->GetActiveFlash() != nullptr)
+			{
+				MyCharacter->SetZ(VerticalDir);
+				MyCharacter->InitAttack();
+			}
+			else
+			{
+				MyCharacter->ReleaseAttack();
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("Shooting !!!"));
+			}
 		}
 	}
-
-	
 }
 
 

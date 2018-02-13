@@ -704,7 +704,7 @@ void AGammaCharacter::ReleaseAttack()
 				ActiveAttack = Cast<AGAttack>(GetWorld()->SpawnActor<AGAttack>(AttackClass, FirePosition, FireRotation, SpawnParams));
 				ActiveAttack->InitAttack(this, 1, InputZ);
 				
-				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("B A N G"));
+				///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("B A N G"));
 
 				if (ActiveAttack->LockedEmitPoint)
 				{
@@ -737,7 +737,7 @@ bool AGammaCharacter::ServerReleaseAttack_Validate()
 // SECONDARY
 void AGammaCharacter::FireSecondary()
 {
-	if (!ActiveSecondary && SecondaryClass
+	if (SecondaryClass && (ActiveSecondary == nullptr)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.5f))
 	{
 		// Clean burn
@@ -752,29 +752,22 @@ void AGammaCharacter::FireSecondary()
 		// Spawning
 		if (HasAuthority())
 		{
-			if (SecondaryClass != nullptr)
+			ActiveSecondary = GetWorld()->SpawnActor<AGAttack>(SecondaryClass, FirePosition, FireRotation, SpawnParams); //  Cast<AActor>());
+
+			if (ActiveSecondary)
 			{
-				ActiveSecondary = GetWorld()->SpawnActor<AGAttack>(SecondaryClass, FirePosition, FireRotation, SpawnParams); //  Cast<AActor>());
-				
-				if (ActiveSecondary)
+				//bSecondaryActive = true;
+
+				AGAttack* PotentialAttack = Cast<AGAttack>(ActiveSecondary);
+				if (PotentialAttack)
 				{
-					//bSecondaryActive = true;
+					PotentialAttack->InitAttack(this, 1, InputZ);
 
-					AGAttack* PotentialAttack = Cast<AGAttack>(ActiveSecondary);
-					if (PotentialAttack)
+					if (PotentialAttack->LockedEmitPoint)
 					{
-						PotentialAttack->InitAttack(this, 1, InputZ);
-
-						if (PotentialAttack->LockedEmitPoint)
-						{
-							PotentialAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
-						}
+						PotentialAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
 					}
 				}
-			}
-			else
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No secondary class to spawn"));
 			}
 		}
 	}
