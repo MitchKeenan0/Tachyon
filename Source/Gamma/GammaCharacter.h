@@ -115,6 +115,7 @@ protected:
 	void MoveUp(float Value);
 
 	// Locator handling
+	UFUNCTION(BlueprintCallable)
 	void ResetLocator();
 	void LocatorScaling();
 

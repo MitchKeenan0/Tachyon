@@ -77,20 +77,25 @@ void AGammaAIController::Tactical(FVector Target)
 		FVector LocalForward = MyCharacter->GetActorForwardVector();
 		FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
 		float VerticalDir = FMath::FloorToFloat(FMath::Clamp(ToPlayer.Z, -1.0f, 1.0f));
+		//float LateralDir = FMath::FloorToFloat(FMath::Clamp(ToPlayer.X, -1.0f, 1.0f));
+		
 		float DotToPlayer = FVector::DotProduct(LocalForward, ToPlayer);
-		float AngleToPlayer = FMath::Acos(DotToPlayer);
-		if (AngleToPlayer <= ShootingAngle)
+		if (DotToPlayer > 0.0f)
 		{
-			if (MyCharacter->GetActiveFlash() != nullptr)
+			float AngleToPlayer = FMath::Acos(DotToPlayer);
+			if (AngleToPlayer <= ShootingAngle)
 			{
-				MyCharacter->SetZ(VerticalDir);
-				MyCharacter->InitAttack();
-			}
-			else
-			{
-				MyCharacter->SetZ(VerticalDir);
-				MyCharacter->ReleaseAttack();
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("AI Z: %f"), VerticalDir));
+				if (MyCharacter->GetActiveFlash() != nullptr)
+				{
+					MyCharacter->SetZ(VerticalDir);
+					MyCharacter->InitAttack();
+				}
+				else
+				{
+					MyCharacter->SetZ(VerticalDir);
+					MyCharacter->ReleaseAttack();
+					///GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("AI Z: %f"), VerticalDir));
+				}
 			}
 		}
 	}
@@ -106,9 +111,9 @@ FVector AGammaAIController::GetNewLocationTarget()
 	
 	// Getting spicy
 	FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
-	FVector RandomOffset = (FMath::VRand() * MoveRange) * Aggression;
+	FVector RandomOffset = (FMath::VRand() * MoveRange) * (1 / Aggression);
 	Result = PlayerAtSpeed + RandomOffset;
-	Result.Z *= 0.68f;
+	Result.Z *= 0.8f;
 
 	// And serve
 	bCourseLayedIn = true;
@@ -124,7 +129,7 @@ void AGammaAIController::NavigateTo(FVector Target)
 	FVector ToTarget = (Target - MyLocation);
 
 	// Have we reached target?
-	if (ToTarget.Size() < 50.0f)
+	if (ToTarget.Size() < 550.0f)
 	{
 		LocationTarget = FVector::ZeroVector;
 		bCourseLayedIn = false;
