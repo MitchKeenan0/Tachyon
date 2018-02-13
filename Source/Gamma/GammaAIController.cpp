@@ -74,11 +74,12 @@ void AGammaAIController::Tactical(FVector Target)
 	// Shooting
 	else
 	{
-		FVector ToPlayer = Player->GetActorLocation() - GetPawn()->GetActorLocation();
+		FVector LocalForward = MyCharacter->GetActorForwardVector();
+		FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
 		float VerticalDir = FMath::FloorToFloat(FMath::Clamp(ToPlayer.Z, -1.0f, 1.0f));
-		float DotToPlayer = FVector::DotProduct(MyPawn->GetActorForwardVector(), ToPlayer);
+		float DotToPlayer = FVector::DotProduct(LocalForward, ToPlayer);
 		float AngleToPlayer = FMath::Acos(DotToPlayer);
-		if (AngleToPlayer < ShootingAngle)
+		if (AngleToPlayer <= ShootingAngle)
 		{
 			if (MyCharacter->GetActiveFlash() != nullptr)
 			{
@@ -87,8 +88,9 @@ void AGammaAIController::Tactical(FVector Target)
 			}
 			else
 			{
+				MyCharacter->SetZ(VerticalDir);
 				MyCharacter->ReleaseAttack();
-				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("Shooting !!!"));
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("AI Z: %f"), VerticalDir));
 			}
 		}
 	}
