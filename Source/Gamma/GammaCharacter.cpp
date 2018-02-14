@@ -481,12 +481,13 @@ void AGammaCharacter::NewMoveKick()
 		FActorSpawnParameters SpawnParams;
 		FVector PlayerVelocity = GetCharacterMovement()->Velocity;
 		FRotator PlayerVelRotator = PlayerVelocity.Rotation();
+		FRotator InputRotator = MoveInputVector.Rotation();
 
 		PlayerVelocity.Z *= 0.01f;
-		FVector SpawnLocation = GetActorLocation(); // +(PlayerVelocity / 3);
+		FVector SpawnLocation = GetActorLocation(); /// + (PlayerVelocity / 3);
 		
 		GetWorld()->SpawnActor<AActor>
-			(BoostClass, SpawnLocation, PlayerVelRotator, SpawnParams);
+			(BoostClass, SpawnLocation, InputRotator, SpawnParams); /// PlayerVelRotator
 		
 		ForceNetUpdate();
 
