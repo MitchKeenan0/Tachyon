@@ -348,7 +348,7 @@ void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 	if (!bHit && bLethal && (OtherActor != OwningShooter))
 	{
 		// Consequences
-		if (!OtherActor->ActorHasTag("Attack"))// && (HitTimer >= (1.0f / HitsPerSecond)))
+		if (!OtherActor->ActorHasTag("Attack")) // && (HitTimer >= (1.0f / HitsPerSecond)))
 		{
 			bHit = true;
 
