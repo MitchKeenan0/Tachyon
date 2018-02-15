@@ -67,6 +67,8 @@ protected:
 
 private:
 	// Quiet variables
+	APawn* MyPawn = nullptr;
+	AGammaCharacter* MyCharacter = nullptr;
 	float ReactionTimer = 0.0f;
 	bool bCourseLayedIn = false;
 	FVector LocationTarget = FVector::ZeroVector;

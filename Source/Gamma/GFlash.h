@@ -7,6 +7,8 @@
 #include "GameFramework/Actor.h"
 #include "GFlash.generated.h"
 
+class AGammaCharacter;
+
 UCLASS()
 class GAMMA_API AGFlash : public AActor
 {
@@ -15,6 +17,7 @@ class GAMMA_API AGFlash : public AActor
 public:	
 	// Sets default values for this actor's properties
 	AGFlash();
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -25,8 +28,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float FlashMaxScale = 5.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float FlashMaxPitch = 5.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float FlashMaxVolume = 5.0f;
 
@@ -46,6 +51,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	
+private:
+	float FlashTimer = 0.0f;
 	
 };

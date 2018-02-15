@@ -6,6 +6,10 @@
 void AGammaAIController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Get our Gamma Character
+	MyPawn = GetPawn();
+	MyCharacter = Cast<AGammaCharacter>(MyPawn);
 }
 
 
@@ -13,35 +17,54 @@ void AGammaAIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	// Locating player
-	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
-	if (PlayersArray.Num() > 0)
+	if (!MyCharacter)
 	{
-		if (PlayersArray[0] != GetPawn())
+		MyPawn = GetPawn();
+		MyCharacter = Cast<AGammaCharacter>(MyPawn);
+	}
+	else
+	{
+		// Locating player
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
+		if (PlayersArray.Num() > 0)
 		{
-			AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(PlayersArray[0]);
-			if (PotentialPlayer && PotentialPlayer->IsValidLowLevel())
+			for (int i = 0; i < PlayersArray.Num(); ++i)
 			{
-				Player = PotentialPlayer;
+				if (PlayersArray[i] != GetPawn())
+				{
+					AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(PlayersArray[i]);
+					if (PotentialPlayer && PotentialPlayer->IsValidLowLevel())
+					{
+						Player = PotentialPlayer;
+						break;
+					}
+				}
 			}
 		}
-	}
-	if (Player->IsValidLowLevel())
-	{
-		// Got a player - stunt on'em
-		if (ReactionTiming(DeltaSeconds))
+		if (Player->IsValidLowLevel())
 		{
-			Tactical(FVector::ZeroVector);
-		}
+			// Got a player - stunt on'em
+			// Update prefire
+			if ((MyCharacter->GetActiveFlash()->IsValidLowLevel()))
+			{
+				MyCharacter->PrefireTiming();
+			}
 
-		// Get some moves
-		if (LocationTarget == FVector::ZeroVector)
-		{
-			GetNewLocationTarget();
-		}
-		else
-		{
-			NavigateTo(LocationTarget);
+			// Reation time
+			if (ReactionTiming(DeltaSeconds))
+			{
+				Tactical(FVector::ZeroVector);
+			}
+
+			// Get some moves
+			if (LocationTarget == FVector::ZeroVector)
+			{
+				GetNewLocationTarget();
+			}
+			else
+			{
+				NavigateTo(LocationTarget);
+			}
 		}
 	}
 }
@@ -64,10 +87,6 @@ bool AGammaAIController::ReactionTiming(float DeltaTime)
 
 void AGammaAIController::Tactical(FVector Target)
 {
-	// Get our Gamma Character
-	APawn* MyPawn = GetPawn();
-	AGammaCharacter* MyCharacter = Cast<AGammaCharacter>(MyPawn);
-
 	// Random number to evoke choice
 	float RandomDc = FMath::FRandRange(0.0f, 10.0f);
 
@@ -98,19 +117,11 @@ void AGammaAIController::Tactical(FVector Target)
 			{
 
 				// Firing
-				if (MyCharacter->GetActiveFlash() != nullptr)
+				if (!MyCharacter->GetActiveFlash()->IsValidLowLevel())
 				{
 					MyCharacter->SetZ(VerticalDir);
 					MyCharacter->InitAttack();
 				}
-				else
-				{
-					MyCharacter->SetZ(VerticalDir);
-					MyCharacter->ReleaseAttack();
-					///GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("AI Z: %f"), VerticalDir));
-				}
-
-				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("B A N G"));
 			}
 		}
 	}

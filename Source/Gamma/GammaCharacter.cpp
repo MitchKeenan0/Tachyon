@@ -115,7 +115,7 @@ void AGammaCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 {
 	Super::SetupPlayerInputComponent(InputComponent);
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AGammaCharacter::InitAttack);
-	PlayerInputComponent->BindAction("Attack", IE_Released, this, &AGammaCharacter::ReleaseAttack);
+	//PlayerInputComponent->BindAction("Attack", IE_Released, this, &AGammaCharacter::ReleaseAttack);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AGammaCharacter::RaiseCharge);
 	PlayerInputComponent->BindAction("Secondary", IE_Pressed, this, &AGammaCharacter::FireSecondary);
 	PlayerInputComponent->BindAction("Rematch", IE_Pressed, this, &AGammaCharacter::Rematch);
@@ -158,6 +158,12 @@ void AGammaCharacter::BeginPlay()
 // MAIN CHARACTER UPDATE
 void AGammaCharacter::UpdateCharacter(float DeltaTime)
 {
+	// Update prefire
+	if ((GetActiveFlash() != nullptr) && GetActiveFlash()->IsValidLowLevel())
+	{
+		PrefireTiming();
+	}
+
 	// Update animation to match the motion
 	//UpdateAnimation();
 
@@ -286,7 +292,10 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 void AGammaCharacter::ResetLocator()
 {
 	Locator->SetRelativeScale3D(FVector(25.0f, 25.0f, 25.0f));
+
+	ClearFlash();
 }
+
 
 void AGammaCharacter::LocatorScaling()
 {
@@ -389,6 +398,7 @@ void AGammaCharacter::MoveRight(float Value)
 
 		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value * MoveByDot);
 	}
+
 	ForceNetUpdate();
 }
 
@@ -522,7 +532,7 @@ bool AGammaCharacter::ServerNewMoveKick_Validate()
 	return true;
 }
 
-// KICK-PARTICLES
+// BOOST PARTICLES
 void AGammaCharacter::UpdateMoveParticles(FVector Move)
 {
 	// Direct particles on vector of movement
@@ -622,6 +632,11 @@ void AGammaCharacter::RaiseCharge()
 			PlayerSound->Play();
 		}
 
+		// Spawn charge vfx
+		FActorSpawnParameters SpawnParams;
+		ActiveChargeParticles = Cast<AActor>(GetWorld()->SpawnActor<AActor>(ChargeParticles, GetActorLocation(), GetActorRotation(), SpawnParams));
+		ActiveChargeParticles->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+
 		//GEngine->AddOnScreenDebugMessage(-1, 0.68f, FColor::White, FString::Printf(TEXT("%f % CHARGE"), Charge), true, FVector2D::UnitVector * 2);
 
 
@@ -663,13 +678,8 @@ void AGammaCharacter::InitAttack()
 		// Spawning
 		if (HasAuthority())
 		{
-			FActorSpawnParameters SpawnParams;
-			// Spawn charge vfx
-			ActiveChargeParticles = Cast<AActor>(GetWorld()->SpawnActor<AActor>
-				(ChargeParticles, GetActorLocation(), GetActorRotation(), SpawnParams));
-			ActiveChargeParticles->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
-
 			// Spawn eye heat
+			FActorSpawnParameters SpawnParams;
 			ActiveFlash = Cast<AGFlash>(GetWorld()->SpawnActor<AGFlash>(FlashClass, FirePosition, FireRotation, SpawnParams));
 			ActiveFlash->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
 		}
@@ -805,6 +815,36 @@ bool AGammaCharacter::ServerFireSecondary_Validate()
 {
 	return true;
 }
+
+
+// PREFIRE TIMING
+void AGammaCharacter::PrefireTiming()
+{
+	if ((PrefireTimer >= PrefireTime)
+		&& (Charge > 0))
+	{
+		PrefireTimer = 0.0f;
+		ReleaseAttack();
+	}
+	else
+	{
+		PrefireTimer += GetWorld()->GetDeltaSeconds();
+	}
+
+	if (Role < ROLE_Authority)
+	{
+		ServerPrefireTiming();
+	}
+}
+void AGammaCharacter::ServerPrefireTiming_Implementation()
+{
+	PrefireTiming();
+}
+bool AGammaCharacter::ServerPrefireTiming_Validate()
+{
+	return true;
+}
+
 
 // REMATCH
 void AGammaCharacter::Rematch()

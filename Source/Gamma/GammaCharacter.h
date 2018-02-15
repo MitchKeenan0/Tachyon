@@ -95,7 +95,7 @@ public:
 	{ 
 		if (ActiveFlash)
 		{
-			ActiveFlash->SetActorHiddenInGame(true); // Deactivate
+			ActiveFlash->Destroy();
 			ActiveFlash = nullptr;
 		}
 	}
@@ -141,25 +141,24 @@ protected:
 
 	// ATTACK STUFF ////////////////////////////////////////////////
 	// Attack objects
-	UPROPERTY(EditDefaultsOnly)
-	bool bMultipleAttacks = false;
-
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<AGFlash> FlashClass;
 	class AGFlash* ActiveFlash = nullptr;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<AGAttack> AttackClass;
 	class AGAttack* ActiveAttack = nullptr;
 
-	// Secondary objects
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditAnywhere)
+	bool bMultipleAttacks = false;
+
+	// Secondary object
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<AGAttack> SecondaryClass;
 	class AGAttack* ActiveSecondary = nullptr;
 
-	// Shield object
-
-	UPROPERTY(EditDefaultsOnly)
+	// Charge object
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> ChargeParticles;
 	class AActor* ActiveChargeParticles = nullptr;
 
@@ -197,6 +196,8 @@ protected:
 public:
 	AActor* GetActiveFlash() { return ActiveFlash; }
 
+
+	// REPLICATED COMBAT FUNCTIONS ////////////////////////////////
 	void InitAttack();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerInitAttack();
@@ -212,6 +213,10 @@ public:
 	void FireSecondary();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerFireSecondary();
+
+	void PrefireTiming();
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerPrefireTiming();
 
 
 protected:
@@ -262,6 +267,8 @@ protected:
 	float Charge = 0.0f;
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
 	bool bCharging = false;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	float PrefireTimer = 0.0f;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	int Score = 0;
@@ -269,6 +276,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
 	bool bSecondaryActive = false;
 
+	// ATTRIBUTES //////////////////////////////////////////	
 	// Player movement
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MoveSpeed = 100.0f;
@@ -302,6 +310,8 @@ protected:
 	float CameraTiltClamp = 1.0f;
 
 	// Charge properties
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float PrefireTime = 0.1f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ChargeMax = 4.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

@@ -56,13 +56,16 @@ void AGFlash::UpdateFlash(float DeltaTime)
 	float FPitch = FlashSound->PitchMultiplier * GrowthAlgo;
 	if (FPitch < FlashMaxPitch)
 	{
-		FlashSound->SetPitchMultiplier(FlashSound->PitchMultiplier * GrowthAlgo);
+		float Clamped = FMath::Clamp(FlashSound->PitchMultiplier * GrowthAlgo, 0.0f, 1.0f);
+		FlashSound->SetPitchMultiplier(Clamped);
 	}
 	
 	float FVol = FlashSound->VolumeMultiplier * GrowthAlgo;
 	if (FVol < FlashMaxVolume)
 	{
-		FlashSound->SetVolumeMultiplier(FlashSound->VolumeMultiplier * GrowthAlgo);
+		float Clamped = FMath::Clamp(FlashSound->VolumeMultiplier * GrowthAlgo, 0.0f, 1.0f);
+		FlashSound->SetVolumeMultiplier(Clamped);
 	}
 }
+
 
