@@ -143,6 +143,10 @@ void AGammaCharacter::BeginPlay()
 		AddMovementInput(FVector(0.0f, 0.0f, 1.0f), 1.0f);
 		GetCharacterMovement()->AddImpulse(FVector::UpVector * 100.0f);
 	}
+	else
+	{
+		Locator->SetActive(false);
+	}
 
 	ResetLocator();
 
@@ -295,10 +299,22 @@ void AGammaCharacter::LocatorScaling()
 			FVector ShrinkingSize = Locator->RelativeScale3D * 0.9f;
 			Locator->SetRelativeScale3D(ShrinkingSize);
 		}
+		else if (Locator->RelativeScale3D == FVector(25.0f, 25.0f, 25.0f)
+			&& Locator->IsVisible())
+		{
+			Locator->SetVisibility(false);
+		}
 	}
 	else
 	{
-		ResetLocator();
+		if (Locator->RelativeScale3D.Size() < 1.0f)
+		{
+			ResetLocator();
+		}
+		if (!Locator->IsVisible())
+		{
+			Locator->SetVisibility(true);
+		}
 	}
 }
 
@@ -579,37 +595,40 @@ bool AGammaCharacter::ServerSetAim_Validate()
 // RAISE CHARGE for attack 
 void AGammaCharacter::RaiseCharge()
 {
-	if (Charge < ChargeMax)
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
 	{
-		Charge += ChargeGain;
+		if (Charge < ChargeMax)
+		{
+			Charge += ChargeGain;
+		}
+
+		if (Role < ROLE_Authority)
+		{
+			ServerRaiseCharge();
+			return;
+		}
+
+		// Move boost o.o
+		if (FVector(InputX, 0.0f, InputZ) != FVector::ZeroVector)
+		{
+			NewMoveKick();
+			//UpdateMoveParticles(FVector(InputX, 0.0f, InputZ));
+		}
+
+		// Sound fx -.-
+		if (PlayerSound != nullptr)
+		{
+			PlayerSound->SetPitchMultiplier(Charge / 10.0f); /// Charges currently 1-10
+			PlayerSound->Play();
+		}
+
+		//GEngine->AddOnScreenDebugMessage(-1, 0.68f, FColor::White, FString::Printf(TEXT("%f % CHARGE"), Charge), true, FVector2D::UnitVector * 2);
+
+
+		//// Scale up charge vfx
+		//float Scalar = Charge / ChargeMax;
+		//ActiveChargeParticles->SetActorRelativeScale3D(ActiveChargeParticles->GetActorRelativeScale3D() * Scalar);
 	}
-
-	if (Role < ROLE_Authority)
-	{
-		ServerRaiseCharge();
-		return;
-	}
-
-	// Move boost o.o
-	if (FVector(InputX, 0.0f, InputZ) != FVector::ZeroVector)
-	{
-		NewMoveKick();
-		//UpdateMoveParticles(FVector(InputX, 0.0f, InputZ));
-	}
-
-	// Sound fx -.-
-	if (PlayerSound != nullptr)
-	{
-		PlayerSound->SetPitchMultiplier(Charge / 10.0f); /// Charges currently 1-10
-		PlayerSound->Play();
-	}
-
-	//GEngine->AddOnScreenDebugMessage(-1, 0.68f, FColor::White, FString::Printf(TEXT("%f % CHARGE"), Charge), true, FVector2D::UnitVector * 2);
-
-
-	//// Scale up charge vfx
-	//float Scalar = Charge / ChargeMax;
-	//ActiveChargeParticles->SetActorRelativeScale3D(ActiveChargeParticles->GetActorRelativeScale3D() * Scalar);
 }
 void AGammaCharacter::ServerRaiseCharge_Implementation()
 {
@@ -680,12 +699,12 @@ void AGammaCharacter::ReleaseAttack()
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.5f))
 	{
 		// Clean up previous flash
-		if (ActiveFlash)
+		if (ActiveFlash != nullptr && ActiveFlash->IsValidLowLevel())
 		{
 			ActiveFlash->Destroy();
 			ActiveFlash = nullptr;
 		}
-		if (ActiveChargeParticles)
+		if (ActiveChargeParticles != nullptr && ActiveChargeParticles->IsValidLowLevel())
 		{
 			ActiveChargeParticles->Destroy();
 			ActiveChargeParticles = nullptr;

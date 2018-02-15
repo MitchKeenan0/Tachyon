@@ -17,10 +17,18 @@ void AGammaAIController::Tick(float DeltaSeconds)
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
 	if (PlayersArray.Num() > 0)
 	{
-		Player = Cast<AGammaCharacter>(PlayersArray[0]);
+		if (PlayersArray[0] != GetPawn())
+		{
+			AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(PlayersArray[0]);
+			if (PotentialPlayer && PotentialPlayer->IsValidLowLevel())
+			{
+				Player = PotentialPlayer;
+			}
+		}
 	}
 	if (Player->IsValidLowLevel())
 	{
+		// Got a player - stunt on'em
 		if (ReactionTiming(DeltaSeconds))
 		{
 			Tactical(FVector::ZeroVector);
@@ -60,6 +68,7 @@ void AGammaAIController::Tactical(FVector Target)
 	APawn* MyPawn = GetPawn();
 	AGammaCharacter* MyCharacter = Cast<AGammaCharacter>(MyPawn);
 
+	// Random number to evoke choice
 	float RandomDc = FMath::FRandRange(0.0f, 10.0f);
 
 	// Charge
@@ -74,17 +83,21 @@ void AGammaAIController::Tactical(FVector Target)
 	// Shooting
 	else
 	{
+		// Considerations for shooting
 		FVector LocalForward = MyCharacter->GetActorForwardVector();
 		FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
 		float VerticalDir = FMath::FloorToFloat(FMath::Clamp(ToPlayer.Z, -1.0f, 1.0f));
 		//float LateralDir = FMath::FloorToFloat(FMath::Clamp(ToPlayer.X, -1.0f, 1.0f));
 		
+		// Aim
 		float DotToPlayer = FVector::DotProduct(LocalForward, ToPlayer);
 		if (DotToPlayer > 0.0f)
 		{
 			float AngleToPlayer = FMath::Acos(DotToPlayer);
 			if (AngleToPlayer <= ShootingAngle)
 			{
+
+				// Firing
 				if (MyCharacter->GetActiveFlash() != nullptr)
 				{
 					MyCharacter->SetZ(VerticalDir);
@@ -96,6 +109,8 @@ void AGammaAIController::Tactical(FVector Target)
 					MyCharacter->ReleaseAttack();
 					///GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("AI Z: %f"), VerticalDir));
 				}
+
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("B A N G"));
 			}
 		}
 	}

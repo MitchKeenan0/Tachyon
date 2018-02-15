@@ -158,7 +158,7 @@ void AGAttack::Tick(float DeltaTime)
 	}
 
 	// Healthy attack activities
-	if (bLethal)
+	if (bLethal && HasAuthority())
 	{
 		UpdateAttack(DeltaTime);
 	}
@@ -270,6 +270,10 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 			ActorFlipbook->SetPlaybackPositionInFrames(1, true);
 			///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("Got Flipbook"));
 		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No Flipbook"));
+		}
 
 		// Spawning damage fx
 		FActorSpawnParameters SpawnParams;
@@ -281,6 +285,8 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No Dmg class to spawn"));
 	}
+
+	ForceNetUpdate();
 }
 
 
@@ -339,10 +345,10 @@ void AGAttack::Nullify()
 // COLLISION BEGIN
 void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (bLethal && (OtherActor != OwningShooter))
+	if (!bHit && bLethal && (OtherActor != OwningShooter))
 	{
 		// Consequences
-		if (!bHit && (!OtherActor->ActorHasTag("Attack")))// && (HitTimer >= (1.0f / HitsPerSecond)))
+		if (!OtherActor->ActorHasTag("Attack"))// && (HitTimer >= (1.0f / HitsPerSecond)))
 		{
 			bHit = true;
 
@@ -358,6 +364,10 @@ void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 			}
 
 			HitTimer = 0.0f;
+		}
+		else
+		{
+			// Hit another attack..
 		}
 	}
 
