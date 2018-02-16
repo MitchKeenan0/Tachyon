@@ -16,6 +16,7 @@ void AGMatch::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	SetTimeScale(NaturalTimeScale);
 }
 
 // Called every frame

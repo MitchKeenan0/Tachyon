@@ -478,11 +478,11 @@ void AGammaCharacter::NewMoveKick()
 	{
 		// Algo scaling for time dilation. Slower time == more kick
 		float TimeScalar = 1.0f;
-		float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-		if (TimeDilat < 0.7f)
-		{
-			TimeScalar = (SlowmoMoveBoost * (1 + (1.0f / TimeDilat))) * (1.0f / TimeDilat); //  FMath::Abs(SlowmoMoveBoost * (1.0f / TimeDilat)) / 10.0f;
-		}
+		//float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+		//if (TimeDilat < 0.7f)
+		//{
+		//	TimeScalar = (SlowmoMoveBoost * (1 + (1.0f / TimeDilat))) * (1.0f / TimeDilat); //  FMath::Abs(SlowmoMoveBoost * (1.0f / TimeDilat)) / 10.0f;
+		//}
 
 		// Algo scaling for timescale & max velocity
 		FVector MoveInputVector = FVector(InputX, 0.0f, InputZ);

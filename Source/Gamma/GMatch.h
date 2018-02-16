@@ -33,6 +33,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ClearPlayers() { LocalPlayer = OpponentPlayer = nullptr; }
 
+	UFUNCTION(BlueprintCallable)
+	float GetNaturalTimeScale() { return NaturalTimeScale; }
+
 	// End-game slow-time functions
 	void ClaimGG(AActor* Winner);
 	/*UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
@@ -47,6 +50,9 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float NaturalTimeScale = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float GGTimescale = 0.001f;
