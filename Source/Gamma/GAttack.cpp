@@ -134,6 +134,12 @@ void AGAttack::Tick(float DeltaTime)
 	LifeTimer += DeltaTime;
 	HitTimer += DeltaTime;
 
+	// Neutralize before smooth visual exit
+	if (LifeTimer >= LethalTime)
+	{
+		bLethal = false;
+	}
+
 	// End-of-life activities
 	float CloseEnough = DynamicLifetime * 0.97f;
 	if (LifeTimer >= CloseEnough || this->IsPendingKillOrUnreachable())

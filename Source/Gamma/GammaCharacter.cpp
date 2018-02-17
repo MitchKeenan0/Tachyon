@@ -300,7 +300,7 @@ void AGammaCharacter::ResetLocator()
 void AGammaCharacter::LocatorScaling()
 {
 	// Player locator
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) >= 0.7f)
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.2f)
 	{
 		// Scaling down
 		if (Locator->RelativeScale3D.Size() >= 0.1f)
@@ -474,16 +474,8 @@ void AGammaCharacter::NewMoveKick()
 		return;
 	}
 
-	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.5f)
+	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f)
 	{
-		// Algo scaling for time dilation. Slower time == more kick
-		float TimeScalar = 1.0f;
-		//float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-		//if (TimeDilat < 0.7f)
-		//{
-		//	TimeScalar = (SlowmoMoveBoost * (1 + (1.0f / TimeDilat))) * (1.0f / TimeDilat); //  FMath::Abs(SlowmoMoveBoost * (1.0f / TimeDilat)) / 10.0f;
-		//}
-
 		// Algo scaling for timescale & max velocity
 		FVector MoveInputVector = FVector(InputX, 0.0f, InputZ);
 		FVector CurrentVelocity = GetCharacterMovement()->Velocity;
@@ -494,10 +486,9 @@ void AGammaCharacter::NewMoveKick()
 		// Force, clamp, & effect chara movement
 		FVector KickVector = MoveInputVector
 			* MoveFreshMultiplier
-			* TimeScalar
 			* RelativityToMaxSpeed
 			* DotScalar;
-		KickVector = KickVector.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier * TimeScalar);
+		KickVector = KickVector.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier);
 		GetCharacterMovement()->AddImpulse(KickVector * TimeDelta);
 
 		bMoved = false;
@@ -605,7 +596,7 @@ bool AGammaCharacter::ServerSetAim_Validate()
 // RAISE CHARGE for attack 
 void AGammaCharacter::RaiseCharge()
 {
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.2f)
 	{
 		if (Charge < ChargeMax)
 		{
@@ -661,7 +652,7 @@ void AGammaCharacter::InitAttack()
 	MoveParticles->bSuppressSpawning = true;
 
 	if ((Charge > 0.0f) && FlashClass && (ActiveFlash == nullptr)
-		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.5f))
+		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f))
 	{
 		// Clean up previous attack
 		if (ActiveAttack && !bMultipleAttacks)
@@ -706,7 +697,7 @@ void AGammaCharacter::ReleaseAttack()
 	MoveParticles->bSuppressSpawning = false;
 
 	if (AttackClass && (ActiveAttack == nullptr || bMultipleAttacks) && (Charge > 0.0f)
-		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.5f))
+		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f))
 	{
 		// Clean up previous flash
 		if (ActiveFlash != nullptr && ActiveFlash->IsValidLowLevel())
@@ -768,7 +759,7 @@ bool AGammaCharacter::ServerReleaseAttack_Validate()
 void AGammaCharacter::FireSecondary()
 {
 	if (SecondaryClass && (ActiveSecondary == nullptr)
-		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.5f))
+		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f))
 	{
 		// Clean burn
 		MoveParticles->bSuppressSpawning = true;
