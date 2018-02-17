@@ -383,20 +383,17 @@ void AGammaCharacter::MoveRight(float Value)
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
-
-		float MoveByDot = 0.0f;
-		float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
 		if (MoveInput != FVector::ZeroVector
-			&& DotToInput <= 0.99f)
+			&& CurrentV != FVector::ZeroVector)
 		{
-			MoveByDot = 120000.0f;
-		}
-		else if (DotToInput > 0.99f)
-		{
-			MoveByDot = 1.0f;
-		}
+			float MoveByDot = 0.0f;
+			float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
+			float AngleToInput = FMath::Clamp(FMath::Acos(DotToInput), 1.0f, 180.0f);
+			MoveByDot = AngleToInput * MoveSpeed;
 
-		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value * MoveByDot);
+			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value * MoveByDot);
+		}
+		
 	}
 
 	ForceNetUpdate();
@@ -417,20 +414,18 @@ void AGammaCharacter::MoveUp(float Value)
 	if (MoveTimer >= (1 / MovesPerSecond))
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
-		FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
+		FVector CurrentV = (GetMovementComponent()->Velocity).GetSafeNormal();
 
-		float MoveByDot = 0.0f;
-		float DotToInput = FVector::DotProduct(CurrentV, MoveInput);
-		if (MoveInput != FVector::ZeroVector && DotToInput <= 0.99f)
+		if (MoveInput != FVector::ZeroVector
+			&& CurrentV != FVector::ZeroVector)
 		{
-			MoveByDot = 120000.0f;
+			float MoveByDot = 0.0f;
+			float DotToInput = FVector::DotProduct(CurrentV, MoveInput);
+			float AngleToInput = FMath::Clamp(FMath::Acos(DotToInput), 1.0f, 180.0f);
+			MoveByDot = AngleToInput * MoveSpeed;
+
+			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), Value * MoveByDot);
 		}
-		else if (DotToInput > 0.99f)
-		{
-			MoveByDot = 1.0f;
-		}
-		
-		AddMovementInput(FVector(0.0f, 0.0f, 1.0f), Value * MoveByDot);
 	}
 
 	ForceNetUpdate();
