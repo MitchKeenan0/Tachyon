@@ -17,7 +17,6 @@ void AGammaSoloSequence::BeginPlay()
 	Super::BeginPlay();
 	
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
-
 	if (PlayersArray.Num() > 0)
 	{
 		Player = Cast<AGammaCharacter>(PlayersArray[0]);
@@ -36,13 +35,12 @@ void AGammaSoloSequence::Tick(float DeltaTime)
 // Main Sequence
 void AGammaSoloSequence::MainSequence(float DeltaTime)
 {
-	if (!bSpawned)
+	RunTimer += DeltaTime;
+	if (RunTimer >= FirstEncounterTime
+		&& NumDenizens() < MaxLiveUnits)
 	{
-		RunTimer += DeltaTime;
-		if (RunTimer >= FirstEncounterTime)
-		{
-			SpawnDenizen();
-		}
+		SpawnDenizen();
+		RunTimer = 0.0f;
 	}
 }
 
@@ -51,14 +49,35 @@ void AGammaSoloSequence::MainSequence(float DeltaTime)
 void AGammaSoloSequence::SpawnDenizen()
 {
 	FActorSpawnParameters SpawnParams;
-	FVector PlayerLocation = Player->GetActorLocation() + Player->GetActorForwardVector() * 1000.0f;
-	FVector PlayerVelocity = Player->GetCharacterMovement()->Velocity;
-	FVector AheadOfPlayer = PlayerLocation + PlayerVelocity;
-	AGammaCharacter* NewDenizen = Cast<AGammaCharacter>(GetWorld()->SpawnActor<AActor>(DenizenClass, AheadOfPlayer, GetActorRotation(), SpawnParams));
-	if (NewDenizen)
+	
+	for (int i = 0; i < MaxLiveUnits; ++i)
 	{
-		bSpawned = true;
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("Spawned Denizen"));
+		FVector PlayerWiseLocation = FVector::ZeroVector;
+		if (Player != nullptr)
+		{
+			FVector PlayerLocation = Player->GetActorLocation() + Player->GetActorForwardVector() * 1000.0f;
+			FVector PlayerVelocity = Player->GetCharacterMovement()->Velocity;
+			PlayerWiseLocation = PlayerLocation + PlayerVelocity;
+		}
+		
+		FVector RandomOffset = (FMath::VRand() * 1000);
+		RandomOffset.Y = 0.0f;
+		FVector SpawnLoc = PlayerWiseLocation + RandomOffset;
+		AGammaCharacter* NewDenizen = Cast<AGammaCharacter>(GetWorld()->SpawnActor<AActor>(DenizenClass, SpawnLoc, GetActorRotation(), SpawnParams));
 	}
+
+	++Spawns;
+}
+
+
+int AGammaSoloSequence::NumDenizens()
+{
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Bot"), DenizenArray);
+	int Result = DenizenArray.Num();
+	if ((Result == 0 && (Spawns > 0)))
+	{
+		RunTimer = 0;
+	}
+	return Result;
 }
 

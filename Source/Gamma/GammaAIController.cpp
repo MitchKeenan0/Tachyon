@@ -51,7 +51,8 @@ void AGammaAIController::Tick(float DeltaSeconds)
 			}
 
 			// Reation time
-			if (ReactionTiming(DeltaSeconds))
+			if (ReactionTiming(DeltaSeconds)
+				&& MyCharacter->GetRootComponent()->bVisible)
 			{
 				Tactical(FVector::ZeroVector);
 			}
@@ -138,6 +139,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 	// Getting spicy
 	FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
 	FVector RandomOffset = (FMath::VRand() * MoveRange) * (1 / Aggression);
+	RandomOffset.Y = 0.0f;
 	Result = PlayerAtSpeed + RandomOffset;
 	Result.Z *= 0.8f;
 

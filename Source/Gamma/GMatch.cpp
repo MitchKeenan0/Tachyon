@@ -59,15 +59,24 @@ bool AGMatch::PlayersAccountedFor()
 }
 
 
-void AGMatch::ClaimGG(AActor* Winner)
+void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 {
-	// Do the flashy GAME thing if the shooter is a player
-	AGammaCharacter* Reciever = Cast<AGammaCharacter>(Winner);
-	if (Winner->ActorHasTag("Player")) //Reciever)
+	// Player killer
+	if (HitActor->ActorHasTag("Player"))
 	{
-		Winner = Reciever;
-		Reciever->RaiseScore(1);
+		AGammaCharacter* Reciever = Cast<AGammaCharacter>(Winner);
+		if (Reciever)
+		{
+			bGG = true;
+			///Reciever->RaiseScore(1);
+		}
+	}
+
+	// Bot killer
+	if (HitActor->ActorHasTag("Bot"))
+	{
 		bGG = true;
+		HitActor->Tags.Add("Doomed");
 	}
 }
 
@@ -147,7 +156,7 @@ float AGMatch::GetOpponentChargePercent()
 
 void AGMatch::GetPlayers()
 {
-	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), TempPlayers);
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), TempPlayers);
 	if (GetWorld() && TempPlayers.Num() > 0)
 	{
 		// Loop through to deliberate local and opponent

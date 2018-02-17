@@ -37,9 +37,7 @@ public:
 	float GetNaturalTimeScale() { return NaturalTimeScale; }
 
 	// End-game slow-time functions
-	void ClaimGG(AActor* Winner);
-	/*UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
-	void ServerClaimGG(AActor* Winner);*/
+	void ClaimHit(AActor* HitActor, AActor* Winner);
 
 	void HandleTimeScale(bool Gg, float Delta);
 
@@ -92,5 +90,6 @@ private:
 	AGammaCharacter* LocalPlayer = nullptr;
 	AGammaCharacter* OpponentPlayer = nullptr;
 	AActor* Winner = nullptr;
+	AActor* DoomedBoye = nullptr;
 	
 };

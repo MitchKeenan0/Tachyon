@@ -22,15 +22,20 @@ protected:
 
 	void MainSequence(float DeltaTime);
 
+	int NumDenizens();
+
 	void SpawnDenizen();
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AGammaCharacter> DenizenClass;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float FirstEncounterTime = 3.0f;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int MaxLiveUnits = 10;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector SpawnLocation = FVector::ZeroVector;
 
 public:	
@@ -39,8 +44,10 @@ public:
 
 private:
 	float RunTimer = 0.0f;
+	int Spawns = 0;
 	bool bSpawned = false;
 	AGammaCharacter* Player = nullptr;
 	TArray<AActor*> PlayersArray;
+	TArray<AActor*> DenizenArray;
 	
 };

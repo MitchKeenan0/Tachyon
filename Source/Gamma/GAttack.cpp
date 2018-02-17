@@ -245,16 +245,9 @@ void AGAttack::DetectHit(FVector RaycastVector)
 	// Consequences
 	if (bHit)
 	{
-		// Damage vfx
 		SpawnDamage(HitActor, HitActor->GetActorLocation());
-
-		// Player killer
 		ApplyKnockback(HitActor);
-		
-		if (HitActor->ActorHasTag("Player"))
-		{
-			TakeGG();
-		}
+		ReportHit(HitActor);
 
 		// Clean-up for next frame
 		HitTimer = 0.0f;
@@ -327,12 +320,12 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 }
 
 
-void AGAttack::TakeGG()
+void AGAttack::ReportHit(AActor* HitActor)
 {
 	if (CurrentMatch)
 	{
 		bLethal = false;
-		CurrentMatch->ClaimGG(OwningShooter);
+		CurrentMatch->ClaimHit(HitActor, OwningShooter);
 	}
 }
 
@@ -358,16 +351,9 @@ void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 		{
 			bHit = true;
 
-			// Damage vfx
 			SpawnDamage(OtherActor, OtherActor->GetActorLocation());
-
-			// Player killer
 			ApplyKnockback(OtherActor);
-			
-			if (OtherActor->ActorHasTag("Player"))
-			{
-				TakeGG();
-			}
+			ReportHit(OtherActor);
 
 			HitTimer = 0.0f;
 		}

@@ -32,7 +32,7 @@ public:
 	bool GetLethal() { return bLethal; }
 
 	UFUNCTION(BlueprintCallable)
-	void TakeGG();
+	void ReportHit(AActor* HitActor);
 
 	UFUNCTION(BlueprintCallable)
 	void Nullify();
