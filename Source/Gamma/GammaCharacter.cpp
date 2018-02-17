@@ -138,7 +138,7 @@ void AGammaCharacter::BeginPlay()
 	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), TEXT("p.NetEnableMoveCombining 0")); /// is this needed?
 
 	// Camera needs some movement to wake up
-	if (Controller && Controller->IsLocalController())
+	if (Controller->IsLocalController())
 	{
 		AddMovementInput(FVector(0.0f, 0.0f, 1.0f), 1.0f);
 		GetCharacterMovement()->AddImpulse(FVector::UpVector * 100.0f);
