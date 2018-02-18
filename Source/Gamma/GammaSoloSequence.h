@@ -38,6 +38,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector SpawnLocation = FVector::ZeroVector;
 
+	UPROPERTY(BlueprintReadWrite)
+	AGammaCharacter* Player = nullptr;
+
+	UPROPERTY(BlueprintReadWrite)
+	TArray<AActor*> PlayersArray;
+	
+	UPROPERTY(BlueprintReadWrite)
+	TArray<AActor*> DenizenArray;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -46,8 +55,7 @@ private:
 	float RunTimer = 0.0f;
 	int Spawns = 0;
 	bool bSpawned = false;
-	AGammaCharacter* Player = nullptr;
-	TArray<AActor*> PlayersArray;
-	TArray<AActor*> DenizenArray;
+	
+	
 	
 };

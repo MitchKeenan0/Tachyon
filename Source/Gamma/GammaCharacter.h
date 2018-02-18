@@ -93,7 +93,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ClearFlash() 
 	{ 
-		if (ActiveFlash)
+		if (ActiveFlash != nullptr)
 		{
 			ActiveFlash->Destroy();
 			ActiveFlash = nullptr;
@@ -117,6 +117,7 @@ protected:
 	// Locator handling
 	UFUNCTION(BlueprintCallable)
 	void ResetLocator();
+
 	void LocatorScaling();
 
 	// APawn interface
@@ -279,9 +280,9 @@ protected:
 	// ATTRIBUTES //////////////////////////////////////////	
 	// Player movement
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MoveSpeed = 100.0f;
+	float MoveSpeed = 330000.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MovesPerSecond = 3.0f;
+	float MovesPerSecond = 10.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float TurnSpeed = 500.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -289,9 +290,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SlowmoMoveBoost = 5.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MaxMoveSpeed = 610.0f;
+	float MaxMoveSpeed = 750.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MoveAccelerationSpeed = 4200.0f;
+	float MoveAccelerationSpeed = 5000.0f;
 
 	// Camera movement
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -301,9 +302,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CameraSoloVelocityChase = 1.5f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CameraDistanceScalar = 1.5f;
+	float CameraDistanceScalar = 1.9f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CameraTiltValue = 4.2f;
+	float CameraTiltValue = 5.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CameraTiltSpeed = 0.68f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

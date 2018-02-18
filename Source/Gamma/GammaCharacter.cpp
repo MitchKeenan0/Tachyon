@@ -383,8 +383,10 @@ void AGammaCharacter::MoveRight(float Value)
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
-		if (MoveInput != FVector::ZeroVector
-			&& CurrentV != FVector::ZeroVector)
+		
+		// Only moving if theres' input
+		if (MoveInput != FVector::ZeroVector)
+			//&& CurrentV != FVector::ZeroVector)
 		{
 			float MoveByDot = 0.0f;
 			float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
@@ -416,8 +418,8 @@ void AGammaCharacter::MoveUp(float Value)
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = (GetMovementComponent()->Velocity).GetSafeNormal();
 
-		if (MoveInput != FVector::ZeroVector
-			&& CurrentV != FVector::ZeroVector)
+		if (MoveInput != FVector::ZeroVector)
+			//&& CurrentV != FVector::ZeroVector)
 		{
 			float MoveByDot = 0.0f;
 			float DotToInput = FVector::DotProduct(CurrentV, MoveInput);
@@ -718,13 +720,14 @@ void AGammaCharacter::ReleaseAttack()
 			if (AttackClass != nullptr || bMultipleAttacks)
 			{
 				ActiveAttack = Cast<AGAttack>(GetWorld()->SpawnActor<AGAttack>(AttackClass, FirePosition, FireRotation, SpawnParams));
-				ActiveAttack->InitAttack(this, 1, InputZ);
-				
-				///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("B A N G"));
-
-				if (ActiveAttack->LockedEmitPoint)
+				if (ActiveAttack != nullptr)
 				{
-					ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
+					ActiveAttack->InitAttack(this, 1, InputZ);
+
+					if (ActiveAttack->LockedEmitPoint)
+					{
+						ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
+					}
 				}
 			}
 			else
@@ -770,12 +773,12 @@ void AGammaCharacter::FireSecondary()
 		{
 			ActiveSecondary = GetWorld()->SpawnActor<AGAttack>(SecondaryClass, FirePosition, FireRotation, SpawnParams); //  Cast<AActor>());
 
-			if (ActiveSecondary)
+			if (ActiveSecondary != nullptr)
 			{
 				//bSecondaryActive = true;
 
 				AGAttack* PotentialAttack = Cast<AGAttack>(ActiveSecondary);
-				if (PotentialAttack)
+				if (PotentialAttack != nullptr)
 				{
 					PotentialAttack->InitAttack(this, 1, InputZ);
 

@@ -52,11 +52,11 @@ void AGammaSoloSequence::SpawnDenizen()
 {
 	FActorSpawnParameters SpawnParams;
 	
-	FVector PlayerWiseLocation = FVector::ForwardVector;
+	FVector PlayerWiseLocation = SpawnLocation;
 	if (Player != nullptr
-		&& Player->GetCharacterMovement())
+		&& Player->GetCharacterMovement() != nullptr)
 	{
-		FVector PlayerLocation = Player->GetActorLocation() + Player->GetActorForwardVector() * 1000.0f;
+		FVector PlayerLocation = Player->GetActorLocation();
 		FVector PlayerVelocity = Player->GetCharacterMovement()->Velocity;
 		PlayerWiseLocation = PlayerLocation + PlayerVelocity;
 	}
@@ -78,7 +78,18 @@ void AGammaSoloSequence::SpawnDenizen()
 int AGammaSoloSequence::NumDenizens()
 {
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Bot"), DenizenArray);
-	int Result = DenizenArray.Num();
+	int Result = 0;
+
+	// Loop to ensure validity of denizens
+	for (int i = 0; i < DenizenArray.Num(); ++i)
+	{
+		if (DenizenArray[i] != nullptr)
+		{
+			Result += 1;
+		}
+	}
+
+	// No denizens?
 	if ((Result == 0 && (Spawns > 0)))
 	{
 		RunTimer = 0;

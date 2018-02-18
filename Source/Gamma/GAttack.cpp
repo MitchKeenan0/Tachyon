@@ -199,7 +199,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 	FHitResult Hit;
 	
 	// Swords, etc, get tangible ray space
-	if (bRaycastOnMesh)
+	if (bRaycastOnMesh && AttackSprite->GetSprite() != nullptr)
 	{
 		float AttackBodyLength = (AttackSprite->Bounds.BoxExtent.X) * RaycastHitRange;
 		Start	= GetActorLocation() + (GetActorForwardVector());
@@ -257,12 +257,12 @@ void AGAttack::DetectHit(FVector RaycastVector)
 
 void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 {
-	if (DamageClass && DamageMaterial)
+	if (DamageClass!= nullptr && OwningShooter != nullptr)
 	{
 		// Calcify HitActor
 		UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
 			(HitActor->FindComponentByClass<UPaperFlipbookComponent>());
-		if (ActorFlipbook)
+		if (ActorFlipbook != nullptr)
 		{
 			float CurrentPosition = FMath::FloorToInt(ActorFlipbook->GetPlaybackPosition());
 			//ActorFlipbook->SetPlayRate(1);
@@ -296,7 +296,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 
 	// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
-	if (Chara)
+	if (Chara != nullptr)
 	{
 		Chara->GetCharacterMovement()->AddImpulse(AwayFromShooter * KineticForce);
 	}
@@ -322,7 +322,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 
 void AGAttack::ReportHit(AActor* HitActor)
 {
-	if (CurrentMatch)
+	if (CurrentMatch != nullptr)
 	{
 		bLethal = false;
 		CurrentMatch->ClaimHit(HitActor, OwningShooter);
@@ -333,7 +333,7 @@ void AGAttack::ReportHit(AActor* HitActor)
 void AGAttack::Nullify()
 {
 	AGammaCharacter* PossibleCharacter = Cast<AGammaCharacter>(OwningShooter);
-	if (PossibleCharacter)
+	if (PossibleCharacter != nullptr)
 	{
 		PossibleCharacter->NullifySecondary();
 		this->Destroy();
