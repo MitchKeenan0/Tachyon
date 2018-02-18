@@ -52,8 +52,8 @@ void AGammaSoloSequence::SpawnDenizen()
 {
 	FActorSpawnParameters SpawnParams;
 	
-	FVector PlayerWiseLocation = FVector::ZeroVector;
-	if (Player && Player->IsValidLowLevel()
+	FVector PlayerWiseLocation = FVector::ForwardVector;
+	if (Player != nullptr
 		&& Player->GetCharacterMovement())
 	{
 		FVector PlayerLocation = Player->GetActorLocation() + Player->GetActorForwardVector() * 1000.0f;
@@ -66,7 +66,12 @@ void AGammaSoloSequence::SpawnDenizen()
 	FVector SpawnLoc = PlayerWiseLocation + RandomOffset;
 	AGammaCharacter* NewDenizen = Cast<AGammaCharacter>(GetWorld()->SpawnActor<AActor>(DenizenClass, SpawnLoc, GetActorRotation(), SpawnParams));
 
-	++Spawns;
+	if (NewDenizen != nullptr)
+	{
+		++Spawns;
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("Spawning Karaoke"));
+	}
+	
 }
 
 

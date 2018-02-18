@@ -22,18 +22,20 @@ void AGammaAIController::Tick(float DeltaSeconds)
 		MyPawn = GetPawn();
 		MyCharacter = Cast<AGammaCharacter>(MyPawn);
 	}
-	else if (MyCharacter && MyCharacter->IsValidLowLevel())
+	else if (MyCharacter != nullptr)
 	{
-		// Locating player
+
+		// Locating actual player
 		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
 		if (PlayersArray.Num() > 0)
 		{
 			for (int i = 0; i < PlayersArray.Num(); ++i)
 			{
-				if (PlayersArray[i] != GetPawn())
+				if (PlayersArray[i] != nullptr
+					&& PlayersArray[i] != MyPawn)
 				{
 					AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(PlayersArray[i]);
-					if (PotentialPlayer && PotentialPlayer->IsValidLowLevel())
+					if (PotentialPlayer != nullptr)
 					{
 						Player = PotentialPlayer;
 						break;
@@ -41,17 +43,18 @@ void AGammaAIController::Tick(float DeltaSeconds)
 				}
 			}
 		}
-		if (Player->IsValidLowLevel())
+		if (Player != nullptr)
 		{
 			// Got a player - stunt on'em
 			// Update prefire
-			if ((MyCharacter->GetActiveFlash()->IsValidLowLevel()))
+			if ((MyCharacter->GetActiveFlash() != nullptr))
 			{
 				MyCharacter->PrefireTiming();
 			}
 
 			// Reation time
 			if (ReactionTiming(DeltaSeconds)
+				&& MyCharacter->GetRootComponent()
 				&& MyCharacter->GetRootComponent()->bVisible)
 			{
 				Tactical(FVector::ZeroVector);
@@ -101,7 +104,7 @@ void AGammaAIController::Tactical(FVector Target)
 	}
 
 	// Shooting
-	else if (MyCharacter && MyCharacter->IsValidLowLevel())
+	else if (MyCharacter != nullptr)
 	{
 		// Considerations for shooting
 		FVector LocalForward = MyCharacter->GetActorForwardVector();
@@ -118,7 +121,7 @@ void AGammaAIController::Tactical(FVector Target)
 			{
 
 				// Firing
-				if (!MyCharacter->GetActiveFlash()->IsValidLowLevel())
+				if (!MyCharacter->GetActiveFlash())
 				{
 					MyCharacter->SetZ(VerticalDist);
 					MyCharacter->InitAttack();
@@ -133,19 +136,22 @@ FVector AGammaAIController::GetNewLocationTarget()
 {
 	// Basic ingredients
 	FVector Result = FVector::ZeroVector;
-	FVector PlayerLocation = Player->GetActorLocation();
-	/// not used	FVector AILocation = GetPawn()->GetActorLocation();
-	
-	// Getting spicy
-	FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
-	FVector RandomOffset = (FMath::VRand() * MoveRange) * (1 / Aggression);
-	RandomOffset.Y = 0.0f;
-	Result = PlayerAtSpeed + RandomOffset;
-	Result.Z *= 0.8f;
+	if (Player != nullptr)
+	{
+		FVector PlayerLocation = Player->GetActorLocation();
+		/// not used	FVector AILocation = GetPawn()->GetActorLocation();
 
-	// And serve
-	bCourseLayedIn = true;
-	LocationTarget = Result;
+		// Getting spicy
+		FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
+		FVector RandomOffset = (FMath::VRand() * MoveRange) * (1 / Aggression);
+		RandomOffset.Y = 0.0f;
+		Result = PlayerAtSpeed + RandomOffset;
+		Result.Z *= 0.8f;
+
+		// And serve
+		bCourseLayedIn = true;
+		LocationTarget = Result;
+	}
 	return Result;
 }
 
@@ -153,7 +159,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 void AGammaAIController::NavigateTo(FVector Target)
 {
 	// Basics and line to Target
-	FVector MyLocation = GetPawn()->GetActorLocation();
+	FVector MyLocation = MyPawn->GetActorLocation();
 	FVector ToTarget = (Target - MyLocation);
 
 	// Have we reached target?
@@ -177,14 +183,14 @@ void AGammaAIController::NavigateTo(FVector Target)
 		{
 			ValueX = FMath::Clamp(ToTarget.X, -1.0f, 1.0f);
 			MoveInput = FVector::ForwardVector;
-			GetPawn()->AddMovementInput(MoveInput, MoveSpeed * ValueX);
+			MyPawn->AddMovementInput(MoveInput, MoveSpeed * ValueX);
 			bMoved = true;
 		}
 		if (VerticalDistance > 100)
 		{
 			ValueZ = FMath::Clamp(ToTarget.Z, -1.0f, 1.0f);
 			MoveInput = FVector::UpVector;
-			GetPawn()->AddMovementInput(MoveInput, MoveSpeed * ValueZ);
+			MyPawn->AddMovementInput(MoveInput, MoveSpeed * ValueZ);
 			bMoved = true;
 		}
 

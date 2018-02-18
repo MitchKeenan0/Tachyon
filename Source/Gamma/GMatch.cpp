@@ -44,11 +44,11 @@ bool AGMatch::PlayersAccountedFor()
 {
 	bool Result = false;
 	
-	if ((LocalPlayer && LocalPlayer->GetOwner() && LocalPlayer->IsValidLowLevel()))
+	if ((LocalPlayer != nullptr && LocalPlayer->GetOwner())) // && LocalPlayer->IsValidLowLevel()
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("got local player"));
 		
-		if (OpponentPlayer && OpponentPlayer->GetOwner() && OpponentPlayer->IsValidLowLevel())
+		if (OpponentPlayer != nullptr && OpponentPlayer->GetOwner()) // && OpponentPlayer->IsValidLowLevel()
 		{
 			//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("got opponent player"));
 			Result = true;
@@ -163,29 +163,26 @@ void AGMatch::GetPlayers()
 		// Loop through to deliberate local and opponent
 		for (int i = 0; i < TempPlayers.Num(); ++i)
 		{
-
+			TWeakObjectPtr<ACharacter> TChar = nullptr;
 			ACharacter* TempChar = Cast<ACharacter>(TempPlayers[i]);
-			if (TempChar && TempChar->IsValidLowLevel()) // && TempChar->GetController())
+			if (TempChar != nullptr) //  && TempChar->IsValidLowLevel()
 			{
-				APlayerController* TempCont = Cast<APlayerController>(TempChar->GetController());
 				// Check if controller is local
-				if (TempCont && TempCont->IsLocalController()) //&& (TempCont->NetPlayerIndex == 0))
+				APlayerController* TempCont = Cast<APlayerController>(TempChar->GetController());
+				if (TempCont && TempCont->IsLocalController())
 				{
 					LocalPlayer = Cast<AGammaCharacter>(TempChar);
-					///GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("GotLocalPlayer")));
 				}
 				else // or opponent
 				{
 					OpponentPlayer = Cast<AGammaCharacter>(TempChar);
-					///GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("Got OpponentPlayer")));
 				}
 				
 			}
-			else // ...or client's opponent
-			{
-				OpponentPlayer = Cast<AGammaCharacter>(TempChar);
-				///GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("GotOpponentPlayer")));
-			}
+			//else // ...or client's opponent
+			//{
+			//	OpponentPlayer = Cast<AGammaCharacter>(TempChar);
+			//}
 		}
 	}
 }
