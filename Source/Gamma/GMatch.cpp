@@ -73,7 +73,8 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 	}
 
 	// Bot killer
-	if (HitActor->ActorHasTag("Bot"))
+	if (HitActor->ActorHasTag("Bot")
+		&& !HitActor->ActorHasTag("Attack"))
 	{
 		bGG = true;
 		HitActor->Tags.Add("Doomed");

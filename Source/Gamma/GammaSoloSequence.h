@@ -26,7 +26,7 @@ protected:
 
 	void SpawnDenizen();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<AGammaCharacter> DenizenClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

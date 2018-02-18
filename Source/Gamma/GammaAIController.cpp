@@ -22,7 +22,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 		MyPawn = GetPawn();
 		MyCharacter = Cast<AGammaCharacter>(MyPawn);
 	}
-	else
+	else if (MyCharacter && MyCharacter->IsValidLowLevel())
 	{
 		// Locating player
 		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
@@ -101,16 +101,16 @@ void AGammaAIController::Tactical(FVector Target)
 	}
 
 	// Shooting
-	else
+	else if (MyCharacter && MyCharacter->IsValidLowLevel())
 	{
 		// Considerations for shooting
 		FVector LocalForward = MyCharacter->GetActorForwardVector();
 		FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
-		float VerticalDir = FMath::FloorToFloat(FMath::Clamp(ToPlayer.Z, -1.0f, 1.0f));
-		//float LateralDir = FMath::FloorToFloat(FMath::Clamp(ToPlayer.X, -1.0f, 1.0f));
+		float VerticalDist = FMath::FloorToFloat(FMath::Clamp(ToPlayer.Z, -1.0f, 1.0f));
+		//float LateralDist = FMath::FloorToFloat(FMath::Clamp(ToPlayer.X, -1.0f, 1.0f));
 		
 		// Aim
-		float DotToPlayer = FVector::DotProduct(LocalForward, ToPlayer);
+		float DotToPlayer = FVector::DotProduct(LocalForward.GetSafeNormal(), ToPlayer.GetSafeNormal());
 		if (DotToPlayer > 0.0f)
 		{
 			float AngleToPlayer = FMath::Acos(DotToPlayer);
@@ -120,7 +120,7 @@ void AGammaAIController::Tactical(FVector Target)
 				// Firing
 				if (!MyCharacter->GetActiveFlash()->IsValidLowLevel())
 				{
-					MyCharacter->SetZ(VerticalDir);
+					MyCharacter->SetZ(VerticalDist);
 					MyCharacter->InitAttack();
 				}
 			}
@@ -163,7 +163,7 @@ void AGammaAIController::NavigateTo(FVector Target)
 		bCourseLayedIn = false;
 		return;
 	}
-	else
+	else if (GetWorld())
 	{
 		// Compare movement priorites by distance
 		float VerticalDistance = FMath::Abs(ToTarget.Z);

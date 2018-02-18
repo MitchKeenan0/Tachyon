@@ -230,7 +230,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 			}
 
 			// do some checks to make sure its a player
-			if (!HitActor->ActorHasTag("Attack"))
+			if (HitActor->ActorHasTag("Attack") == false)
 			{
 				// good hit as they say
 				bHit = true;

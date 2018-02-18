@@ -36,11 +36,13 @@ void AGammaSoloSequence::Tick(float DeltaTime)
 void AGammaSoloSequence::MainSequence(float DeltaTime)
 {
 	RunTimer += DeltaTime;
-	if (RunTimer >= FirstEncounterTime
-		&& NumDenizens() < MaxLiveUnits)
+	if (RunTimer >= FirstEncounterTime)
 	{
-		SpawnDenizen();
 		RunTimer = 0.0f;
+		if (NumDenizens() < MaxLiveUnits)
+		{
+			SpawnDenizen();
+		}
 	}
 }
 
@@ -50,21 +52,19 @@ void AGammaSoloSequence::SpawnDenizen()
 {
 	FActorSpawnParameters SpawnParams;
 	
-	for (int i = 0; i < MaxLiveUnits; ++i)
+	FVector PlayerWiseLocation = FVector::ZeroVector;
+	if (Player && Player->IsValidLowLevel()
+		&& Player->GetCharacterMovement())
 	{
-		FVector PlayerWiseLocation = FVector::ZeroVector;
-		if (Player != nullptr)
-		{
-			FVector PlayerLocation = Player->GetActorLocation() + Player->GetActorForwardVector() * 1000.0f;
-			FVector PlayerVelocity = Player->GetCharacterMovement()->Velocity;
-			PlayerWiseLocation = PlayerLocation + PlayerVelocity;
-		}
-		
-		FVector RandomOffset = (FMath::VRand() * 1000);
-		RandomOffset.Y = 0.0f;
-		FVector SpawnLoc = PlayerWiseLocation + RandomOffset;
-		AGammaCharacter* NewDenizen = Cast<AGammaCharacter>(GetWorld()->SpawnActor<AActor>(DenizenClass, SpawnLoc, GetActorRotation(), SpawnParams));
+		FVector PlayerLocation = Player->GetActorLocation() + Player->GetActorForwardVector() * 1000.0f;
+		FVector PlayerVelocity = Player->GetCharacterMovement()->Velocity;
+		PlayerWiseLocation = PlayerLocation + PlayerVelocity;
 	}
+
+	FVector RandomOffset = (FMath::VRand() * 1000);
+	RandomOffset.Y = 0.0f;
+	FVector SpawnLoc = PlayerWiseLocation + RandomOffset;
+	AGammaCharacter* NewDenizen = Cast<AGammaCharacter>(GetWorld()->SpawnActor<AActor>(DenizenClass, SpawnLoc, GetActorRotation(), SpawnParams));
 
 	++Spawns;
 }
