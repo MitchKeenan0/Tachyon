@@ -278,7 +278,7 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 		FActorSpawnParameters SpawnParams;
 		FRotator Forward = (HitActor->GetActorLocation() - OwningShooter->GetActorLocation()).Rotation();
 		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, HitPoint, Forward, SpawnParams));
-		DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
+		//DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
 	}
 	else
 	{
