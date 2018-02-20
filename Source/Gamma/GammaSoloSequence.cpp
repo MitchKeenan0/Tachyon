@@ -32,6 +32,15 @@ void AGammaSoloSequence::Tick(float DeltaTime)
 	{
 		MainSequence(DeltaTime);
 	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Blue, TEXT("no player brahhh"));
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
+		if (PlayersArray.Num() > 0)
+		{
+			Player = Cast<AGammaCharacter>(PlayersArray[0]);
+		}
+	}
 }
 
 
@@ -67,12 +76,26 @@ void AGammaSoloSequence::SpawnDenizen()
 	FVector RandomOffset = (FMath::VRand() * 1000);
 	RandomOffset.Y = 0.0f;
 	FVector SpawnLoc = PlayerWiseLocation + RandomOffset;
-	AGammaCharacter* NewDenizen = Cast<AGammaCharacter>(GetWorld()->SpawnActor<AActor>(DenizenClass, SpawnLoc, GetActorRotation(), SpawnParams));
+
+	// Random character each spawn
+	TSubclassOf<AGammaCharacter> PlayerSpawning = nullptr;
+	int Rando = FMath::FloorToInt(FMath::FRand() * 3);
+	switch (Rando)
+	{
+		case 0: PlayerSpawning = KaraokeClass;
+			break;
+		case 1: PlayerSpawning = PeaceGiantClass;
+			break;
+		case 2: PlayerSpawning = BaetylusClass;
+			break;
+		default:
+			break;
+	}
+	AGammaCharacter* NewDenizen = Cast<AGammaCharacter>(GetWorld()->SpawnActor<AActor>(PlayerSpawning, SpawnLoc, GetActorRotation(), SpawnParams));
 
 	if (NewDenizen != nullptr)
 	{
 		++Spawns;
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("Spawning Karaoke"));
 	}
 	
 }
@@ -97,6 +120,7 @@ int AGammaSoloSequence::NumDenizens()
 	{
 		RunTimer = 0;
 	}
+	
 	return Result;
 }
 

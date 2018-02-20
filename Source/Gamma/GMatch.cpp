@@ -68,6 +68,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 		if (Reciever)
 		{
 			bGG = true;
+			bReturn = false;
 			///Reciever->RaiseScore(1);
 		}
 	}
@@ -77,6 +78,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 		&& !HitActor->ActorHasTag("Attack"))
 	{
 		bGG = true;
+		bReturn = true;
 		HitActor->Tags.Add("Doomed");
 	}
 }
@@ -84,16 +86,6 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 
 void AGMatch::HandleTimeScale(bool Gg, float Delta)
 {
-	bool bReturn = true;
-
-	if (Winner)
-	{
-		if (Winner->ActorHasTag("Player"))
-		{
-			bReturn = false;
-		}
-	}
-
 	// Handle gameover scenario - timing and score handouts
 	if (Gg && GGDelayTimer >= GGDelayTime)
 	{
@@ -109,14 +101,13 @@ void AGMatch::HandleTimeScale(bool Gg, float Delta)
 			GGDelayTimer = 0.0f;
 		}
 	}
-	//else if (bReturn && UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 1.0f)
-	//{
-	//	// ..Rise timescale back to 1
-	//	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-	//	float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed * TimeDilat);
-	//	SetTimeScale(TimeT);
-	//	//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("returning to 1"));
-	//}
+	else if (bReturn && UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 1.0f)
+	{
+		// ..Rise timescale back to 1
+		float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+		float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed * TimeDilat);
+		SetTimeScale(TimeT);
+	}
 }
 
 void AGMatch::SetTimeScale(float Time)

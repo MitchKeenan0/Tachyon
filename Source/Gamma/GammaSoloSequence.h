@@ -27,7 +27,13 @@ protected:
 	void SpawnDenizen();
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<AGammaCharacter> DenizenClass;
+	TSubclassOf<AGammaCharacter> KaraokeClass;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AGammaCharacter> PeaceGiantClass;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AGammaCharacter> BaetylusClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float FirstEncounterTime = 3.0f;
@@ -47,14 +53,21 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	TArray<AActor*> DenizenArray;
 
+	UPROPERTY(BlueprintReadWrite)
+	float RunTimer = 0.0f;
+
+	UPROPERTY(BlueprintReadWrite)
+	int Spawns = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool bSpawned = false;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 private:
-	float RunTimer = 0.0f;
-	int Spawns = 0;
-	bool bSpawned = false;
+	
 	
 	
 	

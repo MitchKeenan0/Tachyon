@@ -77,6 +77,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	float GGDelayTimer = 0.0f;
 
+	UPROPERTY(BlueprintReadWrite)
+	bool bReturn = false;
+
 
 private:
 	int LocalScore = 0;

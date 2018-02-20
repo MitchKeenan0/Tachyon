@@ -95,7 +95,7 @@ void AGammaAIController::Tactical(FVector Target)
 	float RandomDc = FMath::FRandRange(0.0f, 10.0f);
 
 	// Charge
-	if (RandomDc < 3.9f)
+	if (RandomDc < 3.3f)
 	{
 		if (MyCharacter->GetCharge() < 4)
 		{
@@ -119,11 +119,16 @@ void AGammaAIController::Tactical(FVector Target)
 			float AngleToPlayer = FMath::Acos(DotToPlayer);
 			if (AngleToPlayer <= ShootingAngle)
 			{
+				MyCharacter->SetZ(VerticalDist);
 
-				// Firing
-				if (!MyCharacter->GetActiveFlash())
+				// Chance to secondary..
+				if (RandomDc < 6.0f)
 				{
-					MyCharacter->SetZ(VerticalDist);
+					MyCharacter->FireSecondary();
+				}
+				// .. Or fire attack
+				else if (!MyCharacter->GetActiveFlash())
+				{
 					MyCharacter->InitAttack();
 				}
 			}
