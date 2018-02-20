@@ -28,7 +28,10 @@ void AGammaSoloSequence::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	MainSequence(DeltaTime);
+	if (Player != nullptr)
+	{
+		MainSequence(DeltaTime);
+	}
 }
 
 
