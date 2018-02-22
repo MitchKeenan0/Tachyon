@@ -119,7 +119,15 @@ void AGammaAIController::Tactical(FVector Target)
 			float AngleToPlayer = FMath::Acos(DotToPlayer);
 			if (AngleToPlayer <= ShootingAngle)
 			{
-				MyCharacter->SetZ(VerticalDist);
+				// Line-up aim, incorporating forward/zero
+				if (FMath::Abs(AngleToPlayer) <= 0.5f)
+				{
+					MyCharacter->SetZ(0.0f);
+				}
+				else
+				{
+					MyCharacter->SetZ(VerticalDist);
+				}
 
 				// Chance to secondary..
 				if (RandomDc < 6.0f)
