@@ -25,7 +25,7 @@ void AGMatch::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// On gg wait for gg delay before freezing time
-	if ((bGG || bMinorGG) && GGDelayTimer < GGDelayTime)
+	if ((bGG || bMinorGG) && GGDelayTimer <= GGDelayTime)
 	{
 		GGDelayTimer += DeltaTime;
 	}
@@ -36,8 +36,7 @@ void AGMatch::Tick(float DeltaTime)
 		GetPlayers();
 	}
 	
-	bool bOccasion = (bGG || bMinorGG);
-	HandleTimeScale(bOccasion, DeltaTime);
+	HandleTimeScale(DeltaTime);
 }
 
 
@@ -84,25 +83,24 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 }
 
 
-void AGMatch::HandleTimeScale(bool Gg, float Delta)
+void AGMatch::HandleTimeScale(float Delta)
 {
 	// Handle gameover scenario - timing and score handouts
-	if (Gg && (GGDelayTimer >= GGDelayTime))
+	if ((bGG && (GGDelayTimer >= GGDelayTime))
+		|| bMinorGG)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("before drop"));
-
 		// Drop timescale to glacial..
 		if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > GGTimescale)
 		{
 			float DeltaT = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
 			float TimeT = FMath::FInterpConstantTo(DeltaT, GGTimescale, Delta, TimescaleDropSpeed);
 			SetTimeScale(TimeT);
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("dropping"));
 		}
 		else
 		{
 			GGDelayTimer = 0.0f;
 			bGG = false;
+			bMinorGG = false;
 		}
 	}
 	else
@@ -115,7 +113,7 @@ void AGMatch::HandleTimeScale(bool Gg, float Delta)
 			float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
 			float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed);
 			SetTimeScale(TimeT);
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("returning"));
+			GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Blue, TEXT("returning"));
 		}
 		else
 		{

@@ -39,7 +39,7 @@ public:
 	// End-game slow-time functions
 	void ClaimHit(AActor* HitActor, AActor* Winner);
 
-	void HandleTimeScale(bool Gg, float Delta);
+	void HandleTimeScale(float Delta);
 
 	void SetTimeScale(float Time);
 
