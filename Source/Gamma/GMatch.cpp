@@ -62,7 +62,8 @@ bool AGMatch::PlayersAccountedFor()
 void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 {
 	// Player killer
-	if (HitActor->ActorHasTag("Player"))
+	if (HitActor->ActorHasTag("Player")
+		|| (HitActor->ActorHasTag("Bot")))
 	{
 		AGammaCharacter* Reciever = Cast<AGammaCharacter>(Winner);
 		if (Reciever)
@@ -71,10 +72,15 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			bReturn = false;
 			///Reciever->RaiseScore(1);
 		}
+
+		if (HitActor->ActorHasTag("Bot"))
+		{
+			HitActor->Tags.Add("Doomed");
+		}
 	}
 
-	// Bot killer
-	if (HitActor->ActorHasTag("Bot"))
+	// Mob killer
+	if (HitActor->ActorHasTag("Mob"))
 	{
 		bMinorGG = true;
 		bReturn = true;
@@ -113,12 +119,22 @@ void AGMatch::HandleTimeScale(float Delta)
 			float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
 			float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed);
 			SetTimeScale(TimeT);
-			GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Blue, TEXT("returning"));
 		}
 		else
 		{
-			GGDelayTimer = 0.0f;
-			bMinorGG = false;
+			//// Clear doomed actors
+			//TArray<AActor*> DoomedActors;
+			//UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Doomed"), DoomedActors);
+			//if (DoomedActors.Num() > 0)
+			//{
+			//	for (int i = 0; i < DoomedActors.Num(); ++i)
+			//	{
+			//		if (DoomedActors[i] != nullptr)
+			//		{
+			//			DoomedActors[i]->Destroy();
+			//		}
+			//	}
+			//}
 		}
 	}
 }

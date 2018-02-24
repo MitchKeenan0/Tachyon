@@ -243,7 +243,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 	}
 
 	// Consequences
-	if (bHit)
+	if (bHit && !HitActor->ActorHasTag("Doomed"))
 	{
 		SpawnDamage(HitActor, HitActor->GetActorLocation());
 		ApplyKnockback(HitActor);
@@ -257,7 +257,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 
 void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 {
-	if (DamageClass!= nullptr && OwningShooter != nullptr)
+	if (DamageClass!= nullptr)
 	{
 		// Calcify HitActor
 		UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
@@ -271,12 +271,12 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 		}
 		else
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No Flipbook"));
+			//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No Flipbook"));
 		}
 
 		// Spawning damage fx
 		FActorSpawnParameters SpawnParams;
-		FRotator Forward = (HitActor->GetActorLocation() - OwningShooter->GetActorLocation()).Rotation();
+		FRotator Forward = HitActor->GetActorRotation();
 		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, HitPoint, Forward, SpawnParams));
 		DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
 	}
@@ -322,9 +322,16 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 
 void AGAttack::ReportHit(AActor* HitActor)
 {
+	if ((!HitActor->ActorHasTag("Player"))
+		&& (!HitActor->ActorHasTag("Bot")))
+	{
+		HitActor->Tags.Add("Doomed");
+	}
+
 	if (CurrentMatch != nullptr)
 	{
-		bLethal = false;
+		// if multi-hit
+		//bLethal = false;
 		CurrentMatch->ClaimHit(HitActor, OwningShooter);
 	}
 }
@@ -347,7 +354,8 @@ void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 	if (!bHit && bLethal && (OtherActor != OwningShooter))
 	{
 		// Consequences
-		if (!OtherActor->ActorHasTag("Attack")) // && (HitTimer >= (1.0f / HitsPerSecond)))
+		if (!OtherActor->ActorHasTag("Attack")
+			&& !OtherActor->ActorHasTag("Doomed")) /// && (HitTimer >= (1.0f / HitsPerSecond)))
 		{
 			bHit = true;
 
