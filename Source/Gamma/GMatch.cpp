@@ -25,7 +25,7 @@ void AGMatch::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// On gg wait for gg delay before freezing time
-	if (bGG && GGDelayTimer < GGDelayTime)
+	if ((bGG || bMinorGG) && GGDelayTimer < GGDelayTime)
 	{
 		GGDelayTimer += DeltaTime;
 	}
@@ -36,7 +36,8 @@ void AGMatch::Tick(float DeltaTime)
 		GetPlayers();
 	}
 	
-	HandleTimeScale(bGG, DeltaTime);
+	bool bOccasion = (bGG || bMinorGG);
+	HandleTimeScale(bOccasion, DeltaTime);
 }
 
 
@@ -74,10 +75,9 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 	}
 
 	// Bot killer
-	if (HitActor->ActorHasTag("Bot")
-		&& !HitActor->ActorHasTag("Attack"))
+	if (HitActor->ActorHasTag("Bot"))
 	{
-		bGG = true;
+		bMinorGG = true;
 		bReturn = true;
 		HitActor->Tags.Add("Doomed");
 	}
@@ -87,26 +87,41 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 void AGMatch::HandleTimeScale(bool Gg, float Delta)
 {
 	// Handle gameover scenario - timing and score handouts
-	if (Gg && GGDelayTimer >= GGDelayTime)
+	if (Gg && (GGDelayTimer >= GGDelayTime))
 	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("before drop"));
+
 		// Drop timescale to glacial..
 		if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > GGTimescale)
 		{
 			float DeltaT = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
 			float TimeT = FMath::FInterpConstantTo(DeltaT, GGTimescale, Delta, TimescaleDropSpeed);
 			SetTimeScale(TimeT);
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("dropping"));
 		}
 		else
 		{
 			GGDelayTimer = 0.0f;
+			bGG = false;
 		}
 	}
-	else if (bReturn && UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 1.0f)
+	else
 	{
-		// ..Rise timescale back to 1
-		float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-		float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed * TimeDilat);
-		SetTimeScale(TimeT);
+		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("reading ground"));
+
+		if (bReturn && UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 1.0f)
+		{
+			// ..Rise timescale back to 1
+			float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+			float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed);
+			SetTimeScale(TimeT);
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("returning"));
+		}
+		else
+		{
+			GGDelayTimer = 0.0f;
+			bMinorGG = false;
+		}
 	}
 }
 
@@ -186,5 +201,6 @@ void AGMatch::GetLifetimeReplicatedProps(TArray <FLifetimeProperty> & OutLifetim
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AGMatch, bGG);
+	DOREPLIFETIME(AGMatch, bMinorGG);
 	DOREPLIFETIME(AGMatch, GGTimer);
 }

@@ -71,6 +71,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	bool bGG = false;
 
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+	bool bMinorGG = false;
+
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
 	float GGTimer = 0.0f;
 

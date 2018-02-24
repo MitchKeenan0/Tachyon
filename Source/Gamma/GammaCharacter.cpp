@@ -225,7 +225,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Framing up first actor
 			FVector Actor1Velocity = Actor1->GetVelocity();
-			Actor1Velocity.Z *= 0.5f; /// vertical kerning
+			Actor1Velocity.Z *= 0.9f; /// vertical kerning
 			Actor1Velocity.X *= 0.9f; /// lateral kerning
 			
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase);
@@ -242,7 +242,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 					// Framing up with second actor
 					FVector Actor2Velocity = Actor2->GetVelocity();
-					Actor2Velocity.Z *= 0.5f;
+					Actor2Velocity.Z *= 0.9f;
 					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase);
 					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, CameraMoveSpeed);
 				}
@@ -263,7 +263,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			// Positions done
 			// Find the midpoint
 			Midpoint = (PositionOne + PositionTwo) / 2.0f;
-			if (Midpoint.Size() > 1.0f)
+			if (Midpoint.Size() > 0.001f)
 			{
 				// Back away to accommodate distance
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo) + (300 / FramingActors.Num());
@@ -273,17 +273,19 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength, 
 					TargetLengthClamped, DeltaTime, CameraMoveSpeed * 3.0f);
 					
+				// Camera tilt
+				CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue, DeltaTime, CameraTiltSpeed); // pitch
+				CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * CameraTiltValue, DeltaTime, CameraTiltSpeed); // yaw
+				SideViewCameraComponent->SetRelativeRotation(FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue);
+
+				// Adjust position to work angle
+				Midpoint.X -= (CameraTiltZ * (DesiredCameraDistance / 6));
+				Midpoint.Z -= (CameraTiltX * (DesiredCameraDistance / 6));
 
 				// Make it so
 				CameraBoom->SetWorldLocation(Midpoint);
 				CameraBoom->TargetArmLength = DesiredCameraDistance;
 			}
-
-
-			// Camera tilt
-			CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue, DeltaTime, CameraTiltSpeed); // pitch
-			CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * CameraTiltValue, DeltaTime, CameraTiltSpeed); // yaw
-			SideViewCameraComponent->SetRelativeRotation(FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue);
 		}
 	}
 }
