@@ -150,6 +150,9 @@ void AGammaCharacter::BeginPlay()
 
 	ResetLocator();
 
+	// Init charge
+	Charge = FMath::FloorToFloat(ChargeMax / 2);
+
 	//GetCameraBoom()->TargetArmLength = 10000.0f;
 }
 
@@ -568,7 +571,7 @@ void AGammaCharacter::SetAim()
 
 			if (PlayerSound != nullptr)
 			{
-				PlayerSound->SetPitchMultiplier(TimeDelta);
+				PlayerSound->SetPitchMultiplier(Charge);
 				PlayerSound->Play();
 			}
 		}
@@ -612,13 +615,12 @@ void AGammaCharacter::RaiseCharge()
 		if (FVector(InputX, 0.0f, InputZ) != FVector::ZeroVector)
 		{
 			NewMoveKick();
-			//UpdateMoveParticles(FVector(InputX, 0.0f, InputZ));
 		}
 
 		// Sound fx -.-
 		if (PlayerSound != nullptr)
 		{
-			PlayerSound->SetPitchMultiplier(Charge / 10.0f); /// Charges currently 1-10
+			PlayerSound->SetPitchMultiplier(Charge * 0.3f);
 			PlayerSound->Play();
 		}
 

@@ -80,11 +80,10 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 	}
 
 	// Mob killer
-	if (HitActor->ActorHasTag("Mob"))
+	if (HitActor->ActorHasTag("NoKill"))
 	{
 		bMinorGG = true;
 		bReturn = true;
-		HitActor->Tags.Add("Doomed");
 	}
 }
 

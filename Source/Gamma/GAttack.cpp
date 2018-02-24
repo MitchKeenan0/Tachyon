@@ -48,6 +48,14 @@ void AGAttack::BeginPlay()
 	bHit = false;
 	bLethal = false;
 	SetLifeSpan(DurationTime);
+
+	// Add natural deviancy to sound
+	if (AttackSound != nullptr)
+	{
+		float Current = AttackSound->PitchMultiplier;
+		float Spinoff = Current + FMath::FRandRange(-0.33f, 0.33f);
+		AttackSound->SetPitchMultiplier(Spinoff);
+	}
 }
 
 
@@ -227,10 +235,10 @@ void AGAttack::DetectHit(FVector RaycastVector)
 			if (HitActor->ActorHasTag("Shield"))
 			{
 				bLethal = false;
+				ApplyKnockback(HitActor);
+				return;
 			}
-
-			// do some checks to make sure its a player
-			if (HitActor->ActorHasTag("Attack") == false)
+			else if (HitActor->ActorHasTag("Attack") == false)
 			{
 				// good hit as they say
 				bHit = true;
@@ -322,11 +330,11 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 
 void AGAttack::ReportHit(AActor* HitActor)
 {
-	if ((!HitActor->ActorHasTag("Player"))
+	/*if ((!HitActor->ActorHasTag("Player"))
 		&& (!HitActor->ActorHasTag("Bot")))
 	{
 		HitActor->Tags.Add("Doomed");
-	}
+	}*/
 
 	if (CurrentMatch != nullptr)
 	{
