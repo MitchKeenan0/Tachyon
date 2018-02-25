@@ -254,7 +254,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 	// Consequences
 	if (bHit && !HitActor->ActorHasTag("Doomed"))
 	{
-		SpawnDamage(HitActor, HitActor->GetActorLocation());
+		SpawnDamage( HitActor, HitActor->GetActorLocation());
 		ApplyKnockback(HitActor);
 		ReportHit(HitActor);
 
