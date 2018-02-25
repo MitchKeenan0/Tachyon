@@ -395,9 +395,10 @@ void AGammaCharacter::MoveRight(float Value)
 		{
 			float MoveByDot = 0.0f;
 			float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
-			float AngleToInput = FMath::Clamp(FMath::Acos(DotToInput), 1.0f, 180.0f);
-			MoveByDot = AngleToInput * MoveSpeed;
-
+			float AngleToInput = FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -180.0f, 180.0f));
+			MoveByDot = (AngleToInput * TurnSpeed) * MoveSpeed;
+			GetCharacterMovement()->MaxFlySpeed = MoveByDot;
+			GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value * MoveByDot);
 		}
 		
@@ -428,9 +429,10 @@ void AGammaCharacter::MoveUp(float Value)
 		{
 			float MoveByDot = 0.0f;
 			float DotToInput = FVector::DotProduct(CurrentV, MoveInput);
-			float AngleToInput = FMath::Clamp(FMath::Acos(DotToInput), 1.0f, 180.0f);
-			MoveByDot = AngleToInput * MoveSpeed;
-
+			float AngleToInput = FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -180.0f, 180.0f));
+			MoveByDot = (AngleToInput * TurnSpeed) * MoveSpeed;
+			GetCharacterMovement()->MaxFlySpeed = MoveByDot;
+			GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), Value * MoveByDot);
 		}
 	}
