@@ -369,7 +369,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 
 	if (PlayerSound != nullptr)
 	{
-		float VectorScale = GetCharacterMovement()->Velocity.Size() / 1000.0f;
+		float VectorScale = GetCharacterMovement()->Velocity.Size() * 0.001f;
 		float Scalar = FMath::Clamp(VectorScale, 0.2f, 4.0f);
 		PlayerSound->SetPitchMultiplier(Scalar);
 	}
@@ -401,8 +401,8 @@ void AGammaCharacter::MoveRight(float Value)
 		{
 			float MoveByDot = 0.0f;
 			float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
-			float AngleToInput = MoveSpeed + FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -180.0f, 180.0f));
-			MoveByDot = ((AngleToInput * TurnSpeed) * MoveSpeed);
+			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -180.0f, 180.0f));
+			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
 			GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value * MoveByDot);
@@ -435,8 +435,8 @@ void AGammaCharacter::MoveUp(float Value)
 		{
 			float MoveByDot = 0.0f;
 			float DotToInput = FVector::DotProduct(CurrentV, MoveInput);
-			float AngleToInput = MoveSpeed + FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -180.0f, 180.0f));
-			MoveByDot = ((AngleToInput * TurnSpeed) * MoveSpeed);
+			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -180.0f, 180.0f));
+			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
 			GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), Value * MoveByDot);
@@ -628,7 +628,7 @@ void AGammaCharacter::RaiseCharge()
 		// Sound fx -.-
 		if (PlayerSound != nullptr)
 		{
-			PlayerSound->SetPitchMultiplier(Charge * 0.3f);
+			//PlayerSound->SetPitchMultiplier(Charge * 0.3f);
 			PlayerSound->Play();
 		}
 
