@@ -366,6 +366,13 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	
 	// Main update
 	UpdateCharacter(DeltaSeconds);
+
+	if (PlayerSound != nullptr)
+	{
+		float VectorScale = GetCharacterMovement()->Velocity.Size() / 1000.0f;
+		float Scalar = FMath::Clamp(VectorScale, 0.2f, 4.0f);
+		PlayerSound->SetPitchMultiplier(Scalar);
+	}
 }
 
 
@@ -389,15 +396,14 @@ void AGammaCharacter::MoveRight(float Value)
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
 		
-		// Only moving if theres' input
+		// Move by dot product for skating effect
 		if (MoveInput != FVector::ZeroVector)
-			//&& CurrentV != FVector::ZeroVector)
 		{
 			float MoveByDot = 0.0f;
 			float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
-			float AngleToInput = FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -180.0f, 180.0f));
-			MoveByDot = (AngleToInput * TurnSpeed) * MoveSpeed;
-			GetCharacterMovement()->MaxFlySpeed = MoveByDot;
+			float AngleToInput = MoveSpeed + FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -180.0f, 180.0f));
+			MoveByDot = ((AngleToInput * TurnSpeed) * MoveSpeed);
+			GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value * MoveByDot);
 		}
@@ -424,14 +430,14 @@ void AGammaCharacter::MoveUp(float Value)
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = (GetMovementComponent()->Velocity).GetSafeNormal();
 
+		// Move by dot product for skating effect
 		if (MoveInput != FVector::ZeroVector)
-			//&& CurrentV != FVector::ZeroVector)
 		{
 			float MoveByDot = 0.0f;
 			float DotToInput = FVector::DotProduct(CurrentV, MoveInput);
-			float AngleToInput = FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -180.0f, 180.0f));
-			MoveByDot = (AngleToInput * TurnSpeed) * MoveSpeed;
-			GetCharacterMovement()->MaxFlySpeed = MoveByDot;
+			float AngleToInput = MoveSpeed + FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -180.0f, 180.0f));
+			MoveByDot = ((AngleToInput * TurnSpeed) * MoveSpeed);
+			GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), Value * MoveByDot);
 		}

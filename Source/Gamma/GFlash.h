@@ -24,6 +24,9 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float InitialScale = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float FlashGrowthIntensity = 5.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
