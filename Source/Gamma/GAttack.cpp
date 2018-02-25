@@ -126,7 +126,8 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		if (Chara)
 		{
 			float RecoilScalar = KineticForce * -0.5f;
-			Chara->GetCharacterMovement()->AddImpulse(GetActorForwardVector() * RecoilScalar);
+			FRotator RecoilRotator = LocalForward.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
+			Chara->GetCharacterMovement()->AddImpulse(RecoilRotator.Vector() * RecoilScalar);
 		}
 
 		bLethal = true;
