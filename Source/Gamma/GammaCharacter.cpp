@@ -407,7 +407,6 @@ void AGammaCharacter::MoveRight(float Value)
 			GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value * MoveByDot);
 		}
-		
 	}
 
 	ForceNetUpdate();
