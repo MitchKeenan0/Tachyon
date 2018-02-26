@@ -71,12 +71,23 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	float ShootingAngle = 45.0f;
 
-private:
+
 	// Quiet variables
+	UPROPERTY(EditDefaultsOnly)
 	APawn* MyPawn = nullptr;
+
+	UPROPERTY(EditDefaultsOnly)
 	AGammaCharacter* MyCharacter = nullptr;
+
+	UPROPERTY(EditDefaultsOnly)
 	float ReactionTimer = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly)
 	bool bCourseLayedIn = false;
+
+	UPROPERTY(EditDefaultsOnly)
 	FVector LocationTarget = FVector::ZeroVector;
+
+	UPROPERTY(EditDefaultsOnly)
 	FVector MoveInput = FVector::ZeroVector;
 };
