@@ -51,6 +51,12 @@ protected:
 
 	// Attributes
 	UPROPERTY(EditDefaultsOnly)
+	float PrimaryRange = 9500.0f;
+
+	UPROPERTY(EditDefaultsOnly)
+	float SecondaryRange = 4500.0f;
+
+	UPROPERTY(EditDefaultsOnly)
 	float MoveSpeed = 300.0f;
 
 	UPROPERTY(EditDefaultsOnly)

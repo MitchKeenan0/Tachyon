@@ -130,12 +130,14 @@ void AGammaAIController::Tactical(FVector Target)
 				}
 
 				// Chance to secondary..
-				if (RandomDc < 6.0f)
+				if (RandomDc < 6.0f
+					&& (ToPlayer.Size() <= SecondaryRange))
 				{
 					MyCharacter->FireSecondary();
 				}
 				// .. Or fire attack
-				else if (!MyCharacter->GetActiveFlash())
+				else if (!MyCharacter->GetActiveFlash()
+					&& ToPlayer.Size() <= PrimaryRange)
 				{
 					MyCharacter->InitAttack();
 				}
@@ -159,7 +161,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 		FVector RandomOffset = (FMath::VRand() * MoveRange) * (1 / Aggression);
 		RandomOffset.Y = 0.0f;
 		Result = PlayerAtSpeed + RandomOffset;
-		Result.Z *= 0.8f;
+		Result.Z *= 0.5f;
 
 		// And serve
 		bCourseLayedIn = true;
