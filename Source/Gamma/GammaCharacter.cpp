@@ -249,8 +249,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase);
 					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, CameraMoveSpeed);
 				}
-
-				/// TO DO: ^^ camera seems to tilt one direction for each player...
 			}
 			else if (FramingActors.Num() == 1)
 			{
@@ -258,7 +256,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// Framing lone player by their velocity
 				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1->GetVelocity() * CameraSoloVelocityChase);
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, CameraMoveSpeed);
-				//CameraDistance += 500.0f;
 				CameraMaxDistance = 100111.0f;
 			}
 
