@@ -232,14 +232,21 @@ void AGAttack::DetectHit(FVector RaycastVector)
 	if (HitResult)
 	{
 		HitActor = Hit.Actor.Get();
-		if (HitActor)
+		if (HitActor != nullptr)
 		{
 			if (HitActor->ActorHasTag("Shield"))
 			{
-				bLethal = false;
-				SpawnDamage(HitActor, HitActor->GetActorLocation());
-				ApplyKnockback(HitActor);
-				return;
+				AGAttack* Atk = Cast<AGAttack>(HitActor);
+				if (Atk != nullptr)
+				{
+					if (Atk->OwningShooter != OwningShooter)
+					{
+						bLethal = false;
+						SpawnDamage(HitActor, HitActor->GetActorLocation());
+						ApplyKnockback(HitActor);
+						return;
+					}
+				}
 			}
 			else if (HitActor->ActorHasTag("Attack") == false)
 			{
@@ -367,10 +374,17 @@ void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 	{
 		if (OtherActor->ActorHasTag("Shield"))
 		{
-			SpawnDamage(OtherActor, OtherActor->GetActorLocation());
-			ApplyKnockback(OtherActor);
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("Sword hit : %s"), *OtherActor->GetName()));
-			return;
+			AGAttack* Atk = Cast<AGAttack>(HitActor);
+			if (Atk != nullptr)
+			{
+				if (Atk->OwningShooter != OwningShooter)
+				{
+					SpawnDamage(OtherActor, OtherActor->GetActorLocation());
+					ApplyKnockback(OtherActor);
+					GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("Sword hit : %s"), *OtherActor->GetName()));
+					return;
+				}
+			}
 		}
 
 		// Consequences
