@@ -237,6 +237,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 			if (HitActor->ActorHasTag("Shield"))
 			{
 				bLethal = false;
+				SpawnDamage(HitActor, HitActor->GetActorLocation());
 				ApplyKnockback(HitActor);
 				return;
 			}
@@ -303,12 +304,13 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 {
 	// The knock itself
 	FVector AwayFromShooter = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+	float KnockScalar = FMath::Abs(KineticForce);
 
 	// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
 	if (Chara != nullptr)
 	{
-		Chara->GetCharacterMovement()->AddImpulse(AwayFromShooter * KineticForce);
+		Chara->GetCharacterMovement()->AddImpulse(AwayFromShooter * KnockScalar);
 	}
 	else
 	{
@@ -324,7 +326,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 		// Apply force to it
 		if (HitMeshComponent != nullptr)
 		{
-			HitMeshComponent->AddImpulse(AwayFromShooter * KineticForce);
+			HitMeshComponent->AddImpulse(AwayFromShooter * KnockScalar);
 		}
 	}
 }
@@ -363,6 +365,14 @@ void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 {
 	if (!bHit && bLethal && (OtherActor != OwningShooter))
 	{
+		if (OtherActor->ActorHasTag("Shield"))
+		{
+			SpawnDamage(OtherActor, OtherActor->GetActorLocation());
+			ApplyKnockback(OtherActor);
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("Sword hit : %s"), *OtherActor->GetName()));
+			return;
+		}
+
 		// Consequences
 		if (!OtherActor->ActorHasTag("Attack")
 			&& !OtherActor->ActorHasTag("Doomed")) /// && (HitTimer >= (1.0f / HitsPerSecond)))
