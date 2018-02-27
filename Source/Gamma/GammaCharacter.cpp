@@ -259,7 +259,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1->GetVelocity() * CameraSoloVelocityChase);
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, CameraMoveSpeed);
 				//CameraDistance += 500.0f;
-				CameraMaxDistance = 10111.0f;
+				CameraMaxDistance = 100111.0f;
 			}
 
 
