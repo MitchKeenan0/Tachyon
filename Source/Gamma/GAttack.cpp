@@ -404,8 +404,6 @@ void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 			// Hit another attack..
 		}
 	}
-
-	// attack should check for shield to make reflect fx
 }
 
 
