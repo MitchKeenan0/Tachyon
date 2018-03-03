@@ -7,7 +7,7 @@
 #include "ParticleDefinitions.h"
 #include "Particles/ParticleSystem.h"
 #include "PaperSpriteComponent.h"
-#include "PaperFlipbookComponent.h"
+//#include "PaperFlipbookComponent.h"
 
 AGAttack::AGAttack()
 {
@@ -277,20 +277,23 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 {
 	if (DamageClass!= nullptr)
 	{
+
+
+		// *** MOVED TO MATCH.CPP ***
 		// Calcify HitActor
-		UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
-			(HitActor->FindComponentByClass<UPaperFlipbookComponent>());
-		if (ActorFlipbook != nullptr)
-		{
-			float CurrentPosition = FMath::FloorToInt(ActorFlipbook->GetPlaybackPosition());
-			//ActorFlipbook->SetPlayRate(1);
-			ActorFlipbook->SetPlaybackPositionInFrames(1, true);
-			///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("Got Flipbook"));
-		}
-		else
-		{
-			//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No Flipbook"));
-		}
+		//UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
+		//	(HitActor->FindComponentByClass<UPaperFlipbookComponent>());
+		//if (ActorFlipbook != nullptr)
+		//{
+		//	float CurrentPosition = FMath::FloorToInt(ActorFlipbook->GetPlaybackPosition());
+		//	//ActorFlipbook->SetPlayRate(1);
+		//	ActorFlipbook->SetPlaybackPositionInFrames(1, true);
+		//	///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("Got Flipbook"));
+		//}
+		//else
+		//{
+		//	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No Flipbook"));
+		//}
 
 		// Spawning damage fx
 		FActorSpawnParameters SpawnParams;

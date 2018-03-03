@@ -20,12 +20,18 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Charge reporters for HUD display
+	// Charge & Health reporters for HUD display
 	UFUNCTION(BlueprintCallable)
 	float GetLocalChargePercent();
 
 	UFUNCTION(BlueprintCallable)
 	float GetOpponentChargePercent();
+
+	UFUNCTION(BlueprintCallable)
+	float GetLocalHealth();
+
+	UFUNCTION(BlueprintCallable)
+	float GetOpponentHealth();
 
 	UFUNCTION(BlueprintCallable)
 	AGammaCharacter* GetOpponentPlayer() { return OpponentPlayer; }

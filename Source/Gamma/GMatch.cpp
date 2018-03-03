@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "GMatch.h"
+#include "PaperFlipbookComponent.h"
 
 
 // Sets default values
@@ -65,19 +66,47 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 	if (HitActor->ActorHasTag("Player")
 		|| (HitActor->ActorHasTag("Bot")))
 	{
-		AGammaCharacter* Reciever = Cast<AGammaCharacter>(Winner);
-		if (Reciever)
+		AGammaCharacter* Reciever = Cast<AGammaCharacter>(HitActor);
+		if (Reciever != nullptr)
 		{
-			bGG = true;
-			bReturn = false;
-			///Reciever->RaiseScore(1);
-		}
+			// Damage
+			Reciever->ModifyHealth(-20.0f);
 
-		if (HitActor->ActorHasTag("Bot"))
-		{
-			HitActor->Tags.Add("Doomed");
+			// End of game?
+			if (Reciever->GetHealth() == 0.0f)
+			{
+				bGG = true;
+				bReturn = false;
+
+				//Calcify HitActor
+				UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
+					(HitActor->FindComponentByClass<UPaperFlipbookComponent>());
+				if (ActorFlipbook != nullptr)
+				{
+					float CurrentPosition = FMath::FloorToInt(ActorFlipbook->GetPlaybackPosition());
+					//ActorFlipbook->SetPlayRate(1);
+					ActorFlipbook->SetPlaybackPositionInFrames(1, true);
+					///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("Got Flipbook"));
+				}
+
+				if (HitActor->ActorHasTag("Bot"))
+				{
+					HitActor->Tags.Add("Doomed");
+				}
+			}
+			else
+			{
+				bMinorGG = true;
+				bReturn = true;
+			}
 		}
 	}
+	/*else
+	{
+		bMinorGG = true;
+		bReturn = true;
+	}
+	*/
 
 	// Mob killer
 	if (HitActor->ActorHasTag("NoKill"))
@@ -85,6 +114,8 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 		bMinorGG = true;
 		bReturn = true;
 	}
+
+	
 }
 
 
@@ -148,7 +179,7 @@ void AGMatch::SetTimeScale(float Time)
 // Charge Gets called by ScoreboardWidget BP
 float AGMatch::GetLocalChargePercent()
 {
-	if (LocalPlayer)
+	if (LocalPlayer != nullptr)
 	{
 		float LocalCharge = LocalPlayer->GetChargePercentage();
 		///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, FString::Printf(TEXT("Charge: %f"), LocalCharge));
@@ -162,7 +193,7 @@ float AGMatch::GetLocalChargePercent()
 }
 float AGMatch::GetOpponentChargePercent()
 {
-	if (OpponentPlayer)
+	if (OpponentPlayer != nullptr)
 	{
 		return OpponentPlayer->GetChargePercentage();
 	}
@@ -170,6 +201,32 @@ float AGMatch::GetOpponentChargePercent()
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("match sees no opponent player"));
 		return -1.0f;
+	}
+}
+
+
+float AGMatch::GetLocalHealth()
+{
+	if (LocalPlayer != nullptr)
+	{
+		float LocalHealth = LocalPlayer->GetHealth();
+		return LocalHealth;
+	}
+	else
+	{
+		return 0.0f;
+	}
+}
+float AGMatch::GetOpponentHealth()
+{
+	if (OpponentPlayer != nullptr)
+	{
+		float OpponentHealth = OpponentPlayer->GetHealth();
+		return OpponentHealth;
+	}
+	else
+	{
+		return 0.0f;
 	}
 }
 

@@ -843,6 +843,26 @@ bool AGammaCharacter::ServerPrefireTiming_Validate()
 }
 
 
+// MODIFY HEALTH
+void AGammaCharacter::ModifyHealth(float Value)
+{
+	Health = FMath::Clamp(Health += Value, 0.0f, 100.0f);
+
+	if (Role < ROLE_Authority)
+	{
+		ServerModifyHealth(Value);
+	}
+}
+void AGammaCharacter::ServerModifyHealth_Implementation(float Value)
+{
+	ModifyHealth(Value);
+}
+bool AGammaCharacter::ServerModifyHealth_Validate(float Value)
+{
+	return true;
+}
+
+
 // REMATCH
 void AGammaCharacter::Rematch()
 {

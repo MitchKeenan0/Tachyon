@@ -85,6 +85,9 @@ public:
 	float GetCharge() { return Charge; }
 
 	UFUNCTION(BlueprintCallable)
+	float GetHealth() { return Health; }
+
+	UFUNCTION(BlueprintCallable)
 	float GetChargePercentage();
 
 	UFUNCTION(BlueprintCallable)
@@ -218,6 +221,11 @@ public:
 	void PrefireTiming();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerPrefireTiming();
+
+	UFUNCTION(BlueprintCallable)
+	void ModifyHealth(float Value);
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerModifyHealth(float Value);
 
 
 protected:
