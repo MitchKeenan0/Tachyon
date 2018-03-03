@@ -72,15 +72,15 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Pitch After: %f"), AttackSound->PitchMultiplier));
 
 	// Lifespan
-	if (MagnitudeTimeScalar != 0.0f)
+	/*if (MagnitudeTimeScalar != 0.0f)
 	{
 		DynamicLifetime = DurationTime * (1.0f + (AttackMagnitude * MagnitudeTimeScalar));
 	}
 	else 
 	{ 
 		DynamicLifetime = DurationTime;
-	}
-	SetLifeSpan(DynamicLifetime);
+	}*/
+	SetLifeSpan(DurationTime);
 
 	//// Last-second update to direction after fire
 	float DirRecalc = ShotDirection * ShootingAngle;
@@ -151,7 +151,7 @@ void AGAttack::Tick(float DeltaTime)
 	}
 
 	// End-of-life activities
-	float CloseEnough = DynamicLifetime * 0.97f;
+	float CloseEnough = DurationTime * 0.97f;
 	if (LifeTimer >= CloseEnough || this->IsPendingKillOrUnreachable())
 	{
 		AttackParticles->bSuppressSpawning = true;
