@@ -846,7 +846,7 @@ bool AGammaCharacter::ServerPrefireTiming_Validate()
 // MODIFY HEALTH
 void AGammaCharacter::ModifyHealth(float Value)
 {
-	Health = FMath::Clamp(Health += Value, 0.0f, 100.0f);
+	Health = FMath::Clamp(Health + Value, 0.0f, 100.0f);
 
 	if (Role < ROLE_Authority)
 	{
