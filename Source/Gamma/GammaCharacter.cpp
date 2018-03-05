@@ -307,7 +307,7 @@ void AGammaCharacter::LocatorScaling()
 		// Scaling down
 		if (Locator->RelativeScale3D.Size() >= 0.1f)
 		{
-			FVector ShrinkingSize = Locator->RelativeScale3D * 0.9f;
+			FVector ShrinkingSize = Locator->RelativeScale3D * 0.93f;
 			Locator->SetRelativeScale3D(ShrinkingSize);
 		}
 		else if (Locator->RelativeScale3D == FVector(25.0f, 25.0f, 25.0f)
@@ -364,10 +364,12 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	// Main update
 	UpdateCharacter(DeltaSeconds);
 
+
+	// Update player pitch
 	if (PlayerSound != nullptr)
 	{
 		float VectorScale = GetCharacterMovement()->Velocity.Size() * 0.001f;
-		float Scalar = FMath::Clamp(VectorScale, 0.2f, 4.0f);
+		float Scalar = FMath::Clamp(VectorScale, 0.2f, 4.0f) * 0.5f;
 		PlayerSound->SetPitchMultiplier(Scalar);
 	}
 }
@@ -398,7 +400,7 @@ void AGammaCharacter::MoveRight(float Value)
 		{
 			float MoveByDot = 0.0f;
 			float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
-			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -180.0f, 180.0f));
+			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -90.0f, 90.0f));
 			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
 			GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			GetCharacterMovement()->MaxAcceleration = MoveByDot;
@@ -431,7 +433,7 @@ void AGammaCharacter::MoveUp(float Value)
 		{
 			float MoveByDot = 0.0f;
 			float DotToInput = FVector::DotProduct(CurrentV, MoveInput);
-			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -180.0f, 180.0f));
+			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -90.0f, 90.0f));
 			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
 			GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			GetCharacterMovement()->MaxAcceleration = MoveByDot;
@@ -486,15 +488,15 @@ void AGammaCharacter::NewMoveKick()
 		FVector MoveInputVector = FVector(InputX, 0.0f, InputZ);
 		FVector CurrentVelocity = GetCharacterMovement()->Velocity;
 		float TimeDelta = GetWorld()->DeltaTimeSeconds;
-		float RelativityToMaxSpeed = (MaxMoveSpeed * MoveFreshMultiplier) - CurrentVelocity.Size();
-		float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
+		float RelativityToMaxSpeed = (MaxMoveSpeed) - CurrentVelocity.Size();
+		//float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
 
 		// Force, clamp, & effect chara movement
 		FVector KickVector = MoveInputVector
 			* MoveFreshMultiplier
-			* RelativityToMaxSpeed
-			* DotScalar;
-		KickVector = KickVector.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier);
+			* RelativityToMaxSpeed;
+			//* DotScalar;
+		//KickVector = KickVector.GetClampedToSize(0.0f, MaxMoveSpeed);
 		GetCharacterMovement()->AddImpulse(KickVector * TimeDelta);
 
 		bMoved = false;

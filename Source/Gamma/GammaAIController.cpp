@@ -154,7 +154,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 	if (Player != nullptr)
 	{
 		FVector PlayerLocation = Player->GetActorLocation();
-		/// not used	FVector AILocation = GetPawn()->GetActorLocation();
+		/// FVector AILocation = GetPawn()->GetActorLocation();
 
 		// Getting spicy
 		FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
