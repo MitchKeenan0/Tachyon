@@ -97,10 +97,7 @@ void AGammaAIController::Tactical(FVector Target)
 	// Charge
 	if (RandomDc < 3.3f)
 	{
-		if (MyCharacter->GetCharge() < 4)
-		{
-			MyCharacter->RaiseCharge();
-		}
+		MyCharacter->RaiseCharge();
 	}
 
 	// Shooting
@@ -221,22 +218,6 @@ void AGammaAIController::NavigateTo(FVector Target)
 			MyPawn->AddMovementInput(MoveInput * MoveByDot);
 			bMoved = true;
 		}
-		/*
-		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
-		FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
-
-		// Move by dot product for skating effect
-		if (MoveInput != FVector::ZeroVector)
-		{
-			float MoveByDot = 0.0f;
-			float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
-			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -180.0f, 180.0f));
-			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
-			GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
-			GetCharacterMovement()->MaxAcceleration = MoveByDot;
-			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value * MoveByDot);
-		}
-		*/
 
 		// We've arrived
 		if (!bMoved)

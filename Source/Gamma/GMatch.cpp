@@ -73,7 +73,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			Reciever->ModifyHealth(-20.0f);
 
 			// End of game?
-			if (Reciever->GetHealth() == 0.0f)
+			if (Reciever->GetHealth() <= 0.0f)
 			{
 				bGG = true;
 				bReturn = false;
