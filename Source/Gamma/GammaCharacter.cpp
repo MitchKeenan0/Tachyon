@@ -305,7 +305,7 @@ void AGammaCharacter::LocatorScaling()
 	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.2f)
 	{
 		// Scaling down
-		if (Locator->RelativeScale3D.Size() >= 0.1f)
+		if (Locator->RelativeScale3D.Size() >= 0.01f)
 		{
 			FVector ShrinkingSize = Locator->RelativeScale3D * 0.93f;
 			Locator->SetRelativeScale3D(ShrinkingSize);
