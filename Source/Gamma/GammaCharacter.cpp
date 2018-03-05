@@ -268,7 +268,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// Back away to accommodate distance
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo) + (300 / FramingActors.Num());
 				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(DistBetweenActors * 300.f) * CameraDistance,
-					300.0f,
+					1300.0f,
 					CameraMaxDistance);
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength, 
 					TargetLengthClamped, DeltaTime, CameraMoveSpeed * 3.0f);
