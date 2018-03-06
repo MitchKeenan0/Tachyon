@@ -10,6 +10,11 @@ void AGammaAIController::BeginPlay()
 	// Get our Gamma Character
 	MyPawn = GetPawn();
 	MyCharacter = Cast<AGammaCharacter>(MyPawn);
+
+	/*if (MyCharacter != nullptr)
+	{
+		MoveSpeed = MyCharacter->MoveSpeed;
+	}*/
 }
 
 
@@ -95,7 +100,7 @@ void AGammaAIController::Tactical(FVector Target)
 	float RandomDc = FMath::FRandRange(0.0f, 10.0f);
 
 	// Charge
-	if (RandomDc < 3.3f)
+	if (RandomDc < 3.68f)
 	{
 		MyCharacter->RaiseCharge();
 	}
