@@ -153,7 +153,13 @@ void AGammaCharacter::BeginPlay()
 	// Init charge
 	Charge = FMath::FloorToFloat(ChargeMax / 2);
 
-	//GetCameraBoom()->TargetArmLength = 10000.0f;
+	// Init camera
+	FVector PlayerLocation = GetActorLocation();
+	PlayerLocation.Y = 0.0f;
+	CameraBoom->SetRelativeLocation(PlayerLocation);
+	PositionOne = PlayerLocation;
+	PositionTwo = PlayerLocation;
+	CameraBoom->TargetArmLength = 1000;
 }
 
 

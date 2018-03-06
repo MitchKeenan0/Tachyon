@@ -384,7 +384,6 @@ void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 				{
 					SpawnDamage(OtherActor, OtherActor->GetActorLocation());
 					ApplyKnockback(OtherActor);
-					GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("Sword hit : %s"), *OtherActor->GetName()));
 					return;
 				}
 			}
