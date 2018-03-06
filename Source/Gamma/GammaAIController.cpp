@@ -110,16 +110,20 @@ void AGammaAIController::Tactical(FVector Target)
 	// Random number to evoke choice
 	float RandomDc = FMath::FRandRange(0.0f, 10.0f);
 
-	// Charge
+	if (RandomDc <= 0.09f)
+	{
+		// Chance to do nothing
+		return;
+	}
 	if (RandomDc < 3.68f)
 	{
+		// Charge
 		MyCharacter->RaiseCharge();
 	}
-
-	// Shooting
 	else if (MyCharacter != nullptr)
 	{
-		// Considerations for shooting
+		// Attack and Secondary
+		// 
 		FVector LocalForward = MyCharacter->GetActorForwardVector();
 		FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
 		float VerticalDist = FMath::FloorToFloat(FMath::Clamp(ToPlayer.Z, -1.0f, 1.0f));
