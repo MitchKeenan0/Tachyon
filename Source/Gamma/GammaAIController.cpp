@@ -174,7 +174,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 		FVector RandomOffset = (FMath::VRand() * MoveRange) * (1 / Aggression);
 		RandomOffset.Y = 0.0f;
 		Result = PlayerAtSpeed + RandomOffset;
-		Result.Z *= 0.3f;
+		
 
 		// And serve
 		bCourseLayedIn = true;
