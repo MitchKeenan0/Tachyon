@@ -266,9 +266,10 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			if (Midpoint.Size() > 0.001f)
 			{
 				// Back away to accommodate distance
-				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo) + (300 / FramingActors.Num());
-				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(DistBetweenActors * 300.f) * CameraDistance,
-					1300.0f,
+				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo);
+				float TargetLength = DistBetweenActors + (300 / FramingActors.Num());
+				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 555.5f) * CameraDistance,
+					300.0f,
 					CameraMaxDistance);
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength, 
 					TargetLengthClamped, DeltaTime, CameraMoveSpeed * 3.0f);
@@ -307,8 +308,13 @@ void AGammaCharacter::LocatorScaling()
 		// Scaling down
 		if (Locator->RelativeScale3D.Size() >= 0.01f)
 		{
-			FVector ShrinkingSize = Locator->RelativeScale3D * 0.93f;
+			float DeltaTime = GetWorld()->DeltaTimeSeconds;
+			FVector BottomSize = FVector(0.01f, 0.01f, 0.01f);
+			FVector ShrinkingSize = FMath::VInterpTo(Locator->RelativeScale3D, BottomSize, DeltaTime, 3.0f); //Locator->RelativeScale3D * 0.93f;
 			Locator->SetRelativeScale3D(ShrinkingSize);
+
+			float SpinScalar = 1 + (1000 / Locator->RelativeScale3D.Size());
+			Locator->AddLocalRotation(FRotator(SpinScalar, 0.0f, 0.0f) * DeltaTime);
 		}
 		else if (Locator->RelativeScale3D == FVector(25.0f, 25.0f, 25.0f)
 			&& Locator->IsVisible())

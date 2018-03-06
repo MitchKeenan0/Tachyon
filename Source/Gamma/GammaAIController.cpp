@@ -11,10 +11,6 @@ void AGammaAIController::BeginPlay()
 	MyPawn = GetPawn();
 	MyCharacter = Cast<AGammaCharacter>(MyPawn);
 
-	/*if (MyCharacter != nullptr)
-	{
-		MoveSpeed = MyCharacter->MoveSpeed;
-	}*/
 }
 
 
@@ -30,24 +26,14 @@ void AGammaAIController::Tick(float DeltaSeconds)
 	else if (MyCharacter != nullptr)
 	{
 
-		// Locating actual player
-		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
-		if (PlayersArray.Num() > 0)
+		// Set move values by character's flavour
+		if (MoveSpeed == -1.0f)
 		{
-			for (int i = 0; i < PlayersArray.Num(); ++i)
-			{
-				if (PlayersArray[i] != nullptr
-					&& PlayersArray[i] != MyPawn)
-				{
-					AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(PlayersArray[i]);
-					if (PotentialPlayer != nullptr)
-					{
-						Player = PotentialPlayer;
-						break;
-					}
-				}
-			}
+			MoveSpeed = MyCharacter->GetMoveSpeed();
+			TurnSpeed = MyCharacter->GetTurnSpeed();
+			MovesPerSec = MyCharacter->GetMovesPerSec();
 		}
+
 		if (Player != nullptr)
 		{
 			// Got a player - stunt on'em
@@ -66,13 +52,38 @@ void AGammaAIController::Tick(float DeltaSeconds)
 			}
 
 			// Get some moves
-			if (LocationTarget == FVector::ZeroVector)
+			if (TravelTimer >= 3.0f || 
+				LocationTarget == FVector::ZeroVector)
 			{
 				GetNewLocationTarget();
+				TravelTimer = 0.0f;
 			}
 			else
 			{
 				NavigateTo(LocationTarget);
+				MoveTimer += DeltaSeconds;
+				TravelTimer += DeltaSeconds;
+			}
+		}
+		else
+		{
+			// Locating actual player
+			UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
+			if (PlayersArray.Num() > 0)
+			{
+				for (int i = 0; i < PlayersArray.Num(); ++i)
+				{
+					if (PlayersArray[i] != nullptr
+						&& PlayersArray[i] != MyPawn)
+					{
+						AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(PlayersArray[i]);
+						if (PotentialPlayer != nullptr)
+						{
+							Player = PotentialPlayer;
+							break;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -175,6 +186,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 
 void AGammaAIController::NavigateTo(FVector Target)
 {
+
 	// Basics and line to Target
 	FVector MyLocation = MyPawn->GetActorLocation();
 	FVector ToTarget = (Target - MyLocation);
@@ -186,7 +198,7 @@ void AGammaAIController::NavigateTo(FVector Target)
 		bCourseLayedIn = false;
 		return;
 	}
-	else if (GetWorld())
+	else if (GetWorld() && MoveTimer >= (1 / MovesPerSec))
 	{
 		// Compare movement priorites by distance
 		float VerticalDistance = FMath::Abs(ToTarget.Z);
@@ -199,12 +211,10 @@ void AGammaAIController::NavigateTo(FVector Target)
 		if (LateralDistance > 100)
 		{
 			ValueX = FMath::Clamp(ToTarget.X, -1.0f, 1.0f);
-			bMoved = true;
 		}
 		if (VerticalDistance > 100)
 		{
 			ValueZ = FMath::Clamp(ToTarget.Z, -1.0f, 1.0f);
-			bMoved = true;
 		}
 
 		MoveInput = FVector(ValueX, 0.0f, ValueZ).GetSafeNormal();
@@ -215,13 +225,13 @@ void AGammaAIController::NavigateTo(FVector Target)
 		{
 			float MoveByDot = 0.0f;
 			float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
-			float TurnSpeed = -0.05f;
-			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -180.0f, 180.0f));
+			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -90.0f, 90.0f));
 			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
 			MyCharacter->GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			MyCharacter->GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			MyPawn->AddMovementInput(MoveInput * MoveByDot);
 			bMoved = true;
+			MoveTimer = 0.0f;
 		}
 
 		// We've arrived

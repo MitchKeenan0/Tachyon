@@ -57,7 +57,13 @@ protected:
 	float SecondaryRange = 4500.0f;
 
 	UPROPERTY(EditDefaultsOnly)
-	float MoveSpeed = 300.0f;
+	float MoveSpeed = -1.0f;
+
+	UPROPERTY(EditDefaultsOnly)
+	float TurnSpeed = 300.0f;
+
+	UPROPERTY(EditDefaultsOnly)
+	float MovesPerSec = 5.0f;
 
 	UPROPERTY(EditDefaultsOnly)
 	float MoveRange = 750.0f;
@@ -90,4 +96,11 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	FVector MoveInput = FVector::ZeroVector;
+
+private:
+	UPROPERTY()
+	float MoveTimer = 0.0f;
+
+	UPROPERTY()
+	float TravelTimer = 0.0f;
 };

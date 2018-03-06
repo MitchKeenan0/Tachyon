@@ -103,6 +103,11 @@ public:
 		}
 	}
 
+	// AI HELPER FUNCTIONS
+	float GetMoveSpeed() { return MoveSpeed; }
+	float GetTurnSpeed() { return TurnSpeed; }
+	float GetMovesPerSec() { return MovesPerSecond; }
+
 
 protected:
 	// Called when the game starts or when spawned
