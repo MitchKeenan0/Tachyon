@@ -350,6 +350,19 @@ void AGAttack::ReportHit(AActor* HitActor)
 		HitActor->Tags.Add("Doomed");
 	}*/
 
+	if (HitActor->ActorHasTag("Grow"))
+	{
+		FVector HitActorScale = HitActor->GetActorScale3D();
+		HitActor->SetActorScale3D(HitActorScale * 1.15f);
+		/*TSubclassOf<UStaticMeshComponent> MeshCompTest;
+		UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(HitActor->GetComponentByClass(MeshCompTest));
+		if (MeshComp != nullptr)
+		{
+			float MeshMass = MeshComp->GetMass();
+			MeshComp->SetMassScale(NAME_None, MeshMass * 0.9f);
+		}*/
+	}
+
 	if (CurrentMatch != nullptr)
 	{
 		// if multi-hit
