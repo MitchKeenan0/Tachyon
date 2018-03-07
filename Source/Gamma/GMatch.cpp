@@ -69,8 +69,9 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 		AGammaCharacter* Reciever = Cast<AGammaCharacter>(HitActor);
 		if (Reciever != nullptr)
 		{
-			// Damage
-			Reciever->ModifyHealth(-20.0f);
+
+			//FTimerHandle UnusedHandle;
+			//GetWorldTimerManager().SetTimer(UnusedHandle, )
 
 			// End of game?
 			if (Reciever->GetHealth() <= 0.0f)

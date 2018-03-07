@@ -273,8 +273,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				// Back away to accommodate distance
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo);
-				float TargetLength = DistBetweenActors + (300 / FramingActors.Num());
-				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 555.5f) * CameraDistance,
+				float VerticalDist = FMath::Abs((PositionTwo - PositionOne).Z);
+				float TargetLength = DistBetweenActors + (300 / FramingActors.Num()) + VerticalDist;
+				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 420.0f) * CameraDistance,
 					300.0f,
 					CameraMaxDistance);
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength, 
@@ -916,6 +917,14 @@ void AGammaCharacter::ResetFlipbook()
 		ActorFlipbook->SetPlaybackPositionInFrames(0, true);
 		ActorFlipbook->SetPlayRate(1);
 	}
+
+	// Init camera
+	FVector PlayerLocation = GetActorLocation();
+	PlayerLocation.Y = 0.0f;
+	CameraBoom->SetRelativeLocation(PlayerLocation);
+	PositionOne = PlayerLocation;
+	PositionTwo = PlayerLocation;
+	CameraBoom->TargetArmLength = 5000;
 }
 
 

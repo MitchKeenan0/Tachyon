@@ -73,13 +73,20 @@ void AGammaSoloSequence::SpawnDenizen()
 		PlayerWiseLocation = PlayerLocation + PlayerVelocity;
 	}
 
-	FVector RandomOffset = (FMath::VRand() * 1000);
+	FVector RandomOffset = (FMath::VRand() * 2200);
 	RandomOffset.Y = 0.0f;
 	FVector SpawnLoc = PlayerWiseLocation + RandomOffset;
 
 	// Random character each spawn
 	TSubclassOf<AGammaCharacter> PlayerSpawning = nullptr;
 	int Rando = FMath::FloorToInt(FMath::FRand() * 3);
+	
+	// Ensure different enemy each time
+	if (Rando == PreviousSpawn)
+	{
+		return;
+	}
+
 	switch (Rando)
 	{
 		case 0: PlayerSpawning = KaraokeClass;
@@ -96,6 +103,7 @@ void AGammaSoloSequence::SpawnDenizen()
 	if (NewDenizen != nullptr)
 	{
 		++Spawns;
+		PreviousSpawn = Rando;
 	}
 	
 }

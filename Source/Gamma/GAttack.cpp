@@ -350,6 +350,14 @@ void AGAttack::ReportHit(AActor* HitActor)
 		HitActor->Tags.Add("Doomed");
 	}*/
 
+	// Damage
+	AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
+	if (PotentialPlayer != nullptr)
+	{
+		PotentialPlayer->ModifyHealth(-20);
+	}
+
+	// Grow maze cubes
 	if (HitActor->ActorHasTag("Grow"))
 	{
 		FVector HitActorScale = HitActor->GetActorScale3D();

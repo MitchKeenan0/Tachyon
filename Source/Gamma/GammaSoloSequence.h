@@ -68,7 +68,8 @@ public:
 
 private:
 	
-	
+	UPROPERTY()
+	int PreviousSpawn = 0;
 	
 	
 };
