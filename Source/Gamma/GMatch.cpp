@@ -70,8 +70,8 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 		if (Reciever != nullptr)
 		{
 
-			//FTimerHandle UnusedHandle;
-			//GetWorldTimerManager().SetTimer(UnusedHandle, )
+			/*FTimerHandle UnusedHandle;
+			GetWorldTimerManager().SetTimer(UnusedHandle, 1.0f, false, 0.1f);*/
 
 			// End of game?
 			if (Reciever->GetHealth() <= 0.0f)
