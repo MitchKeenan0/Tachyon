@@ -63,8 +63,9 @@ bool AGMatch::PlayersAccountedFor()
 void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 {
 	// Player killer
-	if (HitActor->ActorHasTag("Player")
+	if ((HitActor->ActorHasTag("Player")
 		|| (HitActor->ActorHasTag("Bot")))
+		&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) >= GGTimescale)
 	{
 		AGammaCharacter* Reciever = Cast<AGammaCharacter>(HitActor);
 		if (Reciever != nullptr)
@@ -122,10 +123,16 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 
 void AGMatch::HandleTimeScale(float Delta)
 {
+	if (bGG)
+	{
+		bReturn = false;
+	}
+
 	// Handle gameover scenario - timing and score handouts
 	if ((bGG && (GGDelayTimer >= GGDelayTime))
 		|| bMinorGG)
 	{
+
 		// Drop timescale to glacial..
 		if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > GGTimescale)
 		{

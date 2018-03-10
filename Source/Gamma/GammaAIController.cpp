@@ -171,13 +171,14 @@ FVector AGammaAIController::GetNewLocationTarget()
 	if (Player != nullptr)
 	{
 		FVector PlayerLocation = Player->GetActorLocation();
-		/// FVector AILocation = GetPawn()->GetActorLocation();
+		FVector AILocation = GetPawn()->GetActorLocation();
 
 		// Getting spicy
 		FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
 		FVector RandomOffset = (FMath::VRand() * MoveRange) * (1 / Aggression);
 		RandomOffset.Y = 0.0f;
-		Result = PlayerAtSpeed + RandomOffset;
+		Result = (PlayerAtSpeed - AILocation) + RandomOffset;
+		Result.Z *= 0.5f;
 		
 
 		// And serve
