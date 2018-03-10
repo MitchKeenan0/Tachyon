@@ -37,6 +37,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool ReactionTiming(float DeltaTime);
 
+	UFUNCTION(BlueprintCallable)
+	void SetReactionTime(float Value) { ReactionTime = Value; }
+
+	UFUNCTION(BlueprintCallable)
+	float GetReactionTime() { return ReactionTime; }
+
 	/*UFUNCTION(BlueprintCallable)
 	void InitAttack();
 

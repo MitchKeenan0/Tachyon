@@ -10,7 +10,6 @@ void AGammaAIController::BeginPlay()
 	// Get our Gamma Character
 	MyPawn = GetPawn();
 	MyCharacter = Cast<AGammaCharacter>(MyPawn);
-
 }
 
 
@@ -76,7 +75,8 @@ void AGammaAIController::Tick(float DeltaSeconds)
 				for (int i = 0; i < PlayersArray.Num(); ++i)
 				{
 					if (PlayersArray[i] != nullptr
-						&& PlayersArray[i] != MyPawn)
+						&& PlayersArray[i] != MyPawn
+						&& !PlayersArray[i]->ActorHasTag("Spectator"))
 					{
 						AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(PlayersArray[i]);
 						if (PotentialPlayer != nullptr)

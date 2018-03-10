@@ -112,6 +112,8 @@ void AGammaSoloSequence::SpawnDenizen()
 	{
 		++Spawns;
 		PreviousSpawn = Rando;
+
+		// GameInst = GetGameInstance();
 	}
 	
 }
