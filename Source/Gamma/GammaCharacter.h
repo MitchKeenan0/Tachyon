@@ -107,6 +107,7 @@ public:
 	float GetMoveSpeed() { return MoveSpeed; }
 	float GetTurnSpeed() { return TurnSpeed; }
 	float GetMovesPerSec() { return MovesPerSecond; }
+	float GetPrefireTime() { return PrefireTime; }
 
 
 protected:

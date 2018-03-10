@@ -28,13 +28,16 @@ void AGammaSoloSequence::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (Player != nullptr)
+	MainSequence(DeltaTime);
+
+	/*if (Player != nullptr)
 	{
 		MainSequence(DeltaTime);
 	}
-	else
+	else*/
+	if (Player == nullptr)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Blue, TEXT("no player brahhh"));
+		//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Blue, TEXT("no player brahhh"));
 		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
 		if (PlayersArray.Num() > 0)
 		{
@@ -71,6 +74,11 @@ void AGammaSoloSequence::SpawnDenizen()
 		FVector PlayerLocation = Player->GetActorLocation();
 		FVector PlayerVelocity = Player->GetCharacterMovement()->Velocity;
 		PlayerWiseLocation = PlayerLocation + PlayerVelocity;
+	}
+	else
+	{
+		float Rando = FMath::FRandRange(0.0f, 1000.0f);
+		PlayerWiseLocation = FVector(Rando, 0.0f, Rando);
 	}
 
 	FVector RandomOffset = (FMath::VRand() * 2200);

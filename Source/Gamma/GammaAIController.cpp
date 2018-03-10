@@ -32,6 +32,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 			MoveSpeed = MyCharacter->GetMoveSpeed();
 			TurnSpeed = MyCharacter->GetTurnSpeed();
 			MovesPerSec = MyCharacter->GetMovesPerSec();
+			PrefireTime = MyCharacter->GetPrefireTime();
 		}
 
 		if (Player != nullptr)
@@ -44,6 +45,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 			}
 
 			// Reation time
+			PrefireTimer += DeltaSeconds;
 			if (ReactionTiming(DeltaSeconds)
 				&& MyCharacter->GetRootComponent()
 				&& MyCharacter->GetRootComponent()->bVisible)
@@ -68,7 +70,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 		else
 		{
 			// Locating actual player
-			UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
+			UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), PlayersArray);
 			if (PlayersArray.Num() > 0)
 			{
 				for (int i = 0; i < PlayersArray.Num(); ++i)
@@ -154,9 +156,11 @@ void AGammaAIController::Tactical(FVector Target)
 				}
 				// .. Or fire attack
 				else if (!MyCharacter->GetActiveFlash()
-					&& ToPlayer.Size() <= PrimaryRange)
+					&& ToPlayer.Size() <= PrimaryRange
+					&& PrefireTimer >= PrefireTime)
 				{
 					MyCharacter->InitAttack();
+					PrefireTimer = 0.0f;
 				}
 			}
 		}

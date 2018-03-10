@@ -66,6 +66,9 @@ protected:
 	float MovesPerSec = 5.0f;
 
 	UPROPERTY(EditDefaultsOnly)
+	float PrefireTime = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly)
 	float MoveRange = 750.0f;
 
 	UPROPERTY(EditDefaultsOnly)
@@ -103,4 +106,7 @@ private:
 
 	UPROPERTY()
 	float TravelTimer = 0.0f;
+
+	UPROPERTY()
+	float PrefireTimer = 0.0f;
 };

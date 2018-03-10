@@ -241,32 +241,47 @@ float AGMatch::GetOpponentHealth()
 
 void AGMatch::GetPlayers()
 {
-	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), TempPlayers);
-	if (GetWorld() && TempPlayers.Num() > 0)
+	// Spectator case
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Spectator"), TempPlayers);
+	if (TempPlayers.Num() > 0)
 	{
-		// Loop through to deliberate local and opponent
-		for (int i = 0; i < TempPlayers.Num(); ++i)
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), TempPlayers);
+		if (TempPlayers.Num() == 2)
 		{
-			TWeakObjectPtr<ACharacter> TChar = nullptr;
-			ACharacter* TempChar = Cast<ACharacter>(TempPlayers[i]);
-			if (TempChar != nullptr) //  && TempChar->IsValidLowLevel()
+			LocalPlayer = Cast<AGammaCharacter>(TempPlayers[0]);
+			OpponentPlayer = Cast<AGammaCharacter>(TempPlayers[1]);
+		}
+	}
+	else
+	{
+
+		// Proper game
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), TempPlayers);
+		if (GetWorld() && TempPlayers.Num() > 0)
+		{
+			// Loop through to deliberate local and opponent
+			for (int i = 0; i < TempPlayers.Num(); ++i)
 			{
-				// Check if controller is local
-				APlayerController* TempCont = Cast<APlayerController>(TempChar->GetController());
-				if (TempCont && TempCont->IsLocalController())
+				TWeakObjectPtr<ACharacter> TChar = nullptr;
+				ACharacter* TempChar = Cast<ACharacter>(TempPlayers[i]);
+				if (TempChar != nullptr) //  && TempChar->IsValidLowLevel()
 				{
-					LocalPlayer = Cast<AGammaCharacter>(TempChar);
+					// Check if controller is local
+					APlayerController* TempCont = Cast<APlayerController>(TempChar->GetController());
+					if (TempCont && TempCont->IsLocalController())
+					{
+						LocalPlayer = Cast<AGammaCharacter>(TempChar);
+					}
+					else // or opponent
+					{
+						OpponentPlayer = Cast<AGammaCharacter>(TempChar);
+					}
 				}
-				else // or opponent
-				{
-					OpponentPlayer = Cast<AGammaCharacter>(TempChar);
-				}
-				
+				//else // ...or client's opponent
+				//{
+				//	OpponentPlayer = Cast<AGammaCharacter>(TempChar);
+				//}
 			}
-			//else // ...or client's opponent
-			//{
-			//	OpponentPlayer = Cast<AGammaCharacter>(TempChar);
-			//}
 		}
 	}
 }
