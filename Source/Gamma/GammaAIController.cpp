@@ -54,7 +54,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 
 			// Get some moves
 			if (TravelTimer >= 1.0f || 
-				LocationTarget == FVector::ZeroVector)
+				(LocationTarget == FVector::ZeroVector))
 			{
 				GetNewLocationTarget();
 				TravelTimer = 0.0f;
@@ -177,13 +177,13 @@ FVector AGammaAIController::GetNewLocationTarget()
 	if (Player != nullptr)
 	{
 		FVector PlayerLocation = Player->GetActorLocation();
-		FVector AILocation = GetPawn()->GetActorLocation();
+		//FVector AILocation = GetPawn()->GetActorLocation(); // not used
 
 		// Getting spicy
 		FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
 		FVector RandomOffset = (FMath::VRand() * MoveRange) * (1 / Aggression);
 		RandomOffset.Y = 0.0f;
-		Result = (PlayerAtSpeed + RandomOffset) - AILocation;
+		Result = (PlayerAtSpeed + RandomOffset);
 		Result.Z *= 0.5f;
 		
 

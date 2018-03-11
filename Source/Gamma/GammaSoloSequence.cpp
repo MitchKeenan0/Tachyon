@@ -67,6 +67,7 @@ void AGammaSoloSequence::SpawnDenizen()
 {
 	FActorSpawnParameters SpawnParams;
 	
+	// Set up spawn location
 	FVector PlayerWiseLocation = SpawnLocation;
 	if (Player != nullptr
 		&& Player->GetCharacterMovement() != nullptr)
@@ -77,11 +78,12 @@ void AGammaSoloSequence::SpawnDenizen()
 	}
 	else
 	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No Player, Extrapolating..."));
 		float Rando = FMath::FRandRange(0.0f, 1000.0f);
 		PlayerWiseLocation = FVector(Rando, 0.0f, Rando);
 	}
 
-	FVector RandomOffset = (FMath::VRand() * 2200);
+	FVector RandomOffset = (FMath::VRand() * 1000);
 	RandomOffset.Y = 0.0f;
 	FVector SpawnLoc = PlayerWiseLocation + RandomOffset;
 
