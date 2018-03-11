@@ -133,7 +133,9 @@ void AGammaAIController::Tactical(FVector Target)
 		
 		// Aim
 		float DotToPlayer = FVector::DotProduct(LocalForward.GetSafeNormal(), ToPlayer.GetSafeNormal());
-		if (DotToPlayer > 0.0f)
+		float RangeToPlayer = ToPlayer.Size();
+		if (DotToPlayer > 0.0f
+			&& RangeToPlayer <= PrimaryRange)
 		{
 			float AngleToPlayer = FMath::Acos(DotToPlayer);
 			if (AngleToPlayer <= ShootingAngle)

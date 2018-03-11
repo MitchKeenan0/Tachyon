@@ -37,7 +37,10 @@ void AGMatch::Tick(float DeltaTime)
 		GetPlayers();
 	}
 	
-	HandleTimeScale(DeltaTime);
+	if (Role == ROLE_Authority)	// new 03-10-18
+	{
+		HandleTimeScale(DeltaTime);
+	}
 }
 
 
@@ -45,13 +48,10 @@ bool AGMatch::PlayersAccountedFor()
 {
 	bool Result = false;
 	
-	if ((LocalPlayer != nullptr && LocalPlayer->GetOwner())) // && LocalPlayer->IsValidLowLevel()
+	if ((LocalPlayer != nullptr && LocalPlayer->GetOwner()))
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("got local player"));
-		
-		if (OpponentPlayer != nullptr && OpponentPlayer->GetOwner()) // && OpponentPlayer->IsValidLowLevel()
+		if (OpponentPlayer != nullptr && OpponentPlayer->GetOwner())
 		{
-			//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("got opponent player"));
 			Result = true;
 		}
 	}

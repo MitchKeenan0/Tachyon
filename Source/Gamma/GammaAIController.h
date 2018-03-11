@@ -57,7 +57,7 @@ protected:
 
 	// Attributes
 	UPROPERTY(EditDefaultsOnly)
-	float PrimaryRange = 9500.0f;
+	float PrimaryRange = 1500.0f;
 
 	UPROPERTY(EditDefaultsOnly)
 	float SecondaryRange = 4500.0f;
