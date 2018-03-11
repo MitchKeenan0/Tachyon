@@ -53,7 +53,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 			}
 
 			// Get some moves
-			if (TravelTimer >= 3.0f || 
+			if (TravelTimer >= 1.0f || 
 				LocationTarget == FVector::ZeroVector)
 			{
 				GetNewLocationTarget();
@@ -117,7 +117,7 @@ void AGammaAIController::Tactical(FVector Target)
 		// Chance to do nothing
 		return;
 	}
-	if (RandomDc < 3.68f)
+	else if (RandomDc < 3.68f)
 	{
 		// Charge
 		MyCharacter->RaiseCharge();
@@ -183,7 +183,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 		FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
 		FVector RandomOffset = (FMath::VRand() * MoveRange) * (1 / Aggression);
 		RandomOffset.Y = 0.0f;
-		Result = (PlayerAtSpeed - AILocation) + RandomOffset;
+		Result = (PlayerAtSpeed + RandomOffset) - AILocation;
 		Result.Z *= 0.5f;
 		
 
@@ -219,11 +219,11 @@ void AGammaAIController::NavigateTo(FVector Target)
 		bool bMoved = false;
 
 		// Simulating decision between vertical and lateral
-		if (LateralDistance > 100)
+		if (LateralDistance > 1.0f)
 		{
 			ValueX = FMath::Clamp(ToTarget.X, -1.0f, 1.0f);
 		}
-		if (VerticalDistance > 100)
+		if (VerticalDistance > 1.0f)
 		{
 			ValueZ = FMath::Clamp(ToTarget.Z, -1.0f, 1.0f);
 		}
