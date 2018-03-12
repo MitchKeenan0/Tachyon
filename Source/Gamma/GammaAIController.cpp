@@ -123,7 +123,7 @@ void AGammaAIController::Tactical(FVector Target)
 	// Random number to evoke choice
 	float RandomDc = FMath::FRandRange(0.0f, 10.0f);
 
-	if (RandomDc <= 0.09f)
+	if (RandomDc <= 0.15f)
 	{
 		// Chance to do nothing
 		return;

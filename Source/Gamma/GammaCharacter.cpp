@@ -635,10 +635,10 @@ void AGammaCharacter::RaiseCharge()
 		{
 			NewMoveKick();
 		}
-		else
+		/*else
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("Boost failed! :("));
-		}
+		}*/
 
 
 		// Sound fx -.-
