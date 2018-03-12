@@ -48,6 +48,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void FireAttack();*/
+
+	FRandomStream* RandStream;
 	
 protected:
 	// Called when the game starts or when spawned

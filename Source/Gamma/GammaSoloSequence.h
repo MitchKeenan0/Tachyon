@@ -26,6 +26,8 @@ protected:
 
 	void SpawnDenizen();
 
+	void AquirePlayer();
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AGammaCharacter> KaraokeClass;
 

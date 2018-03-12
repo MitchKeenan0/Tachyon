@@ -181,7 +181,9 @@ protected:
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerRematch();
 
+	public:
 	void SetX(float Value);
+	protected:
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerSetX(float Value);
 	

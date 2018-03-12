@@ -16,10 +16,30 @@ void AGammaSoloSequence::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	AquirePlayer();
+}
+
+
+void AGammaSoloSequence::AquirePlayer()
+{
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
 	if (PlayersArray.Num() > 0)
 	{
-		Player = Cast<AGammaCharacter>(PlayersArray[0]);
+		if (PlayersArray[0] != nullptr)
+		{
+			Player = Cast<AGammaCharacter>(PlayersArray[0]);
+		}
+	}
+	if (Player == nullptr)
+	{
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), PlayersArray);
+		if (PlayersArray.Num() > 0)
+		{
+			if (PlayersArray[0] != nullptr)
+			{
+				Player = Cast<AGammaCharacter>(PlayersArray[0]);
+			}
+		}
 	}
 }
 
@@ -30,19 +50,9 @@ void AGammaSoloSequence::Tick(float DeltaTime)
 
 	MainSequence(DeltaTime);
 
-	/*if (Player != nullptr)
-	{
-		MainSequence(DeltaTime);
-	}
-	else*/
 	if (Player == nullptr)
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Blue, TEXT("no player brahhh"));
-		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
-		if (PlayersArray.Num() > 0)
-		{
-			Player = Cast<AGammaCharacter>(PlayersArray[0]);
-		}
+		AquirePlayer();
 	}
 }
 

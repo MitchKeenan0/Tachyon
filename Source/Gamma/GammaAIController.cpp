@@ -10,6 +10,15 @@ void AGammaAIController::BeginPlay()
 	// Get our Gamma Character
 	MyPawn = GetPawn();
 	MyCharacter = Cast<AGammaCharacter>(MyPawn);
+	RandStream = new FRandomStream;
+	if (RandStream != nullptr)
+	{
+		RandStream->GenerateNewSeed();
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 12.f, FColor::Blue, TEXT("NO RAND STREAM"));
+	}
 }
 
 
@@ -34,58 +43,60 @@ void AGammaAIController::Tick(float DeltaSeconds)
 			PrefireTime = MyCharacter->GetPrefireTime();
 		}
 
+
+		// Locate "player" target
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), PlayersArray);
+		if (PlayersArray.Num() > 0)
+		{
+			for (int i = 0; i < PlayersArray.Num(); ++i)
+			{
+				if (PlayersArray[i] != nullptr
+					&& PlayersArray[i] != MyPawn
+					&& PlayersArray[i] != MyCharacter
+					&& !PlayersArray[i]->ActorHasTag("Spectator"))
+				{
+					AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(PlayersArray[i]);
+					if (PotentialPlayer != nullptr)
+					{
+						Player = PotentialPlayer;
+						/*GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::White,
+							FString::Printf(TEXT("p %s   targeting %s"), *MyCharacter->GetName(), *Player->GetName()));*/
+						break;
+					}
+				}
+			}
+		}
+
+
 		if (Player != nullptr)
 		{
 			// Got a player - stunt on'em
 			// Update prefire
+			PrefireTimer += DeltaSeconds;
 			if ((MyCharacter->GetActiveFlash() != nullptr))
 			{
 				MyCharacter->PrefireTiming();
 			}
 
 			// Reation time
-			PrefireTimer += DeltaSeconds;
 			if (ReactionTiming(DeltaSeconds)
-				&& MyCharacter->GetRootComponent()
-				&& MyCharacter->GetRootComponent()->bVisible)
+				&& MyCharacter->GetRootComponent()) //&& MyCharacter->GetRootComponent()->bVisible
 			{
 				Tactical(FVector::ZeroVector);
 			}
 
 			// Get some moves
-			if (TravelTimer >= 1.0f || 
+			if (TravelTimer >= 2.0f || 
 				(LocationTarget == FVector::ZeroVector))
 			{
 				GetNewLocationTarget();
 				TravelTimer = 0.0f;
 			}
-			else
+			else if (LocationTarget != FVector::ZeroVector)
 			{
 				NavigateTo(LocationTarget);
 				MoveTimer += DeltaSeconds;
 				TravelTimer += DeltaSeconds;
-			}
-		}
-		else
-		{
-			// Locating actual player
-			UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), PlayersArray);
-			if (PlayersArray.Num() > 0)
-			{
-				for (int i = 0; i < PlayersArray.Num(); ++i)
-				{
-					if (PlayersArray[i] != nullptr
-						&& PlayersArray[i] != MyPawn
-						&& !PlayersArray[i]->ActorHasTag("Spectator"))
-					{
-						AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(PlayersArray[i]);
-						if (PotentialPlayer != nullptr)
-						{
-							Player = PotentialPlayer;
-							break;
-						}
-					}
-				}
 			}
 		}
 	}
@@ -120,6 +131,7 @@ void AGammaAIController::Tactical(FVector Target)
 	else if (RandomDc < 3.68f)
 	{
 		// Charge
+		
 		MyCharacter->RaiseCharge();
 	}
 	else if (MyCharacter != nullptr)
@@ -182,10 +194,19 @@ FVector AGammaAIController::GetNewLocationTarget()
 		// Getting spicy
 		FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
 		FVector RandomOffset = (FMath::VRand() * MoveRange) * (1 / Aggression);
-		RandomOffset.Y = 0.0f;
-		Result = (PlayerAtSpeed + RandomOffset);
-		Result.Z *= 0.5f;
+		FVector NextRand = FMath::VRandCone(MyCharacter->GetActorForwardVector(), ShootingAngle) * MoveRange * -1.0f;
+		RandomOffset.Y = NextRand.Y = 0.0f;
+		Result = (PlayerAtSpeed + RandomOffset) + NextRand;
 		
+		// Edge case for extreme range - just get back!
+		FVector ToResult = (Result - MyCharacter->GetActorLocation());
+		if ((FMath::Abs(ToResult.Z) >= PrimaryRange / 2)
+			&& Player != nullptr)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, TEXT("HIT THE CEILING!"));
+
+			Result = Player->GetActorLocation();
+		}
 
 		// And serve
 		bCourseLayedIn = true;
@@ -199,8 +220,11 @@ void AGammaAIController::NavigateTo(FVector Target)
 {
 
 	// Basics and line to Target
-	FVector MyLocation = MyPawn->GetActorLocation();
+	FVector MyLocation = MyCharacter->GetActorLocation();
 	FVector ToTarget = (Target - MyLocation);
+
+	/*DrawDebugLine(GetWorld(), MyLocation, Target,
+		FColor::Green, false, -1.0f, 0, 10.f);*/
 
 	// Have we reached target?
 	if (ToTarget.Size() < 550.0f)
@@ -216,16 +240,18 @@ void AGammaAIController::NavigateTo(FVector Target)
 		float LateralDistance = FMath::Abs(ToTarget.X);
 		float ValueX = 0.0f;
 		float ValueZ = 0.0f;
-		bool bMoved = false;
+		//bool bMoved = false;
 
 		// Simulating decision between vertical and lateral
-		if (LateralDistance > 1.0f)
+		if (LateralDistance != 0.0f)
 		{
 			ValueX = FMath::Clamp(ToTarget.X, -1.0f, 1.0f);
+			MyCharacter->SetX(ValueX);
 		}
-		if (VerticalDistance > 1.0f)
+		if (VerticalDistance != 0.0f)
 		{
 			ValueZ = FMath::Clamp(ToTarget.Z, -1.0f, 1.0f);
+			MyCharacter->SetZ(ValueZ);
 		}
 
 		MoveInput = FVector(ValueX, 0.0f, ValueZ).GetSafeNormal();
@@ -237,20 +263,13 @@ void AGammaAIController::NavigateTo(FVector Target)
 			float MoveByDot = 0.0f;
 			float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
 			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -90.0f, 90.0f));
+			
 			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
 			MyCharacter->GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			MyCharacter->GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			MyPawn->AddMovementInput(MoveInput * MoveByDot);
-			bMoved = true;
+			
 			MoveTimer = 0.0f;
-		}
-
-		// We've arrived
-		if (!bMoved)
-		{
-			// Cancel move
-			LocationTarget = FVector::ZeroVector;
-			bCourseLayedIn = false;
 		}
 
 		// Sprite flipping
