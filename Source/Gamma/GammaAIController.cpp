@@ -203,8 +203,6 @@ FVector AGammaAIController::GetNewLocationTarget()
 		if ((FMath::Abs(ToResult.Z) >= PrimaryRange / 2)
 			&& Player != nullptr)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, TEXT("HIT THE CEILING!"));
-
 			Result = Player->GetActorLocation();
 		}
 

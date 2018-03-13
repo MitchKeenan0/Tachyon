@@ -229,46 +229,16 @@ void AGAttack::DetectHit(FVector RaycastVector)
 											true,
 											FLinearColor::White, FLinearColor::Red, 0.15f);
 	
-	if (HitResult)
+	if (!bHit && HitResult)
 	{
 		HitActor = Hit.Actor.Get();
 		if (HitActor != nullptr)
 		{
-			if (HitActor->ActorHasTag("Shield"))
-			{
-				AGAttack* Atk = Cast<AGAttack>(HitActor);
-				if (Atk != nullptr)
-				{
-					if (Atk->OwningShooter != OwningShooter)
-					{
-						bLethal = false;
-						SpawnDamage(HitActor, HitActor->GetActorLocation());
-						ApplyKnockback(HitActor);
-						return;
-					}
-				}
-			}
-			else if (HitActor->ActorHasTag("Attack") == false)
-			{
-				// good hit as they say
-				bHit = true;
-			}
+			HitEffects(HitActor, Hit.ImpactPoint);
+
+			// Clean-up for next frame
+			HitTimer = 0.0f;
 		}
-	}
-	else
-	{
-		bHit = false;
-	}
-
-	// Consequences
-	if (bHit && !HitActor->ActorHasTag("Doomed"))
-	{
-		SpawnDamage( HitActor, HitActor->GetActorLocation());
-		ApplyKnockback(HitActor);
-		ReportHit(HitActor);
-
-		// Clean-up for next frame
-		HitTimer = 0.0f;
 	}
 }
 
@@ -277,24 +247,6 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 {
 	if (DamageClass!= nullptr)
 	{
-
-
-		// *** MOVED TO MATCH.CPP ***
-		// Calcify HitActor
-		//UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
-		//	(HitActor->FindComponentByClass<UPaperFlipbookComponent>());
-		//if (ActorFlipbook != nullptr)
-		//{
-		//	float CurrentPosition = FMath::FloorToInt(ActorFlipbook->GetPlaybackPosition());
-		//	//ActorFlipbook->SetPlayRate(1);
-		//	ActorFlipbook->SetPlaybackPositionInFrames(1, true);
-		//	///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("Got Flipbook"));
-		//}
-		//else
-		//{
-		//	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No Flipbook"));
-		//}
-
 		// Spawning damage fx
 		FActorSpawnParameters SpawnParams;
 		FRotator Forward = HitActor->GetActorRotation();
@@ -391,41 +343,62 @@ void AGAttack::Nullify()
 }
 
 
+void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
+{
+	bHit = true;
+
+	// Collide off shield
+	if (HitActor->ActorHasTag("Shield"))
+	{
+		AGAttack* Atk = Cast<AGAttack>(HitActor);
+		if (Atk != nullptr)
+		{
+			if (Atk->OwningShooter != nullptr
+				&& this->OwningShooter != nullptr
+				&& Atk->OwningShooter != this->OwningShooter)
+			{
+				SpawnDamage(HitActor, HitPoint);
+				ApplyKnockback(HitActor);
+
+				return;
+			}
+		}
+	}
+
+	// Real hit Consequences
+	else if (!HitActor->ActorHasTag("Attack")
+		&& !HitActor->ActorHasTag("Doomed")) /// && (HitTimer >= (1.0f / HitsPerSecond)))
+	{
+		SpawnDamage(HitActor, HitPoint);
+		ApplyKnockback(HitActor);
+		ReportHit(HitActor);
+
+		HitTimer = 0.0f;
+	}
+	else
+	{
+		// Hit another attack..
+	}
+
+	if (HitActor->ActorHasTag("Solid")
+		&& this->ActorHasTag("Solid"))
+	{
+		Destroy();
+	}
+	
+	bLethal = false;
+}
+
+
 // COLLISION BEGIN
 void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!bHit && bLethal && (OtherActor != OwningShooter))
 	{
-		if (OtherActor->ActorHasTag("Shield"))
-		{
-			AGAttack* Atk = Cast<AGAttack>(HitActor);
-			if (Atk != nullptr)
-			{
-				if (Atk->OwningShooter != OwningShooter)
-				{
-					SpawnDamage(OtherActor, OtherActor->GetActorLocation());
-					ApplyKnockback(OtherActor);
-					return;
-				}
-			}
-		}
+		FVector DamageLocation = GetActorLocation() + (OwningShooter->GetActorForwardVector() * RaycastHitRange);
 
-		// Consequences
-		if (!OtherActor->ActorHasTag("Attack")
-			&& !OtherActor->ActorHasTag("Doomed")) /// && (HitTimer >= (1.0f / HitsPerSecond)))
-		{
-			bHit = true;
-
-			SpawnDamage(OtherActor, OtherActor->GetActorLocation());
-			ApplyKnockback(OtherActor);
-			ReportHit(OtherActor);
-
-			HitTimer = 0.0f;
-		}
-		else
-		{
-			// Hit another attack..
-		}
+		// Got'em
+		HitEffects(OtherActor, DamageLocation);
 	}
 }
 

@@ -71,6 +71,9 @@ protected:
 	void DetectHit(FVector RaycastVector);
 
 	UFUNCTION(BlueprintCallable)
+	void HitEffects(AActor* HitActor, FVector HitPoint);
+
+	UFUNCTION(BlueprintCallable)
 	void SpawnDamage(AActor* HitActor, FVector HitPoint);
 
 	UFUNCTION(BlueprintCallable)
