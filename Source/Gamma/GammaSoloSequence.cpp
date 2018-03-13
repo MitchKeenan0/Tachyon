@@ -118,16 +118,18 @@ void AGammaSoloSequence::SpawnDenizen()
 		default:
 			break;
 	}
-	AGammaCharacter* NewDenizen = Cast<AGammaCharacter>(GetWorld()->SpawnActor<AActor>(PlayerSpawning, SpawnLoc, GetActorRotation(), SpawnParams));
 
-	if (NewDenizen != nullptr)
+	if (PlayerSpawning != nullptr)
 	{
-		++Spawns;
-		PreviousSpawn = Rando;
+		AGammaCharacter* NewDenizen = Cast<AGammaCharacter>(GetWorld()->SpawnActor<AActor>(PlayerSpawning, SpawnLoc, GetActorRotation(), SpawnParams));
+		if (NewDenizen != nullptr)
+		{
+			++Spawns;
+			PreviousSpawn = Rando;
 
-		// GameInst = GetGameInstance();
+			// GameInst = GetGameInstance();
+		}
 	}
-	
 }
 
 
@@ -141,7 +143,13 @@ int AGammaSoloSequence::NumDenizens()
 	{
 		if (DenizenArray[i] != nullptr)
 		{
-			Result += 1;
+			AActor* Act = DenizenArray[i];
+			if (Act != Cast<AActor>(KaraokeClass->GetOwnerClass())
+				&& Act != Cast<AActor>(PeaceGiantClass->GetOwnerClass())
+				&& Act != Cast<AActor>(BaetylusClass->GetOwnerClass()))
+			{
+				Result += 1;
+			}
 		}
 	}
 
