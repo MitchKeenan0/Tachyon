@@ -273,11 +273,13 @@ void AGammaAIController::NavigateTo(FVector Target)
 		// Sprite flipping
 		if (ValueX < 0.0f)
 		{
-			SetControlRotation(FRotator(0.0, 180.0f, 0.0f));
+			FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
+			SetControlRotation(Fint);
 		}
 		else if (ValueX > 0.0f)
 		{
-			SetControlRotation(FRotator(0.0f, 0.0f, 0.0f));
+			FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
+			SetControlRotation(Fint);
 		}
 	}
 }

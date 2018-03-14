@@ -38,8 +38,6 @@ class AGammaCharacter : public APaperCharacter
 	float AttackTimeout = 0.0f; /// generated at fire time
 	float SecondaryTimer = 0.0f;
 	float FrictionTimer = 0.0f;
-	float BPM = 0.0f;
-	float BPMTimer = 0.0f;
 	float LastMoveTime = 0.0f;
 	float CurrentMoveTime = 0.0f;
 	float ChargeFXTimer = 0.0f;
@@ -47,9 +45,6 @@ class AGammaCharacter : public APaperCharacter
 	float CameraTiltZ = 0.0f;
 
 	bool bOnTempo = false;
-	//float x = 0.0f;
-	//float z = 0.0f;				/// allows replicatiuon only 1pf for both
-	//float MoveFriction = 0.0f;
 	bool bFullCharge = false;
 
 	FVector PositionOne = FVector::ZeroVector;
@@ -151,29 +146,29 @@ protected:
 
 	// ATTACK STUFF ////////////////////////////////////////////////
 	// Attack objects
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AGFlash> FlashClass;
 	class AGFlash* ActiveFlash = nullptr;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AGAttack> AttackClass;
 	class AGAttack* ActiveAttack = nullptr;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	bool bMultipleAttacks = false;
 
 	// Secondary object
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AGAttack> SecondaryClass;
 	class AGAttack* ActiveSecondary = nullptr;
 
 	// Charge object
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AActor> ChargeParticles;
 	class AActor* ActiveChargeParticles = nullptr;
 
 	// Boost object
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AActor> BoostClass;
 
 	// Replicated functions
@@ -230,6 +225,7 @@ public:
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerPrefireTiming();
 
+	// Handoff functions to avoid net saturation
 	void CheckPowerSlideOn();
 	void CheckPowerSlideOff();
 
@@ -267,7 +263,7 @@ protected:
 
 	// Shield type
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class USphereComponent* ShieldCollider;
+	class USphereComponent* OuterTouchCollider;
 
 
 
@@ -308,45 +304,47 @@ protected:
 
 	// ATTRIBUTES //////////////////////////////////////////	
 	// Player movement
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float MoveSpeed = 330000.0f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float MovesPerSecond = 10.0f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float TurnSpeed = 500.0f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float MoveFreshMultiplier = 750.0f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float SlowmoMoveBoost = 5.0f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float MaxMoveSpeed = 750.0f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float MoveAccelerationSpeed = 5000.0f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float MoveSpeed = 1000.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float MovesPerSecond = 30.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float TurnSpeed = -0.1f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float MoveFreshMultiplier = 100.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float SlowmoMoveBoost = 1.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float MaxMoveSpeed = 5000.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float MoveAccelerationSpeed = 1000.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float DecelerationSpeed = 0.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float PowerSlideSpeed = 0.0f;
 
 	// Camera movement
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float CameraMoveSpeed = 0.68f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float CameraMoveSpeed = 0.6f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float CameraVelocityChase = 1.5f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float CameraSoloVelocityChase = 1.5f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float CameraDistanceScalar = 1.9f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float CameraTiltValue = 5.0f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float CameraTiltSpeed = 0.68f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float CameraDistanceScalar = 1.3f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float CameraTiltValue = 10.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float CameraTiltSpeed = 0.36f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float CameraTiltClamp = 1.0f;
 
 	// Charge properties
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float PrefireTime = 0.1f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float ChargeMax = 4.0f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float ChargeGain = 1.0f;
 
 	

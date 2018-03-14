@@ -65,7 +65,7 @@ AGammaCharacter::AGammaCharacter()
 	// Behave like a traditional 2D platformer character, with a flat bottom instead of a curved capsule bottom
 	// Note: This can cause a little floating when going up inclines; you can choose the tradeoff between better
 	// behavior on the edge of a ledge versus inclines by setting this to true or false
-	GetCharacterMovement()->bUseFlatBaseForFloorChecks = true;
+	GetCharacterMovement()->bUseFlatBaseForFloorChecks = false;
 
     // 	TextComponent = CreateDefaultSubobject<UTextRenderComponent>(TEXT("IncarGear"));
     // 	TextComponent->SetRelativeScale3D(FVector(3.0f, 3.0f, 3.0f));
@@ -93,10 +93,10 @@ AGammaCharacter::AGammaCharacter()
 	PlayerSound = CreateDefaultSubobject<UAudioComponent>(TEXT("PlayerSound"));
 	PlayerSound->SetIsReplicated(true);
 
-	ShieldCollider = CreateDefaultSubobject<USphereComponent>(TEXT("WarheadCollider"));
+	OuterTouchCollider = CreateDefaultSubobject<USphereComponent>(TEXT("WarheadCollider"));
 	//WarheadCollider->SetSphereRadius(10.0f);
-	ShieldCollider->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-	ShieldCollider->OnComponentBeginOverlap.AddDynamic(this, &AGammaCharacter::OnShieldBeginOverlap);
+	OuterTouchCollider->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	OuterTouchCollider->OnComponentBeginOverlap.AddDynamic(this, &AGammaCharacter::OnShieldBeginOverlap);
 	
 
 	// Enable replication on the Sprite component so animations show up when networked
@@ -191,11 +191,13 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	{
 		if (TravelDirection < 0.0f)
 		{
-			Controller->SetControlRotation(FRotator(0.0, 180.0f, 0.0f));
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 15.0f);
+			Controller->SetControlRotation(Fint);
 		}
 		else if (TravelDirection > 0.0f)
 		{
-			Controller->SetControlRotation(FRotator(0.0f, 0.0f, 0.0f));
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 15.0f);
+			Controller->SetControlRotation(Fint);
 		}
 
 		// Locator scaling
@@ -203,6 +205,9 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		{
 			LocatorScaling();
 		}
+
+		// AfterImage rotation
+		
 	}
 
 	// Move timing and clamp
@@ -245,11 +250,13 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			float CameraMaxDistance = 15555.5f;
 			float CameraDistance = CameraDistanceScalar * 1.25f;
 
-			// Position two may be another actor
-			if (FramingActors.Num() > 1 && FramingActors[1])
+			// Position two by another actor
+			bool bAlone = false;
+			if (FramingActors.Num() > 1 && (FramingActors[1] != nullptr))
 			{
 				AActor* Actor2 = FramingActors[1];
-				if (Actor2 && !Actor2->IsUnreachable())
+				if (Actor2 && !Actor2->IsUnreachable()
+					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 7000.0f)
 				{
 
 					// Framing up with second actor
@@ -258,8 +265,13 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase);
 					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, CameraMoveSpeed);
 				}
+				else
+				{
+					bAlone = true;
+				}
 			}
-			else if (FramingActors.Num() == 1)
+			
+			if (bAlone || FramingActors.Num() == 1)
 			{
 
 				// Framing lone player by their velocity
@@ -287,7 +299,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// Camera tilt
 				CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue, DeltaTime, CameraTiltSpeed); // pitch
 				CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * CameraTiltValue, DeltaTime, CameraTiltSpeed); // yaw
-				SideViewCameraComponent->SetRelativeRotation(FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue);
+				FRotator FTarget = FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue;
+				FTarget.Roll = 0.0f;
+				SideViewCameraComponent->SetRelativeRotation(FTarget);
 
 				// Adjust position to work angle
 				Midpoint.X -= (CameraTiltZ * (DesiredCameraDistance / 6));
@@ -892,7 +906,7 @@ void AGammaCharacter::PowerSlideEngage()
 {
 	if (!bSliding)
 	{
-		GetCharacterMovement()->BrakingFrictionFactor = 0.0f;
+		GetCharacterMovement()->BrakingFrictionFactor = PowerSlideSpeed;
 		bSliding = true;
 
 		if (Role < ROLE_Authority)

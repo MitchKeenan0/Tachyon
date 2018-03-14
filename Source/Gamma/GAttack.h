@@ -46,10 +46,10 @@ public:
 	bool LockedEmitPoint = true;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float LethalTime = 0.1f;
+	float LethalTime = 0.2f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float DurationTime = 0.2f;
+	float DurationTime = 0.3f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float MagnitudeTimeScalar = 1.0f;
@@ -100,41 +100,41 @@ protected:
 
 
 	// Basic Variables
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float ShootingAngle = 21.0f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float ProjectileSpeed = 0.01f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float ProjectileSpeed = 0.0f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	bool bScaleProjectileSpeed = true;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	bool bScaleProjectileSpeed = false;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float ProjectileMaxSpeed = 12000.0f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float AngleSweep = 100.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float AngleSweep = 0.0f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float RefireTime = 0.1f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float ChargeCost = 1.0f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	bool bUpdateAttack = true;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float FireDelay = 0.0f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float RaycastHitRange = 10000.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float RaycastHitRange = 100.0f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	bool bRaycastOnMesh = false;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float KineticForce = 1.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float KineticForce = 30000.0f;
 
 
 	// Local Variables
@@ -162,7 +162,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	class UPaperSpriteComponent* AttackSprite = nullptr;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AGDamage> DamageClass = nullptr;
 
 
