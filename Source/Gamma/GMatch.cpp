@@ -33,11 +33,10 @@ void AGMatch::Tick(float DeltaTime)
 
 	if (!PlayersAccountedFor())
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("Looking for players..."));
 		GetPlayers();
 	}
 	
-	if (Role == ROLE_Authority)	// new 03-10-18
+	if (Role == ROLE_Authority)
 	{
 		HandleTimeScale(DeltaTime);
 	}
