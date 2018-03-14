@@ -183,7 +183,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 	// Now setup the rotation of the controller based on the direction we are travelling
 	const FVector PlayerVelocity = GetVelocity();
-	float TravelDirection = InputX;
+	float TravelDirection = PlayerVelocity.X; //InputX;
 	
 	// Set rotation so character faces direction of travel
 	if (Controller != nullptr
@@ -256,7 +256,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				AActor* Actor2 = FramingActors[1];
 				if (Actor2 && !Actor2->IsUnreachable()
-					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 7000.0f)
+					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 5000.0f)
 				{
 
 					// Framing up with second actor
