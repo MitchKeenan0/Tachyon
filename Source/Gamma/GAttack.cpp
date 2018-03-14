@@ -383,7 +383,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	if (HitActor->ActorHasTag("Solid")
 		&& this->ActorHasTag("Solid"))
 	{
-		Destroy();
+		Nullify();
 	}
 	
 	bLethal = false;

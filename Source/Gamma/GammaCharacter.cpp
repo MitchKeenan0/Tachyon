@@ -116,6 +116,8 @@ void AGammaCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 	Super::SetupPlayerInputComponent(InputComponent);
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AGammaCharacter::InitAttack);
 	//PlayerInputComponent->BindAction("Attack", IE_Released, this, &AGammaCharacter::ReleaseAttack);
+	PlayerInputComponent->BindAction("PowerSlide", IE_Pressed, this, &AGammaCharacter::CheckPowerSlideOn);
+	PlayerInputComponent->BindAction("PowerSlide", IE_Released, this, &AGammaCharacter::CheckPowerSlideOff);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AGammaCharacter::RaiseCharge);
 	PlayerInputComponent->BindAction("Secondary", IE_Pressed, this, &AGammaCharacter::FireSecondary);
 	PlayerInputComponent->BindAction("Rematch", IE_Pressed, this, &AGammaCharacter::Rematch);
@@ -133,6 +135,7 @@ void AGammaCharacter::BeginPlay()
 
 	GetCharacterMovement()->MaxAcceleration = MoveAccelerationSpeed;
 	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed;
+	DecelerationSpeed = GetCharacterMovement()->BrakingFrictionFactor;
 
 	// To reduce jitter
 	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), TEXT("p.NetEnableMoveCombining 0")); /// is this needed?
@@ -403,7 +406,8 @@ void AGammaCharacter::MoveRight(float Value)
 		SetX(Value);
 	}
 
-	if (MoveTimer >= (1 / MovesPerSecond))
+	if ((MoveTimer >= (1 / MovesPerSecond))
+		&& !bSliding)
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
@@ -436,7 +440,8 @@ void AGammaCharacter::MoveUp(float Value)
 	}
 
 	// Abide moves per second
-	if (MoveTimer >= (1 / MovesPerSecond))
+	if ((MoveTimer >= (1 / MovesPerSecond))
+		&& !bSliding)
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = (GetMovementComponent()->Velocity).GetSafeNormal();
@@ -619,6 +624,7 @@ void AGammaCharacter::RaiseCharge()
 {
 	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.2f)
 	{
+
 		if (Charge < ChargeMax)
 		{
 			Charge += ChargeGain;
@@ -863,6 +869,70 @@ bool AGammaCharacter::ServerPrefireTiming_Validate()
 }
 
 
+// POWER SLIDE
+
+// Using these hand-off functions to avoid network saturation
+void AGammaCharacter::CheckPowerSlideOn()
+{
+	if (!bSliding)
+	{
+		PowerSlideEngage();
+	}
+}
+void AGammaCharacter::CheckPowerSlideOff()
+{
+	if (bSliding)
+	{
+		PowerSlideDisengage();
+	}
+}
+
+
+void AGammaCharacter::PowerSlideEngage()
+{
+	if (!bSliding)
+	{
+		GetCharacterMovement()->BrakingFrictionFactor = 0.0f;
+		bSliding = true;
+
+		if (Role < ROLE_Authority)
+		{
+			ServerPowerSlideEngage();
+		}
+	}
+}
+void AGammaCharacter::ServerPowerSlideEngage_Implementation()
+{
+	PowerSlideEngage();
+}
+bool AGammaCharacter::ServerPowerSlideEngage_Validate()
+{
+	return true;
+}
+
+void AGammaCharacter::PowerSlideDisengage()
+{
+	if (bSliding)
+	{
+		GetCharacterMovement()->BrakingFrictionFactor = DecelerationSpeed;
+		bSliding = false;
+
+		if (Role < ROLE_Authority)
+		{
+			ServerPowerSlideDisengage();
+		}
+	}
+}
+void AGammaCharacter::ServerPowerSlideDisengage_Implementation()
+{
+	PowerSlideDisengage();
+}
+bool AGammaCharacter::ServerPowerSlideDisengage_Validate()
+{
+	return true;
+}
+
+
 // MODIFY HEALTH
 void AGammaCharacter::ModifyHealth(float Value)
 {
@@ -947,6 +1017,7 @@ void AGammaCharacter::GetLifetimeReplicatedProps(TArray <FLifetimeProperty> & Ou
 	DOREPLIFETIME(AGammaCharacter, x);
 	DOREPLIFETIME(AGammaCharacter, z);
 	DOREPLIFETIME(AGammaCharacter, MoveTimer);
+	DOREPLIFETIME(AGammaCharacter, bSliding);
 
 	DOREPLIFETIME(AGammaCharacter, Charge);
 	DOREPLIFETIME(AGammaCharacter, bCharging);

@@ -151,24 +151,24 @@ protected:
 
 	// ATTACK STUFF ////////////////////////////////////////////////
 	// Attack objects
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AGFlash> FlashClass;
 	class AGFlash* ActiveFlash = nullptr;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AGAttack> AttackClass;
 	class AGAttack* ActiveAttack = nullptr;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	bool bMultipleAttacks = false;
 
 	// Secondary object
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AGAttack> SecondaryClass;
 	class AGAttack* ActiveSecondary = nullptr;
 
 	// Charge object
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AActor> ChargeParticles;
 	class AActor* ActiveChargeParticles = nullptr;
 
@@ -230,6 +230,17 @@ public:
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerPrefireTiming();
 
+	void CheckPowerSlideOn();
+	void CheckPowerSlideOff();
+
+	void PowerSlideEngage();
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerPowerSlideEngage();
+
+	void PowerSlideDisengage();
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerPowerSlideDisengage();
+
 	UFUNCTION(BlueprintCallable)
 	void ModifyHealth(float Value);
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
@@ -279,6 +290,8 @@ protected:
 	float MoveTimer = 0.0f;
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
 	bool bMoved = false;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	bool bSliding = false;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
 	float Charge = 0.0f;
@@ -295,43 +308,45 @@ protected:
 
 	// ATTRIBUTES //////////////////////////////////////////	
 	// Player movement
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float MoveSpeed = 330000.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float MovesPerSecond = 10.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float TurnSpeed = 500.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float MoveFreshMultiplier = 750.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float SlowmoMoveBoost = 5.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float MaxMoveSpeed = 750.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float MoveAccelerationSpeed = 5000.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	float DecelerationSpeed = 0.0f;
 
 	// Camera movement
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float CameraMoveSpeed = 0.68f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float CameraVelocityChase = 1.5f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float CameraSoloVelocityChase = 1.5f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float CameraDistanceScalar = 1.9f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float CameraTiltValue = 5.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float CameraTiltSpeed = 0.68f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float CameraTiltClamp = 1.0f;
 
 	// Charge properties
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float PrefireTime = 0.1f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float ChargeMax = 4.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float ChargeGain = 1.0f;
 
 	
