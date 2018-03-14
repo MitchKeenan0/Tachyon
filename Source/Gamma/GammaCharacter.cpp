@@ -183,11 +183,10 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 	// Now setup the rotation of the controller based on the direction we are travelling
 	const FVector PlayerVelocity = GetVelocity();
-	float TravelDirection = PlayerVelocity.X; //InputX;
+	float TravelDirection = x; //PlayerVelocity.X; //InputX;
 	
 	// Set rotation so character faces direction of travel
-	if (Controller != nullptr
-		&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
+	if (Controller != nullptr) // && UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f
 	{
 		if (TravelDirection < 0.0f)
 		{
@@ -201,7 +200,8 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		}
 
 		// Locator scaling
-		if (Controller->IsLocalController())
+		if (Controller->IsLocalController()
+			&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
 		{
 			LocatorScaling();
 		}
@@ -484,7 +484,11 @@ void AGammaCharacter::SetX(float Value)
 void AGammaCharacter::ServerSetX_Implementation(float Value)
 {
 	InputX = Value;
-	//bMoved = true;
+	
+	if (Value != 0.0f)
+	{
+		x = Value;
+	}
 }
 bool AGammaCharacter::ServerSetX_Validate(float Value)
 {
