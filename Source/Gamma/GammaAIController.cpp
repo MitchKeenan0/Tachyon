@@ -123,12 +123,12 @@ void AGammaAIController::Tactical(FVector Target)
 	// Random number to evoke choice
 	float RandomDc = FMath::FRandRange(0.0f, 10.0f);
 
-	if (RandomDc <= 0.15f)
+	if (RandomDc <= 1.5f)
 	{
 		// Chance to do nothing
 		return;
 	}
-	else if (RandomDc < 3.68f)
+	else if (RandomDc < 3.5f)
 	{
 		// Charge
 		
@@ -271,15 +271,18 @@ void AGammaAIController::NavigateTo(FVector Target)
 		}
 
 		// Sprite flipping
-		if (ValueX < 0.0f)
+		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
 		{
-			FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
-			SetControlRotation(Fint);
-		}
-		else if (ValueX > 0.0f)
-		{
-			FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
-			SetControlRotation(Fint);
+			if (ValueX < 0.0f)
+			{
+				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
+				SetControlRotation(Fint);
+			}
+			else if (ValueX > 0.0f)
+			{
+				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
+				SetControlRotation(Fint);
+			}
 		}
 	}
 }

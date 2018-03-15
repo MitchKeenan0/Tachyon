@@ -700,7 +700,8 @@ void AGammaCharacter::InitAttack()
 	// Clean burn
 	MoveParticles->bSuppressSpawning = true;
 
-	if ((Charge > 0.0f) && FlashClass && (ActiveFlash == nullptr)
+	bool bFireAllowed = (bMultipleAttacks || (!bMultipleAttacks && ActiveAttack == nullptr));
+	if (bFireAllowed && (Charge > 0.0f) && FlashClass && (ActiveFlash == nullptr)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f))
 	{
 		// Clean up previous attack

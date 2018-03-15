@@ -53,7 +53,7 @@ void AGAttack::BeginPlay()
 	if (AttackSound != nullptr)
 	{
 		float Current = AttackSound->PitchMultiplier;
-		float Spinoff = Current + FMath::FRandRange(-0.33f, 0.33f);
+		float Spinoff = Current + FMath::FRandRange(-0.3f, 0.0f);
 		AttackSound->SetPitchMultiplier(Spinoff);
 	}
 }
@@ -338,6 +338,7 @@ void AGAttack::Nullify()
 	if (PossibleCharacter != nullptr)
 	{
 		PossibleCharacter->NullifySecondary();
+		PossibleCharacter->NullifyAttack();
 		this->Destroy();
 	}
 }
