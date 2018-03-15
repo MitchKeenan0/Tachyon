@@ -752,14 +752,13 @@ void AGammaCharacter::ReleaseAttack()
 		// Clean up previous flash
 		if (ActiveFlash != nullptr && ActiveFlash->IsValidLowLevel())
 		{
-			ActiveFlash->Destroy();
-			ActiveFlash = nullptr;
+			ClearFlash();
 		}
-		if (ActiveChargeParticles != nullptr && ActiveChargeParticles->IsValidLowLevel())
+		/*if (ActiveChargeParticles != nullptr && ActiveChargeParticles->IsValidLowLevel())
 		{
 			ActiveChargeParticles->Destroy();
 			ActiveChargeParticles = nullptr;
-		}
+		}*/
 
 		// Direction & setting up
 		FVector FirePosition = AttackScene->GetComponentLocation();
@@ -777,7 +776,7 @@ void AGammaCharacter::ReleaseAttack()
 				{
 					ActiveAttack->InitAttack(this, 1, InputZ);
 
-					if (ActiveAttack->LockedEmitPoint)
+					if ((ActiveAttack != nullptr) && ActiveAttack->LockedEmitPoint)
 					{
 						ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
 					}
@@ -835,7 +834,7 @@ void AGammaCharacter::FireSecondary()
 				{
 					PotentialAttack->InitAttack(this, 1, InputZ);
 
-					if (PotentialAttack->LockedEmitPoint)
+					if (PotentialAttack != nullptr && PotentialAttack->LockedEmitPoint)
 					{
 						PotentialAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
 					}

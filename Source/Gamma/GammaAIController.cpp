@@ -138,7 +138,7 @@ void AGammaAIController::Tactical(FVector Target)
 	{
 		// Attack and Secondary
 		// 
-		FVector LocalForward = MyCharacter->GetActorForwardVector();
+		FVector LocalForward = MyCharacter->GetAttackScene()->GetForwardVector();
 		FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
 		float VerticalDist = FMath::FloorToFloat(FMath::Clamp(ToPlayer.Z, -1.0f, 1.0f));
 		//float LateralDist = FMath::FloorToFloat(FMath::Clamp(ToPlayer.X, -1.0f, 1.0f));
@@ -164,7 +164,8 @@ void AGammaAIController::Tactical(FVector Target)
 
 				// Chance to secondary..
 				if (RandomDc < 6.0f
-					&& (ToPlayer.Size() <= SecondaryRange))
+					&& (ToPlayer.Size() <= SecondaryRange)
+					&& !MyCharacter->GetActiveSecondary())
 				{
 					MyCharacter->FireSecondary();
 				}
@@ -192,11 +193,13 @@ FVector AGammaAIController::GetNewLocationTarget()
 		//FVector AILocation = GetPawn()->GetActorLocation(); // not used
 
 		// Getting spicy
+		float DynamicMoveRange = MoveRange * (1 / MyCharacter->GetCharacterMovement()->Velocity.Size());
 		FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
-		FVector RandomOffset = (FMath::VRand() * MoveRange) * (1 / Aggression);
-		FVector NextRand = FMath::VRandCone(MyCharacter->GetActorForwardVector(), ShootingAngle) * MoveRange * -1.0f;
+		FVector RandomOffset = (FMath::VRand() * DynamicMoveRange) * (1 / Aggression);
+		FVector NextRand = FMath::VRandCone(MyCharacter->GetActorForwardVector(), ShootingAngle) * DynamicMoveRange * -1.0f;
 		RandomOffset.Y = NextRand.Y = 0.0f;
 		Result = (PlayerAtSpeed + RandomOffset) + NextRand;
+		Result.Z *= 0.351f;
 		
 		// Edge case for extreme range - just get back!
 		FVector ToResult = (Result - MyCharacter->GetActorLocation());

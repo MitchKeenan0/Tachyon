@@ -103,6 +103,7 @@ public:
 	float GetTurnSpeed() { return TurnSpeed; }
 	float GetMovesPerSec() { return MovesPerSecond; }
 	float GetPrefireTime() { return PrefireTime; }
+	USceneComponent* GetAttackScene() { return AttackScene; }
 
 
 protected:
@@ -202,6 +203,8 @@ protected:
 
 public:
 	AActor* GetActiveFlash() { return ActiveFlash; }
+	AActor* GetActiveSecondary() { return ActiveSecondary; }
+
 
 
 	// REPLICATED COMBAT FUNCTIONS ////////////////////////////////

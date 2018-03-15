@@ -35,7 +35,7 @@ public:
 	void ReportHit(AActor* HitActor);
 
 	UFUNCTION(BlueprintCallable)
-	void Nullify();
+	void Nullify(int AttackType);
 
 
 	// Public variables

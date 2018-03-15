@@ -159,17 +159,8 @@ void AGAttack::Tick(float DeltaTime)
 		AGammaCharacter* PotentialGamma = Cast<AGammaCharacter>(OwningShooter);
 		if (PotentialGamma)
 		{
-			// Clean up shooter's pointer
-			if (bSecondary)
-			{
-				PotentialGamma->NullifySecondary();
-			}
-			else
-			{
-				PotentialGamma->NullifyAttack();
-			}
-			
-			Destroy();
+			bool Input = bSecondary;
+			Nullify(Input);
 		}
 	}
 
@@ -326,19 +317,26 @@ void AGAttack::ReportHit(AActor* HitActor)
 	if (CurrentMatch != nullptr)
 	{
 		// if multi-hit
-		//bLethal = false;
+		bLethal = false;
 		CurrentMatch->ClaimHit(HitActor, OwningShooter);
 	}
 }
 
 
-void AGAttack::Nullify()
+void AGAttack::Nullify(int AttackType)
 {
 	AGammaCharacter* PossibleCharacter = Cast<AGammaCharacter>(OwningShooter);
 	if (PossibleCharacter != nullptr)
 	{
-		PossibleCharacter->NullifySecondary();
-		PossibleCharacter->NullifyAttack();
+		if (AttackType == 0)
+		{
+			PossibleCharacter->NullifyAttack();
+		}
+		else if (AttackType == 1)
+		{
+			PossibleCharacter->NullifySecondary();
+		}
+		
 		this->Destroy();
 	}
 }
@@ -348,15 +346,18 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 {
 	bHit = true;
 
-	// Collide off shield
-	if (HitActor->ActorHasTag("Shield"))
+
+	// Hit another attack?
+	AGAttack* Atk = Cast<AGAttack>(HitActor);
+	if (Atk != nullptr)
 	{
-		AGAttack* Atk = Cast<AGAttack>(HitActor);
-		if (Atk != nullptr)
+		if (Atk->OwningShooter != nullptr
+			&& this->OwningShooter != nullptr
+			&& Atk->OwningShooter != this->OwningShooter)
 		{
-			if (Atk->OwningShooter != nullptr
-				&& this->OwningShooter != nullptr
-				&& Atk->OwningShooter != this->OwningShooter)
+
+			// Collide off shield
+			if (HitActor->ActorHasTag("Shield"))
 			{
 				SpawnDamage(HitActor, HitPoint);
 				ApplyKnockback(HitActor);
@@ -382,12 +383,12 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	}
 
 	if (HitActor->ActorHasTag("Solid")
-		&& this->ActorHasTag("Solid"))
+		&& this->ActorHasTag("Solid")
+		&& LifeTimer > 0.1f)
 	{
-		Nullify();
+		bool Input = bSecondary;
+		Nullify(Input);
 	}
-	
-	bLethal = false;
 }
 
 
