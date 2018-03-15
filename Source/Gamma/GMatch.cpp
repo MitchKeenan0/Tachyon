@@ -238,6 +238,31 @@ float AGMatch::GetOpponentHealth()
 }
 
 
+FString AGMatch::GetLocalCharacterName()
+{
+	if (LocalPlayer != nullptr)
+	{
+		return LocalPlayer->GetCharacterName();
+	}
+	else
+	{
+		return "-";
+	}
+}
+
+
+FString AGMatch::GetOpponentCharacterName()
+{
+	if (OpponentPlayer != nullptr)
+	{
+		return OpponentPlayer->GetCharacterName();
+	}
+	else
+	{
+		return "-";
+	}
+}
+
 void AGMatch::GetPlayers()
 {
 	// Spectator case

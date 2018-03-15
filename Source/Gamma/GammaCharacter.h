@@ -30,6 +30,7 @@ class AGammaCharacter : public APaperCharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
 
+	UPROPERTY(EditDefaultsOnly)
 	UTextRenderComponent* TextComponent;
 	
 	virtual void Tick(float DeltaSeconds) override;
@@ -104,6 +105,7 @@ public:
 	float GetMovesPerSec() { return MovesPerSecond; }
 	float GetPrefireTime() { return PrefireTime; }
 	USceneComponent* GetAttackScene() { return AttackScene; }
+	FString GetCharacterName() { return CharacterName; }
 
 
 protected:
@@ -306,6 +308,9 @@ protected:
 	bool bSecondaryActive = false;
 
 	// ATTRIBUTES //////////////////////////////////////////	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	FString CharacterName = "Name";
+
 	// Player movement
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float MoveSpeed = 1000.0f;

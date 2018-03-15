@@ -67,11 +67,13 @@ AGammaCharacter::AGammaCharacter()
 	// behavior on the edge of a ledge versus inclines by setting this to true or false
 	GetCharacterMovement()->bUseFlatBaseForFloorChecks = false;
 
-    // 	TextComponent = CreateDefaultSubobject<UTextRenderComponent>(TEXT("IncarGear"));
-    // 	TextComponent->SetRelativeScale3D(FVector(3.0f, 3.0f, 3.0f));
-    // 	TextComponent->SetRelativeLocation(FVector(35.0f, 5.0f, 20.0f));
-    // 	TextComponent->SetRelativeRotation(FRotator(0.0f, 90.0f, 0.0f));
-    // 	TextComponent->SetupAttachment(RootComponent);
+    TextComponent = CreateDefaultSubobject<UTextRenderComponent>(TEXT("TextComponent"));
+    TextComponent->SetRelativeScale3D(FVector(1.0f, 1.0f, 1.0f));
+    TextComponent->SetRelativeLocation(FVector(0.0f, 0.0f, -75.0f));
+    TextComponent->SetRelativeRotation(FRotator(0.0f, 90.0f, 0.0f));
+    TextComponent->SetupAttachment(RootComponent);
+	TextComponent->Text = FText::FromString(CharacterName);
+	TextComponent->SetAbsolute(false, true, false);
 
 	// Set up attack
 	AttackScene = CreateDefaultSubobject<USceneComponent>(TEXT("AttackScene"));
