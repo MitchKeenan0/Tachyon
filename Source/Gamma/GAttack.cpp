@@ -328,10 +328,19 @@ void AGAttack::Nullify(int AttackType)
 	AGammaCharacter* PossibleCharacter = Cast<AGammaCharacter>(OwningShooter);
 	if (PossibleCharacter != nullptr)
 	{
+		// All
+		if (AttackType == -1)
+		{
+			PossibleCharacter->NullifyAttack();
+			PossibleCharacter->NullifySecondary();
+		}
+
+		// Attack
 		if (AttackType == 0)
 		{
 			PossibleCharacter->NullifyAttack();
 		}
+		// Secondary
 		else if (AttackType == 1)
 		{
 			PossibleCharacter->NullifySecondary();

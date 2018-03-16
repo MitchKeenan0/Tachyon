@@ -65,7 +65,7 @@ protected:
 	float NaturalTimeScale = 1.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float GGTimescale = 0.001f;
+	float GGTimescale = 0.01f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float GGDelayTime = 0.15f;
@@ -77,7 +77,7 @@ protected:
 	float TimescaleDropSpeed = 50.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float TimescaleRecoverySpeed = 0.33f;
+	float TimescaleRecoverySpeed = 11.0f;
 
 	// Network-replicated variables
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
