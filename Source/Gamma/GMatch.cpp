@@ -214,7 +214,8 @@ float AGMatch::GetOpponentChargePercent()
 
 float AGMatch::GetLocalHealth()
 {
-	if (LocalPlayer != nullptr)
+	if (LocalPlayer != nullptr
+		&& LocalPlayer->IsValidLowLevel())
 	{
 		float LocalHealth = LocalPlayer->GetHealth();
 		return LocalHealth;
@@ -226,7 +227,8 @@ float AGMatch::GetLocalHealth()
 }
 float AGMatch::GetOpponentHealth()
 {
-	if (OpponentPlayer != nullptr)
+	if (OpponentPlayer != nullptr
+		&& OpponentPlayer->IsValidLowLevel())
 	{
 		float OpponentHealth = OpponentPlayer->GetHealth();
 		return OpponentHealth;

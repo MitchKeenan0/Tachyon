@@ -244,7 +244,7 @@ void AGammaAIController::NavigateTo(FVector Target)
 		FVector CurrentHeading = MyCharacter->GetCharacterMovement()->Velocity.GetSafeNormal();
 		FVector TargetHeading = ToTarget.GetSafeNormal();
 		float DotToTarget = FVector::DotProduct(CurrentHeading, TargetHeading);
-		if (DotToTarget < 0.0f)
+		if (DotToTarget < -0.3f)
 		{
 			MyCharacter->CheckPowerSlideOn();
 		}
