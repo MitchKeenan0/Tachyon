@@ -4,7 +4,7 @@
 
 #include "Engine.h"
 #include "GameFramework/Actor.h"
-#include "GammaCharacter.h"
+#include "GammaAIController.h"
 #include "GammaSoloSequence.generated.h"
 
 UCLASS()
@@ -36,6 +36,9 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AGammaCharacter> BaetylusClass;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AGammaAIController> AIControllerClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float FirstEncounterTime = 3.0f;

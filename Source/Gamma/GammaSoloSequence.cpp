@@ -119,11 +119,24 @@ void AGammaSoloSequence::SpawnDenizen()
 			break;
 	}
 
+	// Spawn is go!
 	if (PlayerSpawning != nullptr)
 	{
-		AGammaCharacter* NewDenizen = Cast<AGammaCharacter>(GetWorld()->SpawnActor<AActor>(PlayerSpawning, SpawnLoc, GetActorRotation(), SpawnParams));
-		if (NewDenizen != nullptr)
+		AGammaCharacter* NewDenizen = Cast<AGammaCharacter>(
+			GetWorld()->SpawnActor<AActor>(PlayerSpawning, SpawnLoc, GetActorRotation(), SpawnParams));
+		AGammaAIController* DenizenController = Cast<AGammaAIController>(
+			GetWorld()->SpawnActor<AActor>(AIControllerClass, SpawnLoc, GetActorRotation(), SpawnParams));
+		
+		if (NewDenizen != nullptr
+			&& DenizenController != nullptr)
 		{
+			// Install AI Controller
+			NewDenizen->Controller = DenizenController;
+			DenizenController->Possess(NewDenizen);
+
+			// "Alert the media"
+			NewDenizen->Tags.Add("Bot");
+
 			++Spawns;
 			PreviousSpawn = Rando;
 		}

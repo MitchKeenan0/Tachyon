@@ -34,10 +34,10 @@ public:
 	float GetOpponentHealth();
 
 	UFUNCTION(BlueprintCallable)
-	FString GetLocalCharacterName();
+	FText GetLocalCharacterName();
 
 	UFUNCTION(BlueprintCallable)
-	FString GetOpponentCharacterName();
+	FText GetOpponentCharacterName();
 
 	UFUNCTION(BlueprintCallable)
 	AGammaCharacter* GetOpponentPlayer() { return OpponentPlayer; }

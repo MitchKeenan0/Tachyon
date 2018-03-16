@@ -238,30 +238,33 @@ float AGMatch::GetOpponentHealth()
 }
 
 
-FString AGMatch::GetLocalCharacterName()
+FText AGMatch::GetLocalCharacterName()
 {
-	if (LocalPlayer != nullptr)
+	if (LocalPlayer != nullptr
+		&& LocalPlayer->IsValidLowLevel())
 	{
-		return LocalPlayer->GetCharacterName();
+		return FText::FromString(LocalPlayer->GetCharacterName());
 	}
 	else
 	{
-		return "-";
+		return FText::FromString("-");
 	}
 }
 
 
-FString AGMatch::GetOpponentCharacterName()
+FText AGMatch::GetOpponentCharacterName()
 {
-	if (OpponentPlayer != nullptr)
+	if (OpponentPlayer != nullptr
+		&& OpponentPlayer->IsValidLowLevel())
 	{
-		return OpponentPlayer->GetCharacterName();
+		return FText::FromString(OpponentPlayer->GetCharacterName());
 	}
 	else
 	{
-		return "-";
+		return FText::FromString("-");
 	}
 }
+
 
 void AGMatch::GetPlayers()
 {

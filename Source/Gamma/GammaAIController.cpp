@@ -236,11 +236,27 @@ void AGammaAIController::NavigateTo(FVector Target)
 	}
 	else if (GetWorld() && MoveTimer >= (1 / MovesPerSec))
 	{
+		// Use the handbrake if we're off target
+		float ValueX = 0.0f;
+		float ValueZ = 0.0f;
+		
+		// Power Slide
+		FVector CurrentHeading = MyCharacter->GetCharacterMovement()->Velocity.GetSafeNormal();
+		FVector TargetHeading = ToTarget.GetSafeNormal();
+		float DotToTarget = FVector::DotProduct(CurrentHeading, TargetHeading);
+		if (DotToTarget < 0.0f)
+		{
+			MyCharacter->CheckPowerSlideOn();
+		}
+		else
+		{
+			MyCharacter->CheckPowerSlideOff();
+		}
+		
 		// Compare movement priorites by distance
 		float VerticalDistance = FMath::Abs(ToTarget.Z);
 		float LateralDistance = FMath::Abs(ToTarget.X);
-		float ValueX = 0.0f;
-		float ValueZ = 0.0f;
+
 		//bool bMoved = false;
 
 		// Simulating decision between vertical and lateral
@@ -264,12 +280,12 @@ void AGammaAIController::NavigateTo(FVector Target)
 			float MoveByDot = 0.0f;
 			float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
 			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -90.0f, 90.0f));
-			
+
 			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
 			MyCharacter->GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			MyCharacter->GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			MyPawn->AddMovementInput(MoveInput * MoveByDot);
-			
+
 			MoveTimer = 0.0f;
 		}
 
