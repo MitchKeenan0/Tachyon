@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "Engine.h"
 #include "GameFramework/Actor.h"
 #include "GammaAIController.h"
 #include "GammaSoloSequence.generated.h"

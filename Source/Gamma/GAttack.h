@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "Engine.h"
 #include "UnrealNetwork.h"
 #include "GameFramework/Actor.h"
 #include "GDamage.h"

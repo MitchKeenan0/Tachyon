@@ -2,9 +2,7 @@
 
 #pragma once
 
-#include "Engine.h"
 #include "AIController.h"
-#include "GAttack.h"
 #include "GammaCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GammaAIController.generated.h"

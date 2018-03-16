@@ -29,9 +29,6 @@ class AGammaCharacter : public APaperCharacter
 	// Camera boom positioning the camera beside the character
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
-
-	UPROPERTY(EditDefaultsOnly)
-	UTextRenderComponent* TextComponent;
 	
 	virtual void Tick(float DeltaSeconds) override;
 
@@ -141,6 +138,10 @@ protected:
 		bool bFromSweep,
 		const FHitResult& SweepResult
 	);
+
+	// Character Name
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UTextRenderComponent* TextComponent;
 
 	// ARRAYS ///////////////////////////////////////////////////////////////
 	// Camera partners

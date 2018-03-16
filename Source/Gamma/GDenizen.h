@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "Engine.h"
+#include "Gamma.h"
 #include "GameFramework/Actor.h"
 #include "GDenizen.generated.h"
 
