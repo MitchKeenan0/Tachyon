@@ -92,7 +92,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 				GetNewLocationTarget();
 				TravelTimer = 0.0f;
 			}
-			else if (LocationTarget != FVector::ZeroVector)
+			else if ((LocationTarget != FVector::ZeroVector) && !bShootingSoon)
 			{
 				NavigateTo(LocationTarget);
 				MoveTimer += DeltaSeconds;
@@ -136,6 +136,7 @@ void AGammaAIController::Tactical(FVector Target)
 	}
 	else if (MyCharacter != nullptr)
 	{
+		bShootingSoon = true;
 		// Attack and Secondary
 		// 
 		FVector LocalForward = MyCharacter->GetAttackScene()->GetForwardVector();
@@ -179,6 +180,8 @@ void AGammaAIController::Tactical(FVector Target)
 				}
 			}
 		}
+
+		bShootingSoon = false;
 	}
 }
 

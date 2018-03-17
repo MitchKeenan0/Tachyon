@@ -228,11 +228,9 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 void AGammaCharacter::UpdateCamera(float DeltaTime)
 {
-	// Interpolating camera position to the centre of 2 framing points.
-	// TODO - add defense on running get?
-	
 	// Poll for framing actors
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
+	// TODO - add defense on running get?
 
 	if (FramingActors.Num() > 0)
 	{

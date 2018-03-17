@@ -115,4 +115,7 @@ private:
 
 	UPROPERTY()
 	float PrefireTimer = 0.0f;
+
+	UPROPERTY()
+	bool bShootingSoon = false; /// used to reject moving; would cause a miss
 };
