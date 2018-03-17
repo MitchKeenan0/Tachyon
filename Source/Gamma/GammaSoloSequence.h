@@ -28,6 +28,12 @@ protected:
 	void AquirePlayer();
 
 	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> ObstacleClass1;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> ObstacleClass2;
+
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<AGammaCharacter> KaraokeClass;
 
 	UPROPERTY(EditAnywhere)
@@ -41,6 +47,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float FirstEncounterTime = 3.0f;
+
+	UPROPERTY(EditAnywhere)
+	bool bSpawnCharacters = true;
+
+	UPROPERTY(EditAnywhere)
+	bool bSpawnObstacles = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int MaxLiveUnits = 10;
@@ -56,6 +68,9 @@ protected:
 	
 	UPROPERTY(BlueprintReadWrite)
 	TArray<AActor*> DenizenArray;
+
+	UPROPERTY(BlueprintReadWrite)
+	TArray<AActor*> ObstacleArray;
 
 	UPROPERTY(BlueprintReadWrite)
 	float RunTimer = 0.0f;
@@ -74,6 +89,9 @@ private:
 	
 	UPROPERTY()
 	int PreviousSpawn = 0;
+
+	UPROPERTY()
+	int NumObstacles = 0;
 	
 	
 };

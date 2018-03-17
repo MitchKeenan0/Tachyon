@@ -297,7 +297,8 @@ void AGAttack::ReportHit(AActor* HitActor)
 	AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
 	if (PotentialPlayer != nullptr)
 	{
-		PotentialPlayer->ModifyHealth(-20);
+		PotentialPlayer->ModifyHealth(-1.0f);
+		//bLethal = false;
 	}
 
 	// Grow maze cubes
@@ -317,7 +318,6 @@ void AGAttack::ReportHit(AActor* HitActor)
 	if (CurrentMatch != nullptr)
 	{
 		// if multi-hit
-		bLethal = false;
 		CurrentMatch->ClaimHit(HitActor, OwningShooter);
 	}
 }
@@ -353,7 +353,7 @@ void AGAttack::Nullify(int AttackType)
 
 void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 {
-	bHit = true;
+	//bHit = true;
 
 
 	// Hit another attack?

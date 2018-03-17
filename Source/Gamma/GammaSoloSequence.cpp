@@ -90,25 +90,60 @@ void AGammaSoloSequence::SpawnDenizen()
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No Player, Extrapolating..."));
 		float Rando = FMath::FRandRange(0.0f, 1000.0f);
-		PlayerWiseLocation = FVector(Rando, 0.0f, Rando);
+		PlayerWiseLocation += FVector(Rando, 0.0f, Rando);
 	}
 
 	FVector RandomOffset = (FMath::VRand() * 1000);
 	RandomOffset.Y = 0.0f;
 	FVector SpawnLoc = PlayerWiseLocation + RandomOffset;
 
-	// Random character each spawn
-	TSubclassOf<AGammaCharacter> PlayerSpawning = nullptr;
-	int Rando = FMath::FloorToInt(FMath::FRand() * 3);
-	
-	// Ensure different enemy each time
-	if (Rando == PreviousSpawn)
+
+	// OBSTACLE SPAWN
+	if (bSpawnObstacles && ObstacleArray.Num() < 10)
 	{
-		return;
+		int Rando = FMath::FloorToInt(FMath::FRand() * 2);
+		TSubclassOf<AActor> ObstacleSpawning = nullptr;
+		switch (Rando)
+		{
+			case 0: ObstacleSpawning = ObstacleClass1;
+				break;
+			case 1: ObstacleSpawning = ObstacleClass2;
+				break;
+			default:
+				break;
+		}
+		if (ObstacleSpawning != nullptr)
+		{
+			float Randv = FMath::Rand();
+			FRotator SpawnRotation = FRotator(Randv * 10.0f, Randv * 3.0f, Randv * 9.0f);
+			SpawnLoc.X += FMath::FRandRange(-10000.0f, 10000.0f);
+			SpawnLoc.Y += FMath::FRandRange(-500.0f, 500.0f);
+			SpawnLoc.Z += FMath::FRandRange(-7000.0f, 7000.0f);
+			AActor* NewObstacle = GetWorld()->SpawnActor<AActor>(ObstacleSpawning, SpawnLoc, SpawnRotation, SpawnParams);
+			
+			if (NewObstacle != nullptr)
+			{
+				ObstacleArray.Add(NewObstacle);
+			}
+		}
 	}
 
-	switch (Rando)
+
+	// CHARACTER SPAWN
+	if (bSpawnCharacters)
 	{
+		// Random character each spawn
+		TSubclassOf<AGammaCharacter> PlayerSpawning = nullptr;
+		int Rando = FMath::FloorToInt(FMath::FRand() * 3);
+
+		// Ensure different enemy each time
+		if (Rando == PreviousSpawn)
+		{
+			return;
+		}
+
+		switch (Rando)
+		{
 		case 0: PlayerSpawning = KaraokeClass;
 			break;
 		case 1: PlayerSpawning = PeaceGiantClass;
@@ -117,28 +152,29 @@ void AGammaSoloSequence::SpawnDenizen()
 			break;
 		default:
 			break;
-	}
+		}
 
-	// Spawn is go!
-	if (PlayerSpawning != nullptr)
-	{
-		AGammaCharacter* NewDenizen = Cast<AGammaCharacter>(
-			GetWorld()->SpawnActor<AActor>(PlayerSpawning, SpawnLoc, GetActorRotation(), SpawnParams));
-		AGammaAIController* DenizenController = Cast<AGammaAIController>(
-			GetWorld()->SpawnActor<AActor>(AIControllerClass, SpawnLoc, GetActorRotation(), SpawnParams));
-		
-		if (NewDenizen != nullptr
-			&& DenizenController != nullptr)
+		// Spawn is go!
+		if (PlayerSpawning != nullptr)
 		{
-			// Install AI Controller
-			NewDenizen->Controller = DenizenController;
-			DenizenController->Possess(NewDenizen);
+			AGammaCharacter* NewDenizen = Cast<AGammaCharacter>(
+				GetWorld()->SpawnActor<AActor>(PlayerSpawning, SpawnLoc, GetActorRotation(), SpawnParams));
+			AGammaAIController* DenizenController = Cast<AGammaAIController>(
+				GetWorld()->SpawnActor<AActor>(AIControllerClass, SpawnLoc, GetActorRotation(), SpawnParams));
 
-			// "Alert the media"
-			NewDenizen->Tags.Add("Bot");
+			if (NewDenizen != nullptr
+				&& DenizenController != nullptr)
+			{
+				// Install AI Controller
+				NewDenizen->Controller = DenizenController;
+				DenizenController->Possess(NewDenizen);
 
-			++Spawns;
-			PreviousSpawn = Rando;
+				// "Alert the media"
+				NewDenizen->Tags.Add("Bot");
+
+				++Spawns;
+				PreviousSpawn = Rando;
+			}
 		}
 	}
 }
