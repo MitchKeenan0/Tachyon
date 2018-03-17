@@ -271,6 +271,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				else
 				{
 					bAlone = true;
+					Actor1 = this;
 				}
 			}
 			
