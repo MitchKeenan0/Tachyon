@@ -43,33 +43,12 @@ void AGammaAIController::Tick(float DeltaSeconds)
 			PrefireTime = MyCharacter->GetPrefireTime();
 		}
 
-
-		// Locate "player" target
-		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), PlayersArray);
-		if (PlayersArray.Num() > 0)
+		if (Player != nullptr && Player->IsValidLowLevel())
 		{
-			for (int i = 0; i < PlayersArray.Num(); ++i)
-			{
-				if (PlayersArray[i] != nullptr
-					&& PlayersArray[i] != MyPawn
-					&& PlayersArray[i] != MyCharacter
-					&& !PlayersArray[i]->ActorHasTag("Spectator"))
-				{
-					AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(PlayersArray[i]);
-					if (PotentialPlayer != nullptr)
-					{
-						Player = PotentialPlayer;
-						/*GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::White,
-							FString::Printf(TEXT("p %s   targeting %s"), *MyCharacter->GetName(), *Player->GetName()));*/
-						break;
-					}
-				}
-			}
-		}
+			// Debug AI to Player
+			/*DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(), Player->GetActorLocation(),
+				FColor::White, false, -1.0f, 0, 3.0f);*/
 
-
-		if (Player != nullptr)
-		{
 			// Got a player - stunt on'em
 			// Update prefire
 			PrefireTimer += DeltaSeconds;
@@ -97,6 +76,31 @@ void AGammaAIController::Tick(float DeltaSeconds)
 				NavigateTo(LocationTarget);
 				MoveTimer += DeltaSeconds;
 				TravelTimer += DeltaSeconds;
+			}
+		}
+		else /// player is nullptr
+		{
+			// Locate "player" target
+			UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), PlayersArray);
+			if (PlayersArray.Num() > 0)
+			{
+				for (int i = 0; i < PlayersArray.Num(); ++i)
+				{
+					if (PlayersArray[i] != nullptr
+						&& PlayersArray[i] != MyPawn
+						&& PlayersArray[i] != MyCharacter
+						&& !PlayersArray[i]->ActorHasTag("Spectator"))
+					{
+						AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(PlayersArray[i]);
+						if (PotentialPlayer != nullptr)
+						{
+							Player = PotentialPlayer;
+							/*GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::White,
+							FString::Printf(TEXT("p %s   targeting %s"), *MyCharacter->GetName(), *Player->GetName()));*/
+							break;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -196,21 +200,25 @@ FVector AGammaAIController::GetNewLocationTarget()
 		//FVector AILocation = GetPawn()->GetActorLocation(); // not used
 
 		// Getting spicy
-		float DynamicMoveRange = MoveRange * (1 / MyCharacter->GetCharacterMovement()->Velocity.Size());
+		float MyVelocity = MyCharacter->GetCharacterMovement()->Velocity.Size();
+		float DynamicMoveRange = MoveRange * (1 / MyVelocity);
 		FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
-		FVector RandomOffset = (FMath::VRand() * DynamicMoveRange) * (1 / Aggression);
-		FVector NextRand = FMath::VRandCone(MyCharacter->GetActorForwardVector(), ShootingAngle) * DynamicMoveRange * -1.0f;
-		RandomOffset.Y = NextRand.Y = 0.0f;
-		Result = (PlayerAtSpeed + RandomOffset) + NextRand;
-		Result.Z *= 0.351f;
 		
-		// Edge case for extreme range - just get back!
-		FVector ToResult = (Result - MyCharacter->GetActorLocation());
-		if ((FMath::Abs(ToResult.Z) >= PrimaryRange / 2)
-			&& Player != nullptr)
-		{
-			Result = Player->GetActorLocation();
-		}
+		FVector RandomOffset = (FMath::VRand() * DynamicMoveRange) * (1 / Aggression);
+		RandomOffset.Y = 0.0f;
+		FVector NextRand = FMath::VRandCone(MyCharacter->GetActorForwardVector(), ShootingAngle) * DynamicMoveRange * -1.0f;
+		NextRand.Y = 0.0f;
+		
+		Result = (PlayerAtSpeed + RandomOffset) + NextRand;
+		//Result.Z *= 0.5f;
+		
+		//// Edge case for extreme range - just get back!
+		//FVector ToResult = (Result - MyCharacter->GetActorLocation());
+		//if ((FMath::Abs(ToResult.Z) >= PrimaryRange / 2)
+		//	&& Player != nullptr)
+		//{
+		//	Result = Player->GetActorLocation();
+		//}
 
 		// And serve
 		bCourseLayedIn = true;
@@ -243,11 +251,11 @@ void AGammaAIController::NavigateTo(FVector Target)
 		float ValueX = 0.0f;
 		float ValueZ = 0.0f;
 		
-		// Power Slide
+		// Hand brake
 		FVector CurrentHeading = MyCharacter->GetCharacterMovement()->Velocity.GetSafeNormal();
 		FVector TargetHeading = ToTarget.GetSafeNormal();
 		float DotToTarget = FVector::DotProduct(CurrentHeading, TargetHeading);
-		if (DotToTarget < -0.3f)
+		if (DotToTarget < -0.15f)
 		{
 			MyCharacter->CheckPowerSlideOn();
 		}

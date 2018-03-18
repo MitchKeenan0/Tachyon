@@ -137,21 +137,21 @@ void AGammaSoloSequence::SpawnDenizen()
 		int Rando = FMath::FloorToInt(FMath::FRand() * 3);
 
 		// Ensure different enemy each time
-		if (Rando == PreviousSpawn)
+		/*if (Rando == PreviousSpawn)
 		{
 			return;
-		}
+		}*/
 
 		switch (Rando)
 		{
-		case 0: PlayerSpawning = KaraokeClass;
-			break;
-		case 1: PlayerSpawning = PeaceGiantClass;
-			break;
-		case 2: PlayerSpawning = BaetylusClass;
-			break;
-		default:
-			break;
+			case 0: PlayerSpawning = KaraokeClass;
+				break;
+			case 1: PlayerSpawning = PeaceGiantClass;
+				break;
+			case 2: PlayerSpawning = BaetylusClass;
+				break;
+			default:
+				break;
 		}
 
 		// Spawn is go!

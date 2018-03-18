@@ -69,7 +69,6 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 		AGammaCharacter* Reciever = Cast<AGammaCharacter>(HitActor);
 		if (Reciever != nullptr)
 		{
-
 			/*FTimerHandle UnusedHandle;
 			GetWorldTimerManager().SetTimer(UnusedHandle, 1.0f, false, 0.1f);*/
 
@@ -90,10 +89,10 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 					///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("Got Flipbook"));
 				}
 
-				if (HitActor->ActorHasTag("Bot"))
+				/*if (HitActor->ActorHasTag("Bot"))
 				{
 					HitActor->Tags.Add("Doomed");
-				}
+				}*/
 			}
 			else
 			{

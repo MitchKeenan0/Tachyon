@@ -164,7 +164,12 @@ void AGammaCharacter::BeginPlay()
 	CameraBoom->SetRelativeLocation(PlayerLocation);
 	PositionOne = PlayerLocation;
 	PositionTwo = PlayerLocation;
-	CameraBoom->TargetArmLength = 1000;
+	CameraBoom->TargetArmLength = 3000;
+
+	// Init location (obstacles can currently deset players)
+	FVector ActorLoc = GetActorLocation();
+	ActorLoc.Y = 0.0f;
+	SetActorLocation(ActorLoc);
 }
 
 
@@ -236,8 +241,17 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 	{
 
 		// Start by checking valid actor
-		AActor* Actor1 = FramingActors[0];
-		if (Actor1 && Actor1->IsValidLowLevelFast() && !Actor1->IsUnreachable())
+		AActor* Actor1 = this;
+		AActor* Actor2 = nullptr;
+
+		// Edge case: player is spectator
+		if (Actor1->ActorHasTag("Spectator"))
+		{
+			Actor1 = FramingActors[0];
+		}
+
+		// Let's go
+		if (Actor1 != nullptr && Actor1->IsValidLowLevelFast() && !Actor1->IsUnreachable())
 		{
 
 			// Framing up first actor
@@ -253,10 +267,20 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Position two by another actor
 			bool bAlone = false;
-			if (FramingActors.Num() > 1 && (FramingActors[1] != nullptr))
+			if (FramingActors.Num() > 1)
 			{
-				AActor* Actor2 = FramingActors[1];
-				if (Actor2 && !Actor2->IsUnreachable()
+				// Ensure the second actor is valid and not our own
+				for (int i = 0; i < FramingActors.Num(); ++i)
+				{
+					if (FramingActors[i] != nullptr 
+						&& FramingActors[i] != Actor1)
+					{
+						Actor2 = FramingActors[i];
+					}
+				}
+				
+				// If Actor2 isn't too far away, make 'Pair Framing'
+				if (Actor2 != nullptr && !Actor2->IsUnreachable()
 					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 5000.0f)
 				{
 
@@ -269,10 +293,10 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				else
 				{
 					bAlone = true;
-					Actor1 = this;
 				}
 			}
 			
+			// Lone player gets 'Velocity Framing'
 			if (bAlone || FramingActors.Num() == 1)
 			{
 
@@ -282,9 +306,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				{
 					Actor1Velocity = GetActorForwardVector() * (MoveSpeed);
 				}
-				FVector VelocityFraming = Actor1->GetActorLocation() + Actor1Velocity;
+				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity * 3.0f);
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, CameraMoveSpeed);
-				CameraMaxDistance = 100111.0f;
+				CameraMaxDistance = 10000.0f;
 				CameraMinimumDistance = 1000.0f;
 			}
 
@@ -294,15 +318,15 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			Midpoint = (PositionOne + PositionTwo) / 2.0f;
 			if (Midpoint.Size() > 0.001f)
 			{
-				// Back away to accommodate distance
+				// Distance
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo);
 				float VerticalDist = FMath::Abs((PositionTwo - PositionOne).Z);
 				float TargetLength = DistBetweenActors + (300 / FramingActors.Num()) + VerticalDist;
 				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 420.0f) * CameraDistance,
-					300.0f,
+					CameraMinimumDistance,
 					CameraMaxDistance);
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength, 
-					TargetLengthClamped, DeltaTime, CameraMoveSpeed * 3.0f);
+					TargetLengthClamped, DeltaTime, CameraMoveSpeed * 5.0f);
 					
 				// Camera tilt
 				CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue, DeltaTime, CameraTiltSpeed); // pitch
