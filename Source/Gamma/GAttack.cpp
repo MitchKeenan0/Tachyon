@@ -119,16 +119,17 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	/*FlashMesh->SetMaterial(0, MainMaterial);
 	AttackMesh->SetMaterial(0, MainMaterial);*/
 
-	// Init success & recoil
+
+	// Recoil &
+	// Init Success
 	if (OwningShooter != nullptr)
 	{
 		ACharacter* Chara = Cast<ACharacter>(OwningShooter);
 		if (Chara)
 		{
-			float RecoilScalar = KineticForce * -0.5f;
+			float RecoilScalar = KineticForce * 1.5f;
 			FRotator RecoilRotator = LocalForward.Rotation() + FRotator(ShotDirection * ShootingAngle, 0.0f, 0.0f);
 			Chara->GetCharacterMovement()->AddImpulse(RecoilRotator.Vector() * RecoilScalar);
-
 		}
 
 		bLethal = true;
@@ -257,7 +258,8 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 {
 	// The knock itself
 	FVector AwayFromShooter = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-	float KnockScalar = FMath::Abs(KineticForce);
+	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+	float KnockScalar = FMath::Abs(KineticForce) * TimeDilat;
 
 	// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
@@ -287,17 +289,18 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 
 void AGAttack::ReportHit(AActor* HitActor)
 {
-	/*if ((!HitActor->ActorHasTag("Player"))
-		&& (!HitActor->ActorHasTag("Bot")))
-	{
-		HitActor->Tags.Add("Doomed");
-	}*/
-
 	// Damage
 	AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
 	if (PotentialPlayer != nullptr)
 	{
 		PotentialPlayer->ModifyHealth(-1.0f);
+		
+		// Marked killed player for the reset sweep
+		if (PotentialPlayer->GetHealth() <= 0.0f)
+		{
+			PotentialPlayer->Tags.Add("Doomed");
+		}
+		
 		//bLethal = false;
 	}
 
@@ -392,8 +395,8 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	}
 
 	if (HitActor->ActorHasTag("Solid")
-		&& this->ActorHasTag("Solid")
-		&& LifeTimer > 0.1f)
+		&& (this->ActorHasTag("Solid") && !HitActor->ActorHasTag("Attack"))
+		&& LifeTimer > 0.15f)
 	{
 		bool Input = bSecondary;
 		Nullify(Input);

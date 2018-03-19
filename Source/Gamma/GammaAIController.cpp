@@ -125,14 +125,17 @@ bool AGammaAIController::ReactionTiming(float DeltaTime)
 void AGammaAIController::Tactical(FVector Target)
 {
 	// Random number to evoke choice
-	float RandomDc = FMath::FRandRange(0.0f, 10.0f);
+	float RandomDc = FMath::FRandRange(0.0f, 100.0f);
+	float PauseVal = 15.0f;
+	float ChargeVal = 35.0f;
+	float SecoVal = 60.0f;
 
-	if (RandomDc <= 1.5f)
+	if (RandomDc <= PauseVal)
 	{
 		// Chance to do nothing
 		return;
 	}
-	else if (RandomDc < 3.5f)
+	else if (RandomDc <= ChargeVal)
 	{
 		// Charge
 		
@@ -148,16 +151,18 @@ void AGammaAIController::Tactical(FVector Target)
 		float VerticalDist = FMath::FloorToFloat(FMath::Clamp(ToPlayer.Z, -1.0f, 1.0f));
 		//float LateralDist = FMath::FloorToFloat(FMath::Clamp(ToPlayer.X, -1.0f, 1.0f));
 		
-		// Aim
+
+		// Aim - leads to attacks and secondaries
 		float DotToPlayer = FVector::DotProduct(LocalForward.GetSafeNormal(), ToPlayer.GetSafeNormal());
 		float RangeToPlayer = ToPlayer.Size();
 		if (DotToPlayer > 0.0f
 			&& RangeToPlayer <= PrimaryRange)
 		{
+
 			float AngleToPlayer = FMath::Acos(DotToPlayer);
 			if (AngleToPlayer <= ShootingAngle)
 			{
-				// Forward vs angle aiming
+				// Line up a shot with player Z input
 				if (FMath::Abs(AngleToPlayer) <= 0.25f)
 				{
 					MyCharacter->SetZ(0.0f);
@@ -167,14 +172,15 @@ void AGammaAIController::Tactical(FVector Target)
 					MyCharacter->SetZ(VerticalDist);
 				}
 
-				// Chance to secondary..
-				if (RandomDc < 6.0f
+				
+				// Fire Secondary
+				if (RandomDc < SecoVal
 					&& (ToPlayer.Size() <= SecondaryRange)
 					&& !MyCharacter->GetActiveSecondary())
 				{
 					MyCharacter->FireSecondary();
 				}
-				// .. Or fire attack
+				// Fire Attack
 				else if (!MyCharacter->GetActiveFlash()
 					&& ToPlayer.Size() <= PrimaryRange
 					&& PrefireTimer >= PrefireTime)
