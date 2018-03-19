@@ -207,7 +207,8 @@ FVector AGammaAIController::GetNewLocationTarget()
 
 		// Getting spicy
 		float MyVelocity = MyCharacter->GetCharacterMovement()->Velocity.Size();
-		float DynamicMoveRange = MoveRange * (1 / MyVelocity);
+		float DynamicMoveRange = MoveRange + (1 / (1 / MyVelocity)); /// woah
+		///GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("DMR: %f"), DynamicMoveRange));
 		FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
 		
 		FVector RandomOffset = (FMath::VRand() * DynamicMoveRange) * (1 / Aggression);

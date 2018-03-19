@@ -302,12 +302,21 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Framing lone player by their velocity
 				FVector Actor1Velocity = Actor1->GetVelocity() * CameraSoloVelocityChase;
-				if (Actor1Velocity.Size() <= 1.0f)
+				FVector VelocityFraming = FVector::ZeroVector;
+
+				// Clamp max considered velocity
+				if (Actor1Velocity.Size() >= MoveSpeed * 1.4f)
 				{
-					Actor1Velocity = GetActorForwardVector() * (MoveSpeed);
+					VelocityFraming = Actor1->GetActorLocation() + Actor1Velocity;
 				}
-				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity * 3.0f);
+				else
+				{
+					VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity * 3.0f);
+				}
+				
+				// Declare Position Two
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, CameraMoveSpeed);
+				
 				CameraMaxDistance = 10000.0f;
 				CameraMinimumDistance = 1000.0f;
 			}

@@ -134,14 +134,15 @@ void AGammaSoloSequence::SpawnDenizen()
 	{
 		// Random character each spawn
 		TSubclassOf<AGammaCharacter> PlayerSpawning = nullptr;
-		int Rando = FMath::FloorToInt(FMath::FRand() * 3);
+		int Rando = PreviousSpawn;
 
 		// Ensure different enemy each time
-		/*if (Rando == PreviousSpawn)
+		while (Rando == PreviousSpawn)
 		{
-			return;
-		}*/
+			Rando = FMath::FloorToInt(FMath::FRand() * 3);
+		}
 
+		// Delineate a random Character to spawn
 		switch (Rando)
 		{
 			case 0: PlayerSpawning = KaraokeClass;
