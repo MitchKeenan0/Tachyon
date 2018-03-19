@@ -241,7 +241,7 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 	{
 		// Spawning damage fx
 		FActorSpawnParameters SpawnParams;
-		FRotator Forward = HitActor->GetActorRotation();
+		FRotator Forward = GetActorForwardVector().Rotation(); //HitActor->GetActorRotation();
 		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, HitPoint, Forward, SpawnParams));
 		DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
 	}
@@ -295,8 +295,9 @@ void AGAttack::ReportHit(AActor* HitActor)
 	{
 		PotentialPlayer->ModifyHealth(-1.0f);
 		
-		// Marked killed player for the reset sweep
-		if (PotentialPlayer->GetHealth() <= 0.0f)
+		// Marked killed AI for the reset sweep
+		if (PotentialPlayer->GetHealth() <= 0.0f
+			&& PotentialPlayer->ActorHasTag("Bot"))
 		{
 			PotentialPlayer->Tags.Add("Doomed");
 		}
@@ -394,9 +395,8 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 		// Hit another attack..
 	}
 
-	if (HitActor->ActorHasTag("Solid")
-		&& (this->ActorHasTag("Solid") && !HitActor->ActorHasTag("Attack"))
-		&& LifeTimer > 0.15f)
+	if (HitActor->ActorHasTag("Wall")
+		&& this->ActorHasTag("Solid"))
 	{
 		bool Input = bSecondary;
 		Nullify(Input);

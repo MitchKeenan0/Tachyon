@@ -186,6 +186,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	// Update animation to match the motion
 	//UpdateAnimation();
 
+	// CAMERA UPDATE
 	UpdateCamera(DeltaTime);
 
 	// Now setup the rotation of the controller based on the direction we are travelling
@@ -287,6 +288,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					// Framing up with second actor
 					FVector Actor2Velocity = Actor2->GetVelocity();
 					Actor2Velocity.Z *= 0.9f;
+					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(3000.0f);
+
+					// Declare Position Two
 					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase);
 					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, CameraMoveSpeed);
 				}
@@ -301,24 +305,22 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 
 				// Framing lone player by their velocity
-				FVector Actor1Velocity = Actor1->GetVelocity() * CameraSoloVelocityChase;
-				FVector VelocityFraming = FVector::ZeroVector;
+				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 3.0f;
 
-				// Clamp max considered velocity
-				if (Actor1Velocity.Size() >= MoveSpeed * 1.4f)
-				{
-					VelocityFraming = Actor1->GetActorLocation() + Actor1Velocity;
-				}
-				else
-				{
-					VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity * 3.0f);
-				}
-				
+				// Clamp to max size
+				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(3000.0f);
+
 				// Declare Position Two
+				FVector VelocityFraming = Actor1->GetActorLocation() + Actor1Velocity;
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, CameraMoveSpeed);
 				
+				// Distance controls
 				CameraMaxDistance = 10000.0f;
 				CameraMinimumDistance = 1000.0f;
+
+				/// debug Velocity size
+				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,
+					FColor::White, FString::Printf(TEXT("Actor1 Vel Size: %f"), (Actor1Velocity * 3.0f).Size()));*/
 			}
 
 
@@ -415,6 +417,7 @@ void AGammaCharacter::UpdateAnimation()
 }
 
 
+// Helper for ChargeBar UI
 float AGammaCharacter::GetChargePercentage()
 {
 	float Percentage = 0.0f;
@@ -433,7 +436,10 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	
 	// Main update
-	UpdateCharacter(DeltaSeconds);
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
+	{
+		UpdateCharacter(DeltaSeconds);
+	}
 
 
 	// Update player pitch

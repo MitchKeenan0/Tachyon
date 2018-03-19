@@ -59,7 +59,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 
 			// Reation time
 			if (ReactionTiming(DeltaSeconds)
-				&& MyCharacter->GetRootComponent()) //&& MyCharacter->GetRootComponent()->bVisible
+				&& MyCharacter->WasRecentlyRendered(0.75f))
 			{
 				Tactical(FVector::ZeroVector);
 			}
@@ -71,7 +71,8 @@ void AGammaAIController::Tick(float DeltaSeconds)
 				GetNewLocationTarget();
 				TravelTimer = 0.0f;
 			}
-			else if ((LocationTarget != FVector::ZeroVector) && !bShootingSoon)
+			else if ((LocationTarget != FVector::ZeroVector) && !bShootingSoon
+				&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
 			{
 				NavigateTo(LocationTarget);
 				MoveTimer += DeltaSeconds;
@@ -211,23 +212,18 @@ FVector AGammaAIController::GetNewLocationTarget()
 		///GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("DMR: %f"), DynamicMoveRange));
 		FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
 		
+		// Randomness in movement
 		FVector RandomOffset = (FMath::VRand() * DynamicMoveRange) * (1 / Aggression);
 		RandomOffset.Y = 0.0f;
 		FVector NextRand = FMath::VRandCone(MyCharacter->GetActorForwardVector(), ShootingAngle) * DynamicMoveRange * -1.0f;
 		NextRand.Y = 0.0f;
-		
-		Result = (PlayerAtSpeed + RandomOffset) + NextRand;
-		//Result.Z *= 0.5f;
-		
-		//// Edge case for extreme range - just get back!
-		//FVector ToResult = (Result - MyCharacter->GetActorLocation());
-		//if ((FMath::Abs(ToResult.Z) >= PrimaryRange / 2)
-		//	&& Player != nullptr)
-		//{
-		//	Result = Player->GetActorLocation();
-		//}
+		FVector CombinedRand = RandomOffset + NextRand;
+		CombinedRand = CombinedRand.GetClampedToMaxSize(MoveRange);
+		CombinedRand.Z *= 0.68f;
 
 		// And serve
+		Result = PlayerAtSpeed + CombinedRand;
+		
 		bCourseLayedIn = true;
 		LocationTarget = Result;
 	}
@@ -243,10 +239,11 @@ void AGammaAIController::NavigateTo(FVector Target)
 	FVector ToTarget = (Target - MyLocation);
 
 	/*DrawDebugLine(GetWorld(), MyLocation, Target,
-		FColor::Green, false, -1.0f, 0, 10.f);*/
+		FColor::Green, false, -1.0f, 0, 5.f);*/
 
 	// Have we reached target?
-	if (ToTarget.Size() < 550.0f)
+	/// Or are we too far out vertically?
+	if (ToTarget.Size() < 550.0f) /// || (ToTarget.Z > (ToTarget.X * 1.5f))
 	{
 		LocationTarget = FVector::ZeroVector;
 		bCourseLayedIn = false;
