@@ -459,12 +459,14 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 // MOVE	LEFT / RIGHT
 void AGammaCharacter::MoveRight(float Value)
 {
+	float ValClamped = FMath::Clamp(Value, -1.0f, 1.0f);
+
 	// Adjust aim to reflect move
-	if (InputX != Value 
+	if (InputX != ValClamped
 		/// Ignoring no inputs
-		&& !(InputX == 0.0f && Value == 0.0f))
+		&& !(InputX == 0.0f && ValClamped == 0.0f))
 	{
-		SetX(Value);
+		SetX(ValClamped);
 	}
 
 	if ((MoveTimer >= (1 / MovesPerSecond))
@@ -482,7 +484,7 @@ void AGammaCharacter::MoveRight(float Value)
 			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
 			GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			GetCharacterMovement()->MaxAcceleration = MoveByDot;
-			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value * MoveByDot);
+			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), ValClamped * MoveByDot);
 		}
 	}
 
@@ -492,12 +494,14 @@ void AGammaCharacter::MoveRight(float Value)
 // MOVE UP / DOWN
 void AGammaCharacter::MoveUp(float Value)
 {
+	float ValClamped = FMath::Clamp(Value, -1.0f, 1.0f);
+
 	// Adjust aim to reflect move
-	if (InputZ != Value 
+	if (InputZ != ValClamped
 		/// Ignoring no inputs
-		&& !(InputZ == 0.0f && Value == 0.0f))
+		&& !(InputZ == 0.0f && ValClamped == 0.0f))
 	{
-		SetZ(Value);
+		SetZ(ValClamped);
 	}
 
 	// Abide moves per second
@@ -516,7 +520,7 @@ void AGammaCharacter::MoveUp(float Value)
 			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
 			GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			GetCharacterMovement()->MaxAcceleration = MoveByDot;
-			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), Value * MoveByDot);
+			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), ValClamped * MoveByDot);
 		}
 	}
 
