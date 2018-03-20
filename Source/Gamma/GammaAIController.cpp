@@ -58,8 +58,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 			}
 
 			// Reation time
-			if (ReactionTiming(DeltaSeconds)
-				&& MyCharacter->WasRecentlyRendered(0.75f))
+			if (ReactionTiming(DeltaSeconds))
 			{
 				Tactical(FVector::ZeroVector);
 			}
@@ -127,9 +126,9 @@ void AGammaAIController::Tactical(FVector Target)
 {
 	// Random number to evoke choice
 	float RandomDc = FMath::FRandRange(0.0f, 100.0f);
-	float PauseVal = 15.0f;
-	float ChargeVal = 35.0f;
-	float SecoVal = 60.0f;
+	float PauseVal = 10.0f;
+	float ChargeVal = 42.0f;
+	float SecoVal = 70.0f;
 
 	if (RandomDc <= PauseVal)
 	{
@@ -160,8 +159,10 @@ void AGammaAIController::Tactical(FVector Target)
 			&& RangeToPlayer <= PrimaryRange)
 		{
 
+			// Only fire if a) we're on screen & b) angle looks good
 			float AngleToPlayer = FMath::Acos(DotToPlayer);
-			if (AngleToPlayer <= ShootingAngle)
+			if (AngleToPlayer <= ShootingAngle
+				&& MyCharacter->WasRecentlyRendered(0.75f))
 			{
 				// Line up a shot with player Z input
 				if (FMath::Abs(AngleToPlayer) <= 0.25f)

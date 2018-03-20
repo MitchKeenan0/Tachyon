@@ -105,10 +105,12 @@ void AGammaSoloSequence::SpawnDenizen()
 	FVector SpawnLoc = PlayerWiseLocation + RandomOffset;
 
 
-	// OBSTACLE SPAWN
+	// OBSTACLE SPAWNING ////////////////////////////////////////////////
 	if (bSpawnObstacles && ObstacleArray.Num() < 10)
 	{
-		int Rando = FMath::FloorToInt(FMath::FRand() * 2);
+
+		// Random spawning object
+		int Rando = FMath::FloorToInt(FMath::FRand() * 2); /// filthy hard-coded value!
 		TSubclassOf<AActor> ObstacleSpawning = nullptr;
 		switch (Rando)
 		{
@@ -121,22 +123,27 @@ void AGammaSoloSequence::SpawnDenizen()
 		}
 		if (ObstacleSpawning != nullptr)
 		{
-			float Randv = FMath::Rand();
-			FRotator SpawnRotation = FRotator(Randv * 10.0f, Randv * 3.0f, Randv * 9.0f);
+
+			// Position and Rotation
 			SpawnLoc.X += FMath::FRandRange(-10000.0f, 10000.0f);
-			SpawnLoc.Y += FMath::FRandRange(-500.0f, 500.0f);
+			SpawnLoc.Y = 0.0f; //+= FMath::FRandRange(-500.0f, 500.0f);
 			SpawnLoc.Z += FMath::FRandRange(-7000.0f, 7000.0f);
+
+			float RandF = FMath::FRandRange(-0.8f, 1.2f);
+			FRotator SpawnRotation = FRotator(RandF * 90.0f, RandF * 3.0f, RandF * 9.0f);
+
 			AActor* NewObstacle = GetWorld()->SpawnActor<AActor>(ObstacleSpawning, SpawnLoc, SpawnRotation, SpawnParams);
 			
 			if (NewObstacle != nullptr)
 			{
+				NewObstacle->SetActorScale3D(FMath::VRand() * 2.0f);
 				ObstacleArray.Add(NewObstacle);
 			}
 		}
 	}
 
 
-	// CHARACTER SPAWN
+	// CHARACTER SPAWNING ///////////////////////////////////////////////
 	if (bSpawnCharacters)
 	{
 		// Random character each spawn
@@ -146,7 +153,7 @@ void AGammaSoloSequence::SpawnDenizen()
 		// Ensure different enemy each time
 		while (Rando == PreviousSpawn)
 		{
-			Rando = FMath::FloorToInt(FMath::FRand() * 3);
+			Rando = FMath::FloorToInt(FMath::FRand() * 3); /// filthy hard-coded value!
 		}
 
 		// Delineate a random Character to spawn
