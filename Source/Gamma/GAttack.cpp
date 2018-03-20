@@ -175,7 +175,8 @@ void AGAttack::Tick(float DeltaTime)
 
 void AGAttack::UpdateAttack(float DeltaTime)
 {
-	if (!bHit && OwningShooter != nullptr)
+	bool bTime = (HitTimer >= (1 / HitsPerSecond));
+	if (bTime && !bHit && OwningShooter != nullptr)
 	{
 		DetectHit(GetActorForwardVector());
 	}
@@ -227,9 +228,6 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		if (HitActor != nullptr)
 		{
 			HitEffects(HitActor, Hit.ImpactPoint);
-
-			// Clean-up for next frame
-			HitTimer = 0.0f;
 		}
 	}
 }
@@ -357,8 +355,7 @@ void AGAttack::Nullify(int AttackType)
 
 void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 {
-	//bHit = true;
-
+	HitTimer = 0.0f;
 
 	// Hit another attack?
 	AGAttack* Atk = Cast<AGAttack>(HitActor);
@@ -387,8 +384,6 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 		SpawnDamage(HitActor, HitPoint);
 		ApplyKnockback(HitActor);
 		ReportHit(HitActor);
-
-		HitTimer = 0.0f;
 	}
 	else
 	{
@@ -407,7 +402,8 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 // COLLISION BEGIN
 void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!bHit && bLethal && (OtherActor != OwningShooter))
+	bool bTime = (HitTimer >= (1 / HitsPerSecond));
+	if (bTime && !bHit && bLethal && (OtherActor != OwningShooter))
 	{
 		FVector DamageLocation = GetActorLocation() + (OwningShooter->GetActorForwardVector() * RaycastHitRange);
 
