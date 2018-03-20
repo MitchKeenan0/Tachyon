@@ -340,8 +340,20 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					TargetLengthClamped, DeltaTime, CameraMoveSpeed * 5.0f);
 					
 				// Camera tilt
-				CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue, DeltaTime, CameraTiltSpeed); // pitch
-				CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * CameraTiltValue, DeltaTime, CameraTiltSpeed); // yaw
+				if ( !ActorHasTag("Spectator") )
+				{
+					CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue, DeltaTime, CameraTiltSpeed); // pitch
+					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * CameraTiltValue, DeltaTime, CameraTiltSpeed); // yaw
+				}
+				else
+				{
+					// Spectator cam has auto tilt using position relativity
+					FVector Relativity = (PositionTwo - PositionOne);
+					float ValZ = FMath::Clamp(Relativity.Z, -1.0f, 1.0f);
+					float ValX = FMath::Clamp(Relativity.X, -1.0f, 1.0f);
+					CameraTiltX = FMath::FInterpTo(CameraTiltX, ValZ * CameraTiltValue, DeltaTime, CameraTiltSpeed); // pitch
+					CameraTiltZ = FMath::FInterpTo(CameraTiltX, ValX * CameraTiltValue, DeltaTime, CameraTiltSpeed); // pitch
+				}
 				FRotator FTarget = FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue;
 				FTarget.Roll = 0.0f;
 				SideViewCameraComponent->SetRelativeRotation(FTarget);
