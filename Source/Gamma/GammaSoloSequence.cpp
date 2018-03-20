@@ -17,6 +17,13 @@ void AGammaSoloSequence::BeginPlay()
 	Super::BeginPlay();
 	
 	AquirePlayer();
+
+	// Init Rand
+	RandStream = new FRandomStream;
+	if (RandStream != nullptr)
+	{
+		RandStream->GenerateNewSeed();
+	}
 }
 
 

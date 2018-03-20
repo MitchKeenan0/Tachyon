@@ -15,6 +15,8 @@ public:
 	// Sets default values for this actor's properties
 	AGammaSoloSequence();
 
+	FRandomStream* RandStream;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
