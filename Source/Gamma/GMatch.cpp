@@ -62,7 +62,7 @@ bool AGMatch::PlayersAccountedFor()
 void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 {
 	// Player killer
-	if ((HitActor->ActorHasTag("Player")
+	if (!bGG && (HitActor->ActorHasTag("Player")
 		|| (HitActor->ActorHasTag("Bot")))
 		&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) >= GGTimescale)
 	{

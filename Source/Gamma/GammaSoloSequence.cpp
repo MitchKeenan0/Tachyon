@@ -24,6 +24,8 @@ void AGammaSoloSequence::BeginPlay()
 	{
 		RandStream->GenerateNewSeed();
 	}
+
+	RunTimer = FirstEncounterTime / 5.0f;
 }
 
 
