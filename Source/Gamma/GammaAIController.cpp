@@ -126,14 +126,24 @@ void AGammaAIController::Tactical(FVector Target)
 {
 	// Random number to evoke choice
 	float RandomDc = FMath::FRandRange(0.0f, 100.0f);
-	float PauseVal = 10.0f;
-	float ChargeVal = 42.0f;
+	float HandBrakeVal = 20.0f;
+	float ChargeVal = 50.0f;
 	float SecoVal = 70.0f;
 
-	if (RandomDc <= PauseVal)
+	if (RandomDc <= HandBrakeVal)
 	{
-		// Chance to do nothing
-		return;
+		// Hand brake
+		FVector CurrentHeading = MyCharacter->GetCharacterMovement()->Velocity.GetSafeNormal();
+		FVector TargetHeading = (LocationTarget - MyPawn->GetActorLocation()).GetSafeNormal();
+		float DotToTarget = FVector::DotProduct(CurrentHeading, TargetHeading);
+		if (DotToTarget < -0.15f)
+		{
+			MyCharacter->CheckPowerSlideOn();
+		}
+		else
+		{
+			MyCharacter->CheckPowerSlideOff();
+		}
 	}
 	else if (RandomDc <= ChargeVal)
 	{
@@ -255,19 +265,6 @@ void AGammaAIController::NavigateTo(FVector Target)
 		// Use the handbrake if we're off target
 		float ValueX = 0.0f;
 		float ValueZ = 0.0f;
-		
-		// Hand brake
-		FVector CurrentHeading = MyCharacter->GetCharacterMovement()->Velocity.GetSafeNormal();
-		FVector TargetHeading = ToTarget.GetSafeNormal();
-		float DotToTarget = FVector::DotProduct(CurrentHeading, TargetHeading);
-		if (DotToTarget < -0.15f)
-		{
-			MyCharacter->CheckPowerSlideOn();
-		}
-		else
-		{
-			MyCharacter->CheckPowerSlideOff();
-		}
 		
 		// Compare movement priorites by distance
 		float VerticalDistance = FMath::Abs(ToTarget.Z);

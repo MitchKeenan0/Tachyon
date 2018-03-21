@@ -342,8 +342,11 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// Camera tilt
 				if ( !ActorHasTag("Spectator") )
 				{
-					CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue, DeltaTime, CameraTiltSpeed); // pitch
-					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * CameraTiltValue, DeltaTime, CameraTiltSpeed); // yaw
+					FVector InputVector = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
+					FVector VelNormal = GetCharacterMovement()->Velocity.GetSafeNormal();
+					float DotScale = FVector::DotProduct(InputVector, VelNormal);
+					CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue * DotScale, DeltaTime, CameraTiltSpeed); // pitch
+					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * CameraTiltValue * DotScale, DeltaTime, CameraTiltSpeed); // yaw
 				}
 				else
 				{

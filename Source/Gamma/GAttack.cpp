@@ -99,10 +99,10 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 
 		if (ProjectileComponent)
 		{
-			if (bScaleProjectileSpeed)
+			/*if (bScaleProjectileSpeed)
 			{
 				ProjectileComponent->Velocity = GetActorForwardVector() * ProjectileSpeed * AttackMagnitude * ProjectileMaxSpeed;
-			}
+			}*/
 		}
 		else
 		{
@@ -302,6 +302,12 @@ void AGAttack::ReportHit(AActor* HitActor)
 		}
 		
 		//bLethal = false;
+
+		// Call for slowtime
+		if (CurrentMatch != nullptr)
+		{
+			CurrentMatch->ClaimHit(HitActor, OwningShooter);
+		}
 	}
 
 	// Grow maze cubes
@@ -316,12 +322,6 @@ void AGAttack::ReportHit(AActor* HitActor)
 			float MeshMass = MeshComp->GetMass();
 			MeshComp->SetMassScale(NAME_None, MeshMass * 0.9f);
 		}*/
-	}
-
-	if (CurrentMatch != nullptr)
-	{
-		// if multi-hit
-		CurrentMatch->ClaimHit(HitActor, OwningShooter);
 	}
 }
 
