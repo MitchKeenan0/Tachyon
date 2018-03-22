@@ -103,12 +103,6 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			}
 		}
 	}
-	/*else
-	{
-		bMinorGG = true;
-		bReturn = true;
-	}
-	*/
 
 	// Mob killer
 	if (HitActor->ActorHasTag("NoKill"))

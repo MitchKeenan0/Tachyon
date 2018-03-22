@@ -344,7 +344,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				{
 					FVector InputVector = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 					FVector VelNormal = GetCharacterMovement()->Velocity.GetSafeNormal();
-					float DotScale = FVector::DotProduct(InputVector, VelNormal);
+					float DotScale = FMath::Abs(FVector::DotProduct(InputVector, VelNormal));
 					CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue * DotScale, DeltaTime, CameraTiltSpeed); // pitch
 					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * CameraTiltValue * DotScale, DeltaTime, CameraTiltSpeed); // yaw
 				}
@@ -474,11 +474,11 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 // MOVE	LEFT / RIGHT
 void AGammaCharacter::MoveRight(float Value)
 {
-	float ValClamped = FMath::Clamp(Value, -10.0f, 10.0f);
+	float ValClamped = FMath::Clamp(Value, -1.0f, 1.0f);
 
 	// Adjust aim to reflect move
-	if (InputX != ValClamped
-		/// Ignoring no inputs
+	/// Ignoring no inputs and bots
+	if (InputX != ValClamped && !ActorHasTag("Bot")
 		&& !(InputX == 0.0f && ValClamped == 0.0f))
 	{
 		SetX(ValClamped);
@@ -492,18 +492,19 @@ void AGammaCharacter::MoveRight(float Value)
 		FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
 		
 		// Move by dot product for skating effect
-		if (MoveInput != FVector::ZeroVector)
+		if (InputX != 0.0f)
 		{
 			float MoveByDot = 0.0f;
 			float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
 			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -90.0f, 90.0f));
 			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
-			GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
-			GetCharacterMovement()->MaxAcceleration = MoveByDot;
-			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), ValClamped * MoveByDot);
+			//GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
+			//GetCharacterMovement()->MaxAcceleration = MoveByDot;
+			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * MoveByDot); // ValClamped
 		}
 	}
 
+	GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("Input x: %f"), InputX));
 	ForceNetUpdate();
 }
 
@@ -513,8 +514,8 @@ void AGammaCharacter::MoveUp(float Value)
 	float ValClamped = FMath::Clamp(Value, -1.0f, 1.0f);
 
 	// Adjust aim to reflect move
-	if (InputZ != ValClamped
-		/// Ignoring no inputs
+	/// Ignoring no inputs and bots
+	if (InputZ != ValClamped && !ActorHasTag("Bot")
 		&& !(InputZ == 0.0f && ValClamped == 0.0f))
 	{
 		SetZ(ValClamped);
@@ -535,12 +536,13 @@ void AGammaCharacter::MoveUp(float Value)
 			float DotToInput = FVector::DotProduct(CurrentV, MoveInput);
 			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -90.0f, 90.0f));
 			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
-			GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
-			GetCharacterMovement()->MaxAcceleration = MoveByDot;
-			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), ValClamped * MoveByDot);
+			//GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
+			//GetCharacterMovement()->MaxAcceleration = MoveByDot;
+			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot);
 		}
 	}
 
+	GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("Input z: %f"), InputZ));
 	ForceNetUpdate();
 }
 
@@ -551,13 +553,34 @@ void AGammaCharacter::SetX(float Value)
 }
 void AGammaCharacter::ServerSetX_Implementation(float Value)
 {
-	if (Value != 0.0f)
+	if (Value == 0.0f)
 	{
-		float DeltaVal = FMath::Abs(x - Value);
-		float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 50.0f);
+		x = Value;
+		InputX = Value;
+	}
+	else if (FMath::Abs(Value) > FMath::Abs(x))
+	{
+
+		float DeltaVal = FMath::Abs(Value - x);
+		float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
 		InputX = Value * ValClamped;
-		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("DeltaVal: %f"), DeltaVal));
-		x = InputX;
+		
+		// Speed and Acceleration
+		GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
+		if (DeltaVal >= 0.5f)
+		{
+			GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 3.0f) * MoveSpeed);
+		}
+		
+
+		if (ActorHasTag("Bot"))
+		{
+			MoveRight(InputX);
+		}
+
+		// Update for delta, but only if the delta takes us away from zeroinput
+		//if ()
+		x = Value;
 	}
 }
 bool AGammaCharacter::ServerSetX_Validate(float Value)
@@ -565,14 +588,56 @@ bool AGammaCharacter::ServerSetX_Validate(float Value)
 	return true;
 }
 
+/* old version pre delta
+void AGammaCharacter::SetZ(float Value)
+{
+ServerSetZ(Value);
+}
+void AGammaCharacter::ServerSetZ_Implementation(float Value)
+{
+InputZ = Value;
+//bMoved = true;
+}
+bool AGammaCharacter::ServerSetZ_Validate(float Value)
+{
+return true;
+}
+*/
+
 void AGammaCharacter::SetZ(float Value)
 {
 	ServerSetZ(Value);
 }
 void AGammaCharacter::ServerSetZ_Implementation(float Value)
 {
-	InputZ = Value;
-	//bMoved = true;
+	if (Value == 0.0f)
+	{
+		z = Value;
+		InputZ = Value;
+	}
+	else if (FMath::Abs(Value) > FMath::Abs(z))
+	{
+		float DeltaVal = FMath::Abs(Value - z);
+		float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
+		InputZ = Value * ValClamped;
+		
+		// Speed and Acceleration
+		GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
+		if (DeltaVal >= 0.5f)
+		{
+			GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 3.0f) * MoveSpeed);
+		}
+		
+
+		if (ActorHasTag("Bot"))
+		{
+			MoveUp(InputZ);
+		}
+
+		//GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("DeltaVal z: %f"), DeltaVal));
+
+		z = Value;
+	}
 }
 bool AGammaCharacter::ServerSetZ_Validate(float Value)
 {
@@ -707,6 +772,7 @@ bool AGammaCharacter::ServerSetAim_Validate()
 	return true;
 }
 
+
 // RAISE CHARGE for attack 
 void AGammaCharacter::RaiseCharge()
 {
@@ -785,7 +851,8 @@ void AGammaCharacter::InitAttack()
 		// Direction & setting up
 		FVector FirePosition = AttackScene->GetComponentLocation();
 		FVector FireDirection = AttackScene->GetForwardVector();
-		FRotator FireRotation = FireDirection.Rotation() + FRotator(21.0f * InputZ, 0.0f, 0.0f);
+		FRotator FireRotation = FireDirection.Rotation() + FRotator(InputZ, 0.0f, 0.0f); // InputZ * 21.0f
+		//FVector MoveInputVector = FVector(InputX, 0.0f, InputZ);
 
 		// Spawning
 		if (HasAuthority())
@@ -835,9 +902,10 @@ void AGammaCharacter::ReleaseAttack()
 		}*/
 
 		// Direction & setting up
+		float AimClampedInputZ = FMath::Clamp(InputZ, -1.0f, 1.0f);
 		FVector FirePosition = AttackScene->GetComponentLocation();
 		FVector LocalForward = AttackScene->GetForwardVector();
-		FRotator FireRotation = LocalForward.Rotation() + FRotator(21.0f * InputZ, 0.0f, 0.0f);
+		FRotator FireRotation = LocalForward.Rotation() + FRotator(AimClampedInputZ * 21.0f, 0.0f, 0.0f); // * 21.0f
 		FActorSpawnParameters SpawnParams;
 
 		// Spawning

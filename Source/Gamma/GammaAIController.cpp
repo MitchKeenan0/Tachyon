@@ -284,23 +284,24 @@ void AGammaAIController::NavigateTo(FVector Target)
 			MyCharacter->SetZ(ValueZ);
 		}
 
-		MoveInput = FVector(ValueX, 0.0f, ValueZ).GetSafeNormal();
-		FVector CurrentV = MyCharacter->GetMovementComponent()->Velocity.GetSafeNormal();
 
-		// Move by dot product for skating effect
-		if (MoveInput != FVector::ZeroVector)
-		{
-			float MoveByDot = 0.0f;
-			float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
-			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -90.0f, 90.0f));
+		//MoveInput = FVector(ValueX, 0.0f, ValueZ).GetSafeNormal();
+		//FVector CurrentV = MyCharacter->GetMovementComponent()->Velocity.GetSafeNormal();
 
-			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
-			MyCharacter->GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
-			MyCharacter->GetCharacterMovement()->MaxAcceleration = MoveByDot;
-			MyPawn->AddMovementInput(MoveInput * MoveByDot);
+		//// Move by dot product for skating effect
+		//if (MoveInput != FVector::ZeroVector)
+		//{
+		//	float MoveByDot = 0.0f;
+		//	float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
+		//	float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -90.0f, 90.0f));
+		//	MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
+		//	MyCharacter->GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
+		//	MyCharacter->GetCharacterMovement()->MaxAcceleration = MoveByDot;
+		//	MyPawn->AddMovementInput(MoveInput * MoveByDot);
 
-			MoveTimer = 0.0f;
-		}
+		//	MoveTimer = 0.0f;
+		//}
+
 
 		// Sprite flipping
 		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
