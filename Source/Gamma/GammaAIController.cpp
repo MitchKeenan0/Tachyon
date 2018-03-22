@@ -51,7 +51,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 
 			// Got a player - stunt on'em
 			// Update prefire
-			PrefireTimer += DeltaSeconds;
+			//PrefireTimer += DeltaSeconds;
 			if ((MyCharacter->GetActiveFlash() != nullptr))
 			{
 				MyCharacter->PrefireTiming();
@@ -158,7 +158,7 @@ void AGammaAIController::Tactical(FVector Target)
 		// 
 		FVector LocalForward = MyCharacter->GetAttackScene()->GetForwardVector();
 		FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
-		float VerticalDist = FMath::FloorToFloat(FMath::Clamp(ToPlayer.Z, -1.0f, 1.0f));
+		float VerticalDist = FMath::FloorToFloat(FMath::Clamp(ToPlayer.Z * 0.01f, -1.0f, 1.0f));
 		//float LateralDist = FMath::FloorToFloat(FMath::Clamp(ToPlayer.X, -1.0f, 1.0f));
 		
 
@@ -190,16 +190,28 @@ void AGammaAIController::Tactical(FVector Target)
 					&& (ToPlayer.Size() <= SecondaryRange)
 					&& !MyCharacter->GetActiveSecondary())
 				{
+					MyCharacter->SetZ(VerticalDist);
 					MyCharacter->FireSecondary();
 				}
-				// Fire Attack
-				else if (!MyCharacter->GetActiveFlash()
-					&& ToPlayer.Size() <= PrimaryRange
-					&& PrefireTimer >= PrefireTime)
+				
+				else
 				{
-					MyCharacter->InitAttack();
-					PrefireTimer = 0.0f;
+					// Init Attack
+					if (!MyCharacter->GetActiveFlash()
+						&& ToPlayer.Size() <= PrimaryRange)
+					{
+						MyCharacter->InitAttack();
+						PrefireTimer = 0.0f;
+					}
+					else
+					{
+						MyCharacter->ReleaseAttack();
+					}
+
+					
 				}
+
+				
 			}
 		}
 

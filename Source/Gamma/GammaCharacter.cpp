@@ -553,12 +553,7 @@ void AGammaCharacter::SetX(float Value)
 }
 void AGammaCharacter::ServerSetX_Implementation(float Value)
 {
-	if (Value == 0.0f)
-	{
-		x = Value;
-		InputX = Value;
-	}
-	else if (FMath::Abs(Value) > FMath::Abs(x))
+	if (FMath::Abs(Value) > FMath::Abs(x))
 	{
 
 		float DeltaVal = FMath::Abs(Value - x);
@@ -567,9 +562,13 @@ void AGammaCharacter::ServerSetX_Implementation(float Value)
 		
 		// Speed and Acceleration
 		GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
-		if (DeltaVal >= 0.5f)
+		if (DeltaVal >= 0.33f)
 		{
-			GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 3.0f) * MoveSpeed);
+			GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 5.0f) * MoveSpeed);
+		}
+		else
+		{
+			GetCharacterMovement()->MaxAcceleration = MoveSpeed;
 		}
 		
 
@@ -581,6 +580,11 @@ void AGammaCharacter::ServerSetX_Implementation(float Value)
 		// Update for delta, but only if the delta takes us away from zeroinput
 		//if ()
 		x = Value;
+	}
+	else
+	{
+		x = Value;
+		InputX = Value;
 	}
 }
 bool AGammaCharacter::ServerSetX_Validate(float Value)
@@ -610,12 +614,7 @@ void AGammaCharacter::SetZ(float Value)
 }
 void AGammaCharacter::ServerSetZ_Implementation(float Value)
 {
-	if (Value == 0.0f)
-	{
-		z = Value;
-		InputZ = Value;
-	}
-	else if (FMath::Abs(Value) > FMath::Abs(z))
+	if (FMath::Abs(Value) > FMath::Abs(z))
 	{
 		float DeltaVal = FMath::Abs(Value - z);
 		float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
@@ -623,9 +622,13 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 		
 		// Speed and Acceleration
 		GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
-		if (DeltaVal >= 0.5f)
+		if (DeltaVal >= 0.33f)
 		{
-			GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 3.0f) * MoveSpeed);
+			GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 5.0f) * MoveSpeed);
+		}
+		else
+		{
+			GetCharacterMovement()->MaxAcceleration = MoveSpeed;
 		}
 		
 
@@ -637,6 +640,11 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 		//GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("DeltaVal z: %f"), DeltaVal));
 
 		z = Value;
+	}
+	else
+	{
+		z = Value;
+		InputZ = Value;
 	}
 }
 bool AGammaCharacter::ServerSetZ_Validate(float Value)
