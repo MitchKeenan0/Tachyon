@@ -485,7 +485,8 @@ void AGammaCharacter::MoveRight(float Value)
 	}
 
 	if ((MoveTimer >= (1 / MovesPerSecond))
-		&& !bSliding)
+		&& !bSliding
+		&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) >= 0.9f)
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
@@ -521,7 +522,8 @@ void AGammaCharacter::MoveUp(float Value)
 
 	// Abide moves per second
 	if ((MoveTimer >= (1 / MovesPerSecond))
-		&& !bSliding)
+		&& !bSliding
+		&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) >= 0.9f)
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = (GetMovementComponent()->Velocity).GetSafeNormal();
