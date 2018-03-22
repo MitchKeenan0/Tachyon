@@ -117,7 +117,7 @@ void AGammaCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 {
 	Super::SetupPlayerInputComponent(InputComponent);
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AGammaCharacter::InitAttack);
-	//PlayerInputComponent->BindAction("Attack", IE_Released, this, &AGammaCharacter::ReleaseAttack);
+	PlayerInputComponent->BindAction("Attack", IE_Released, this, &AGammaCharacter::ReleaseAttack);
 	PlayerInputComponent->BindAction("PowerSlide", IE_Pressed, this, &AGammaCharacter::CheckPowerSlideOn);
 	PlayerInputComponent->BindAction("PowerSlide", IE_Released, this, &AGammaCharacter::CheckPowerSlideOff);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AGammaCharacter::RaiseCharge);
@@ -474,7 +474,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 // MOVE	LEFT / RIGHT
 void AGammaCharacter::MoveRight(float Value)
 {
-	float ValClamped = FMath::Clamp(Value, -1.0f, 1.0f);
+	float ValClamped = FMath::Clamp(Value, -10.0f, 10.0f);
 
 	// Adjust aim to reflect move
 	if (InputX != ValClamped
@@ -551,11 +551,13 @@ void AGammaCharacter::SetX(float Value)
 }
 void AGammaCharacter::ServerSetX_Implementation(float Value)
 {
-	InputX = Value;
-	
 	if (Value != 0.0f)
 	{
-		x = Value;
+		float DeltaVal = FMath::Abs(x - Value);
+		float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 50.0f);
+		InputX = Value * ValClamped;
+		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("DeltaVal: %f"), DeltaVal));
+		x = InputX;
 	}
 }
 bool AGammaCharacter::ServerSetX_Validate(float Value)
@@ -708,7 +710,8 @@ bool AGammaCharacter::ServerSetAim_Validate()
 // RAISE CHARGE for attack 
 void AGammaCharacter::RaiseCharge()
 {
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.2f)
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.2f
+		&& Charge <= (ChargeMax - ChargeGain))
 	{
 
 		if (Charge < ChargeMax)
@@ -815,12 +818,15 @@ void AGammaCharacter::ReleaseAttack()
 	MoveParticles->bSuppressSpawning = false;
 
 	if (AttackClass && (ActiveAttack == nullptr || bMultipleAttacks) && (Charge > 0.0f)
-		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f))
+		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f)
+		&& ((PrefireTimer >= PrefireTime || ActiveFlash != nullptr)))
 	{
 		// Clean up previous flash
-		if (ActiveFlash != nullptr && ActiveFlash->IsValidLowLevel())
+		if ((ActiveFlash != nullptr))
 		{
-			ClearFlash();
+			ActiveFlash->Destroy();
+			ActiveFlash = nullptr;
+			//ClearFlash();
 		}
 		/*if (ActiveChargeParticles != nullptr && ActiveChargeParticles->IsValidLowLevel())
 		{
@@ -842,7 +848,7 @@ void AGammaCharacter::ReleaseAttack()
 				ActiveAttack = Cast<AGAttack>(GetWorld()->SpawnActor<AGAttack>(AttackClass, FirePosition, FireRotation, SpawnParams));
 				if (ActiveAttack != nullptr)
 				{
-					ActiveAttack->InitAttack(this, 1, InputZ);
+					ActiveAttack->InitAttack(this, PrefireTimer, InputZ);
 
 					if ((ActiveAttack != nullptr) && ActiveAttack->LockedEmitPoint)
 					{
@@ -856,6 +862,7 @@ void AGammaCharacter::ReleaseAttack()
 			}
 
 			Charge -= ChargeGain;
+			PrefireTimer = 0.0f;
 		}
 	}
 
@@ -930,12 +937,13 @@ bool AGammaCharacter::ServerFireSecondary_Validate()
 void AGammaCharacter::PrefireTiming()
 {
 	if ((PrefireTimer >= PrefireTime)
-		&& (Charge > 0))
+		&& (Charge > 0)
+		&& ActiveAttack == nullptr
+		&& ActiveFlash != nullptr)
 	{
-		PrefireTimer = 0.0f;
 		ReleaseAttack();
 	}
-	else
+	else if (ActiveFlash != nullptr)
 	{
 		PrefireTimer += GetWorld()->GetDeltaSeconds();
 	}
@@ -980,6 +988,7 @@ void AGammaCharacter::PowerSlideEngage()
 	{
 		GetCharacterMovement()->BrakingFrictionFactor = PowerSlideSpeed;
 		bSliding = true;
+		Charge = 0.0f;
 
 		if (Role < ROLE_Authority)
 		{

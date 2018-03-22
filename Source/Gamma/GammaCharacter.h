@@ -272,7 +272,6 @@ protected:
 	class USphereComponent* OuterTouchCollider;
 
 
-
 	// VARIABLES //////////////////////////////////////////////	
 	//
 
