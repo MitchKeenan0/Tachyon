@@ -191,7 +191,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 	// Now setup the rotation of the controller based on the direction we are travelling
 	const FVector PlayerVelocity = GetVelocity();
-	float TravelDirection = FMath::Clamp(InputX * 100.0f, -1.0f, 1.0f);
+	float TravelDirection = FMath::Clamp(InputX * 100000.0f, -1.0f, 1.0f);
 	
 	// Set rotation so character faces direction of travel
 	if (Controller != nullptr) // && UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f
@@ -305,7 +305,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 
 				// Framing lone player by their velocity
-				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 2.1f;
+				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 1.68f;
 
 				// Clamp to max size
 				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(5000.0f);
@@ -451,7 +451,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	
 	// Main update
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.68f)
 	{
 		UpdateCharacter(DeltaSeconds);
 	}
@@ -553,61 +553,62 @@ void AGammaCharacter::SetX(float Value)
 }
 void AGammaCharacter::ServerSetX_Implementation(float Value)
 {
-	if (FMath::Abs(Value) > FMath::Abs(x))
+	// Get delta move value
+	float DeltaVal = FMath::Abs(Value - x) * 1.5f;
+	float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
+	InputX = Value * ValClamped;
+
+	//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Set InputX: %f"), InputX));
+
+	// Speed and Acceleration
+	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
+	GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 5.0f) * MoveSpeed);
+
+
+	if (ActorHasTag("Bot"))
 	{
-
-		// Get delta move value
-		float DeltaVal = FMath::Abs(Value - x);
-		float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
-		InputX = Value * ValClamped;
-		
-		// Speed and Acceleration
-		GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
-		if (DeltaVal >= 0.33f)
-		{
-			GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 5.0f) * MoveSpeed);
-		}
-		else
-		{
-			GetCharacterMovement()->MaxAcceleration = MoveSpeed;
-		}
-		
-
-		if (ActorHasTag("Bot"))
-		{
-			MoveRight(InputX);
-		}
-
-		// Update for delta, but only if the delta takes us away from zeroinput
-		//if ()
-		x = Value;
+		MoveRight(InputX);
 	}
-	else
-	{
-		x = Value;
-		InputX = Value;
-	}
+
+	// Update for delta, but only if the delta takes us away from zeroinput
+	//if ()
+	x = Value;
+
+	//if (FMath::Abs(Value) > FMath::Abs(x))
+	//{
+
+	//	// Get delta move value
+	//	float DeltaVal = FMath::Abs(Value - x);
+	//	float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
+	//	InputX = Value * ValClamped;
+
+	//	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Set InputX: %f"), InputX));
+	//	
+	//	// Speed and Acceleration
+	//	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
+	//	GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 5.0f) * MoveSpeed);
+	//	
+
+	//	if (ActorHasTag("Bot"))
+	//	{
+	//		MoveRight(InputX);
+	//	}
+
+	//	// Update for delta, but only if the delta takes us away from zeroinput
+	//	//if ()
+	//	x = Value;
+	//}
+	//else
+	//{
+	//	x = Value;
+	//	InputX = Value;
+	//}
 }
 bool AGammaCharacter::ServerSetX_Validate(float Value)
 {
 	return true;
 }
 
-/* old version pre delta
-void AGammaCharacter::SetZ(float Value)
-{
-ServerSetZ(Value);
-}
-void AGammaCharacter::ServerSetZ_Implementation(float Value)
-{
-InputZ = Value;
-//bMoved = true;
-}
-bool AGammaCharacter::ServerSetZ_Validate(float Value)
-{
-return true;
-}
-*/
 
 void AGammaCharacter::SetZ(float Value)
 {
@@ -615,43 +616,58 @@ void AGammaCharacter::SetZ(float Value)
 }
 void AGammaCharacter::ServerSetZ_Implementation(float Value)
 {
-	if (FMath::Abs(Value) > FMath::Abs(z))
+	// Get move input Delta
+	float DeltaVal = FMath::Abs(Value - z) * 1.5f;
+	float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
+	InputZ = Value * ValClamped;
+
+	//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Set InputZ: %f"), InputZ));
+
+
+	// Speed and Acceleration
+	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
+	GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 5.0f) * MoveSpeed);
+
+
+	if (ActorHasTag("Bot"))
 	{
-		
-		// Get move input Delta
-		float DeltaVal = FMath::Abs(Value - z);
-		float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
-		InputZ = Value * ValClamped;
-
-		///GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Set InputZ: %f"), InputZ));
-
-		
-		// Speed and Acceleration
-		GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
-		if (DeltaVal >= 0.33f)
-		{
-			GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 5.0f) * MoveSpeed);
-		}
-		else
-		{
-			GetCharacterMovement()->MaxAcceleration = MoveSpeed;
-		}
-		
-
-		if (ActorHasTag("Bot"))
-		{
-			MoveUp(InputZ);
-		}
-
-		//GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("Input z: %f"), InputZ));
-
-		z = Value;
+		MoveUp(InputZ);
 	}
-	else
-	{
-		z = Value;
-		InputZ = Value;
-	}
+
+	//GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("Input z: %f"), InputZ));
+
+	z = Value;
+
+	//if (FMath::Abs(Value) > FMath::Abs(z))
+	//{
+	//	
+	//	// Get move input Delta
+	//	float DeltaVal = FMath::Abs(Value - z);
+	//	float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
+	//	InputZ = Value * ValClamped;
+
+	//	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Set InputZ: %f"), InputZ));
+
+	//	
+	//	// Speed and Acceleration
+	//	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
+	//	GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 5.0f) * MoveSpeed);
+	//	
+
+	//	if (ActorHasTag("Bot"))
+	//	{
+	//		MoveUp(InputZ);
+	//	}
+
+	//	//GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("Input z: %f"), InputZ));
+
+	//	z = Value;
+	//}
+	//else
+	//{
+	//	z = Value;
+	//	InputZ = Value;
+	//}
 }
 bool AGammaCharacter::ServerSetZ_Validate(float Value)
 {
@@ -916,7 +932,7 @@ void AGammaCharacter::ReleaseAttack()
 		}*/
 
 		// Direction & setting up
-		float AimClampedInputZ = FMath::Clamp(InputZ, -10.0f, 10.0f);
+		float AimClampedInputZ = FMath::Clamp(InputZ * 10.0f, -1.0f, 1.0f);
 		FVector FirePosition = AttackScene->GetComponentLocation();
 		FVector LocalForward = AttackScene->GetForwardVector();
 		FRotator FireRotation = LocalForward.Rotation() + FRotator(AimClampedInputZ * 21.0f, 0.0f, 0.0f); // * 21.0f
@@ -933,8 +949,12 @@ void AGammaCharacter::ReleaseAttack()
 				ActiveAttack = Cast<AGAttack>(GetWorld()->SpawnActor<AGAttack>(AttackClass, FirePosition, FireRotation, SpawnParams));
 				if (ActiveAttack != nullptr)
 				{
-					ActiveAttack->InitAttack(this, PrefireTimer, InputZ);
-					GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Firing with InputZ: %f"), InputZ));
+					ActiveAttack->InitAttack(this, PrefireTimer, AimClampedInputZ);
+					//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Firing with AimClampedInputZ: %f"), AimClampedInputZ));
+					if (PrefireTimer > 1.1f)
+					{
+						GEngine->AddOnScreenDebugMessage(-1, 10000.f, FColor::Red, FString::Printf(TEXT("Bad PrefireTime: %f"), PrefireTimer));
+					}
 
 					if ((ActiveAttack != nullptr) && ActiveAttack->LockedEmitPoint)
 					{
@@ -948,8 +968,10 @@ void AGammaCharacter::ReleaseAttack()
 			}
 
 			Charge -= ChargeGain;
-			PrefireTimer = 0.0f;
+			
 		}
+
+		PrefireTimer = 0.0f;
 	}
 
 	if (Role < ROLE_Authority)
@@ -1022,21 +1044,24 @@ bool AGammaCharacter::ServerFireSecondary_Validate()
 // PREFIRE TIMING
 void AGammaCharacter::PrefireTiming()
 {
-	if ((PrefireTimer >= PrefireTime)
-		&& (Charge > 0)
-		&& ActiveAttack == nullptr
-		&& ActiveFlash != nullptr)
-	{
-		ReleaseAttack();
-	}
-	else if (ActiveFlash != nullptr)
-	{
-		PrefireTimer += GetWorld()->GetDeltaSeconds();
-	}
-
 	if (Role < ROLE_Authority)
 	{
 		ServerPrefireTiming();
+	}
+	else
+	{
+		if ((PrefireTimer >= PrefireTime)
+			&& (Charge > 0)
+			&& ActiveAttack == nullptr
+			&& ActiveFlash != nullptr)
+		{
+			ReleaseAttack();
+		}
+		else if (GetActiveFlash() != nullptr)
+		{
+			PrefireTimer += GetWorld()->GetDeltaSeconds();
+			//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("PREFIRE T: %f"), PrefireTimer));
+		}
 	}
 }
 void AGammaCharacter::ServerPrefireTiming_Implementation()

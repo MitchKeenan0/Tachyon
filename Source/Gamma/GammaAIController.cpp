@@ -51,10 +51,9 @@ void AGammaAIController::Tick(float DeltaSeconds)
 
 			// Got a player - stunt on'em
 			// Update prefire
-			//PrefireTimer += DeltaSeconds;
-			if ((MyCharacter->GetActiveFlash() != nullptr))
+			if (PrefireTimer >= PrefireTime)
 			{
-				MyCharacter->PrefireTiming();
+				MyCharacter->ReleaseAttack();
 			}
 
 			// Reation time
@@ -114,7 +113,7 @@ bool AGammaAIController::ReactionTiming(float DeltaTime)
 	if (ReactionTimer >= ReactionTime)
 	{
 		Result = true;
-		float RandomOffset = FMath::FRandRange(-ReactionTime, 0.0f);
+		float RandomOffset = FMath::FRandRange(-ReactionTime, ReactionTime * 0.5f);
 		ReactionTimer = RandomOffset;
 	}
 
@@ -126,7 +125,7 @@ void AGammaAIController::Tactical(FVector Target)
 {
 	// Random number to evoke choice
 	float RandomDc = FMath::FRandRange(0.0f, 100.0f);
-	float HandBrakeVal = 20.0f;
+	float HandBrakeVal = 25.0f;
 	float ChargeVal = 50.0f;
 	float SecoVal = 70.0f;
 
@@ -145,13 +144,14 @@ void AGammaAIController::Tactical(FVector Target)
 			MyCharacter->CheckPowerSlideOff();
 		}
 	}
-	else if (RandomDc <= ChargeVal)
+	
+	if (RandomDc <= ChargeVal)
 	{
 		// Charge
 		if (MyCharacter->GetCharge() <= 3.0f)
 		{
-			MyCharacter->RaiseCharge();
 			MyCharacter->CheckPowerSlideOff();
+			MyCharacter->RaiseCharge();
 		}
 		else
 		{
@@ -206,7 +206,7 @@ void AGammaAIController::Tactical(FVector Target)
 						&& ToPlayer.Size() <= PrimaryRange)
 					{
 						MyCharacter->InitAttack();
-						PrefireTimer = 0.0f;
+						//PrefireTimer = 0.0f;
 					}
 					else
 					{
@@ -247,7 +247,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 		NextRand.Y = 0.0f;
 		FVector CombinedRand = RandomOffset + NextRand;
 		CombinedRand = CombinedRand.GetClampedToMaxSize(MoveRange);
-		CombinedRand.Z *= 0.68f;
+		CombinedRand.Z *= 0.5f;
 
 		// And serve
 		Result = PlayerAtSpeed + CombinedRand;
@@ -293,12 +293,12 @@ void AGammaAIController::NavigateTo(FVector Target)
 		if (LateralDistance != 0.0f)
 		{
 			ValueX = FMath::Clamp(ToTarget.X, -1.0f, 1.0f);
-			MyCharacter->SetX(ValueX);
+			MyCharacter->SetX(ValueX * 0.3f);
 		}
 		if (VerticalDistance != 0.0f)
 		{
 			ValueZ = FMath::Clamp(ToTarget.Z, -1.0f, 1.0f);
-			MyCharacter->SetZ(ValueZ);
+			MyCharacter->SetZ(ValueZ * 0.3f);
 		}
 
 

@@ -66,7 +66,10 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	AttackMagnitude = Magnitude;
 	ShotDirection = YScale;
 
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("AttackMagnitude: %f"), AttackMagnitude));
+	/*if (!bSecondary)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("AttackMagnitude: %f"), AttackMagnitude));
+	}*/
 
 	// set sounds
 	AttackSound->SetPitchMultiplier(AttackSound->PitchMultiplier - AttackMagnitude);
@@ -74,14 +77,15 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Pitch After: %f"), AttackSound->PitchMultiplier));
 
 	// Lifespan
-	/*if (MagnitudeTimeScalar != 0.0f)
+	if (MagnitudeTimeScalar != 1.0f)
 	{
-		DynamicLifetime = DurationTime * (1.0f + (AttackMagnitude * MagnitudeTimeScalar));
+		DurationTime = DurationTime + AttackMagnitude;
+		LethalTime = DurationTime * 0.5f;
 	}
-	else 
+	else
 	{ 
 		DynamicLifetime = DurationTime;
-	}*/
+	}
 	SetLifeSpan(DurationTime);
 
 	// Scale HitsPerSecond by Magnitude
