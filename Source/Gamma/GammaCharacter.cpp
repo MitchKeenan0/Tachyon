@@ -670,7 +670,7 @@ void AGammaCharacter::NewMoveKick()
 	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f)
 	{
 		// Algo scaling for timescale & max velocity
-		FVector MoveInputVector = FVector(InputX, 0.0f, InputZ);
+		FVector MoveInputVector = FVector(InputX + x, 0.0f, InputZ + z);
 		FVector CurrentVelocity = GetCharacterMovement()->Velocity;
 		float TimeDelta = GetWorld()->DeltaTimeSeconds;
 		float RelativityToMaxSpeed = (MaxMoveSpeed) - CurrentVelocity.Size();

@@ -165,7 +165,7 @@ void AGammaAIController::Tactical(FVector Target)
 		// 
 		FVector LocalForward = MyCharacter->GetAttackScene()->GetForwardVector();
 		FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
-		float VerticalDist = FMath::FloorToFloat(FMath::Clamp(ToPlayer.Z * 0.01f, -1.0f, 1.0f));
+		float VerticalDist = FMath::FloorToFloat(FMath::Clamp((ToPlayer.GetSafeNormal()).Z, -1.0f, 1.0f));
 		//float LateralDist = FMath::FloorToFloat(FMath::Clamp(ToPlayer.X, -1.0f, 1.0f));
 		
 
@@ -211,7 +211,6 @@ void AGammaAIController::Tactical(FVector Target)
 					else
 					{
 						MyCharacter->ReleaseAttack();
-						GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("VerticalDist: %f"), VerticalDist));
 					}
 
 					
