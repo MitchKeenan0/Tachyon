@@ -191,19 +191,19 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 	// Now setup the rotation of the controller based on the direction we are travelling
 	const FVector PlayerVelocity = GetVelocity();
-	float TravelDirection = x; //PlayerVelocity.X; //InputX;
+	float TravelDirection = FMath::Clamp(InputX * 100.0f, -1.0f, 1.0f);
 	
 	// Set rotation so character faces direction of travel
 	if (Controller != nullptr) // && UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f
 	{
 		if (TravelDirection < 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 15.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 20.0f);
 			Controller->SetControlRotation(Fint);
 		}
 		else if (TravelDirection > 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 15.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 20.0f);
 			Controller->SetControlRotation(Fint);
 		}
 
@@ -282,7 +282,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				
 				// If Actor2 isn't too far away, make 'Pair Framing'
 				if (Actor2 != nullptr && !Actor2->IsUnreachable()
-					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 5000.0f)
+					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 3600.0f)
 				{
 
 					// Framing up with second actor
@@ -305,10 +305,10 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 
 				// Framing lone player by their velocity
-				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 3.0f;
+				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 2.0f;
 
 				// Clamp to max size
-				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(3000.0f);
+				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(5000.0f);
 
 				// Declare Position Two
 				FVector VelocityFraming = Actor1->GetActorLocation() + Actor1Velocity;
@@ -504,7 +504,7 @@ void AGammaCharacter::MoveRight(float Value)
 		}
 	}
 
-	GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("Input x: %f"), InputX));
+	//GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("Input x: %f"), InputX));
 	ForceNetUpdate();
 }
 
@@ -542,7 +542,7 @@ void AGammaCharacter::MoveUp(float Value)
 		}
 	}
 
-	GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("Input z: %f"), InputZ));
+	//GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("Input z: %f"), InputZ));
 	ForceNetUpdate();
 }
 
@@ -556,6 +556,7 @@ void AGammaCharacter::ServerSetX_Implementation(float Value)
 	if (FMath::Abs(Value) > FMath::Abs(x))
 	{
 
+		// Get delta move value
 		float DeltaVal = FMath::Abs(Value - x);
 		float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
 		InputX = Value * ValClamped;
@@ -616,9 +617,14 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 {
 	if (FMath::Abs(Value) > FMath::Abs(z))
 	{
+		
+		// Get move input Delta
 		float DeltaVal = FMath::Abs(Value - z);
 		float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
 		InputZ = Value * ValClamped;
+
+		///GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Set InputZ: %f"), InputZ));
+
 		
 		// Speed and Acceleration
 		GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
@@ -637,7 +643,7 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 			MoveUp(InputZ);
 		}
 
-		//GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("DeltaVal z: %f"), DeltaVal));
+		//GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("Input z: %f"), InputZ));
 
 		z = Value;
 	}
@@ -910,11 +916,14 @@ void AGammaCharacter::ReleaseAttack()
 		}*/
 
 		// Direction & setting up
-		float AimClampedInputZ = FMath::Clamp(InputZ, -1.0f, 1.0f);
+		float AimClampedInputZ = FMath::Clamp(InputZ, -10.0f, 10.0f);
 		FVector FirePosition = AttackScene->GetComponentLocation();
 		FVector LocalForward = AttackScene->GetForwardVector();
 		FRotator FireRotation = LocalForward.Rotation() + FRotator(AimClampedInputZ * 21.0f, 0.0f, 0.0f); // * 21.0f
 		FActorSpawnParameters SpawnParams;
+
+		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Attack read InputZ: %f"), InputZ));
+
 
 		// Spawning
 		if (HasAuthority())
