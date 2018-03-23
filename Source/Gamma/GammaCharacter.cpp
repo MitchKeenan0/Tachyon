@@ -305,7 +305,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 
 				// Framing lone player by their velocity
-				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 2.0f;
+				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 2.1f;
 
 				// Clamp to max size
 				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(5000.0f);
@@ -934,6 +934,7 @@ void AGammaCharacter::ReleaseAttack()
 				if (ActiveAttack != nullptr)
 				{
 					ActiveAttack->InitAttack(this, PrefireTimer, InputZ);
+					GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Firing with InputZ: %f"), InputZ));
 
 					if ((ActiveAttack != nullptr) && ActiveAttack->LockedEmitPoint)
 					{

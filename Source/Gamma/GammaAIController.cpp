@@ -148,8 +148,15 @@ void AGammaAIController::Tactical(FVector Target)
 	else if (RandomDc <= ChargeVal)
 	{
 		// Charge
-		
-		MyCharacter->RaiseCharge();
+		if (MyCharacter->GetCharge() <= 3.0f)
+		{
+			MyCharacter->RaiseCharge();
+			MyCharacter->CheckPowerSlideOff();
+		}
+		else
+		{
+			MyCharacter->CheckPowerSlideOn();
+		}
 	}
 	else if (MyCharacter != nullptr)
 	{
@@ -190,10 +197,8 @@ void AGammaAIController::Tactical(FVector Target)
 					&& (ToPlayer.Size() <= SecondaryRange)
 					&& !MyCharacter->GetActiveSecondary())
 				{
-					MyCharacter->SetZ(VerticalDist);
 					MyCharacter->FireSecondary();
 				}
-				
 				else
 				{
 					// Init Attack
@@ -206,6 +211,7 @@ void AGammaAIController::Tactical(FVector Target)
 					else
 					{
 						MyCharacter->ReleaseAttack();
+						GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("VerticalDist: %f"), VerticalDist));
 					}
 
 					

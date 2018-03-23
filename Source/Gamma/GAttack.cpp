@@ -66,8 +66,10 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	AttackMagnitude = Magnitude;
 	ShotDirection = YScale;
 
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("AttackMagnitude: %f"), AttackMagnitude));
+
 	// set sounds
-	AttackSound->SetPitchMultiplier(AttackSound->PitchMultiplier - (AttackMagnitude / 1.5f));
+	AttackSound->SetPitchMultiplier(AttackSound->PitchMultiplier - AttackMagnitude);
 	//AttackSound->SetVolumeMultiplier(FMath::Clamp(1.0f + (AttackMagnitude * 1.25f), 0.1f, 1.5f));
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Pitch After: %f"), AttackSound->PitchMultiplier));
 
