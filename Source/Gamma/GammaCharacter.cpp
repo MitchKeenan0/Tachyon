@@ -308,7 +308,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 1.68f;
 
 				// Clamp to max size
-				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(5000.0f);
+				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(7000.0f);
 
 				// Declare Position Two
 				FVector VelocityFraming = Actor1->GetActorLocation() + Actor1Velocity;
@@ -554,58 +554,24 @@ void AGammaCharacter::SetX(float Value)
 void AGammaCharacter::ServerSetX_Implementation(float Value)
 {
 	// Get delta move value
-	float CurrentInputSize = FVector(x, 0.0f, z).Size();
-	float DeltaVal = FMath::Abs(Value - CurrentInputSize);
-	//float DeltaVal = FMath::Abs(Value - x) * 1.5f;
-	float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
-	InputX = Value * ValClamped;
+	float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(x));
+	float ValClamped = FMath::Clamp(DeltaVal * 0.68f, 0.1f, 1.0f);
+	InputX = Value + (Value * ValClamped);
 
-	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Delta X: %f"), DeltaVal));
+	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("DeltaVal X: %f"), DeltaVal));
 
 	// Speed and Acceleration
-	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
-	GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 5.0f) * MoveSpeed);
+	float Scalar = FMath::Abs(InputX);
+	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * FMath::Square(Scalar);
+	GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar);
 
+	// Update delta
+	x = Value;
 
 	if (ActorHasTag("Bot"))
 	{
 		MoveRight(InputX);
 	}
-
-	// Update for delta, but only if the delta takes us away from zeroinput
-	//if ()
-	x = FMath::Clamp(Value, 0.0f, 1.0f);
-
-	//if (FMath::Abs(Value) > FMath::Abs(x))
-	//{
-	//	// Get delta move value
-	//	float CurrentInputSize = FVector(x, 0.0f, z).Size();
-	//	float DeltaVal = FMath::Abs(Value - CurrentInputSize);
-	//	//float DeltaVal = FMath::Abs(Value - x) * 1.5f;
-	//	float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
-	//	InputX = Value * ValClamped;
-
-	//	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Delta X: %f"), DeltaVal));
-	//	
-	//	// Speed and Acceleration
-	//	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
-	//	GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 5.0f) * MoveSpeed);
-	//	
-
-	//	if (ActorHasTag("Bot"))
-	//	{
-	//		MoveRight(InputX);
-	//	}
-
-	//	// Update for delta, but only if the delta takes us away from zeroinput
-	//	//if ()
-	//	x = Value;
-	//}
-	//else if (Value == 0.0f)
-	//{
-	//	x = Value;
-	//	InputX = Value;
-	//}
 }
 bool AGammaCharacter::ServerSetX_Validate(float Value)
 {
@@ -620,54 +586,32 @@ void AGammaCharacter::SetZ(float Value)
 void AGammaCharacter::ServerSetZ_Implementation(float Value)
 {
 	// Get move input Delta
-	float CurrentInputSize = FVector(x, 0.0f, z).Size();
-	float DeltaVal = FMath::Abs(Value - CurrentInputSize);
-	//float DeltaVal = FMath::Abs(Value - z) * 1.5f;
-	float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
-	InputZ = Value * ValClamped;
+	float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(z));
+	float ValClamped = FMath::Clamp(DeltaVal * 0.68f, 0.1f, 1.0f);
+	InputZ = Value + (Value * ValClamped);
 
-	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Delta Z: %f"), DeltaVal));
+	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("DeltaVal Z: %f"), DeltaVal));
 
 
 	// Speed and Acceleration
-	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
-	GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 5.0f) * MoveSpeed);
+	float Scalar = FMath::Abs(InputZ);
+	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * FMath::Square(Scalar);
+	GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar);
 
+	// Update delta
+	z = Value;
+	
 
 	if (ActorHasTag("Bot"))
 	{
 		MoveUp(InputZ);
 	}
 
-	//GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("Input z: %f"), InputZ));
 
-	z = FMath::Clamp(Value, 0.0f, 1.0f);
 
 	//if (FMath::Abs(Value) > FMath::Abs(z))
 	//{
-	//	// Get move input Delta
-	//	float CurrentInputSize = FVector(x, 0.0f, z).Size();
-	//	float DeltaVal = FMath::Abs(Value - CurrentInputSize);
-	//	//float DeltaVal = FMath::Abs(Value - z) * 1.5f;
-	//	float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
-	//	InputZ = Value * ValClamped;
-
-	//	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Delta Z: %f"), DeltaVal));
-
-	//	
-	//	// Speed and Acceleration
-	//	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
-	//	GetCharacterMovement()->MaxAcceleration = MoveSpeed + ((DeltaVal * 5.0f) * MoveSpeed);
-	//	
-
-	//	if (ActorHasTag("Bot"))
-	//	{
-	//		MoveUp(InputZ);
-	//	}
-
-	//	//GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("Input z: %f"), InputZ));
-
-	//	z = Value;
+	//	//
 	//}
 	//else if (Value == 0.0f)
 	//{

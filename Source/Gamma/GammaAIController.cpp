@@ -293,12 +293,12 @@ void AGammaAIController::NavigateTo(FVector Target)
 		if (LateralDistance != 0.0f)
 		{
 			ValueX = FMath::Clamp(ToTarget.X, -1.0f, 1.0f);
-			MyCharacter->SetX(ValueX);
+			MyCharacter->SetX(ValueX * 0.7f);
 		}
 		if (VerticalDistance != 0.0f)
 		{
 			ValueZ = FMath::Clamp(ToTarget.Z, -1.0f, 1.0f);
-			MyCharacter->SetZ(ValueZ);
+			MyCharacter->SetZ(ValueZ * 0.7f);
 		}
 
 
