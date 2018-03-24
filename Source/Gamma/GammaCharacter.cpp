@@ -554,11 +554,13 @@ void AGammaCharacter::SetX(float Value)
 void AGammaCharacter::ServerSetX_Implementation(float Value)
 {
 	// Get delta move value
-	float DeltaVal = FMath::Abs(Value - x) * 1.5f;
+	float CurrentInputSize = FVector(x, 0.0f, z).Size();
+	float DeltaVal = FMath::Abs(Value - CurrentInputSize);
+	//float DeltaVal = FMath::Abs(Value - x) * 1.5f;
 	float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
 	InputX = Value * ValClamped;
 
-	//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Set InputX: %f"), InputX));
+	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Delta X: %f"), DeltaVal));
 
 	// Speed and Acceleration
 	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
@@ -572,17 +574,18 @@ void AGammaCharacter::ServerSetX_Implementation(float Value)
 
 	// Update for delta, but only if the delta takes us away from zeroinput
 	//if ()
-	x = Value;
+	x = FMath::Clamp(Value, 0.0f, 1.0f);
 
 	//if (FMath::Abs(Value) > FMath::Abs(x))
 	//{
-
 	//	// Get delta move value
-	//	float DeltaVal = FMath::Abs(Value - x);
+	//	float CurrentInputSize = FVector(x, 0.0f, z).Size();
+	//	float DeltaVal = FMath::Abs(Value - CurrentInputSize);
+	//	//float DeltaVal = FMath::Abs(Value - x) * 1.5f;
 	//	float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
 	//	InputX = Value * ValClamped;
 
-	//	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Set InputX: %f"), InputX));
+	//	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Delta X: %f"), DeltaVal));
 	//	
 	//	// Speed and Acceleration
 	//	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * (DeltaVal + 1);
@@ -598,7 +601,7 @@ void AGammaCharacter::ServerSetX_Implementation(float Value)
 	//	//if ()
 	//	x = Value;
 	//}
-	//else
+	//else if (Value == 0.0f)
 	//{
 	//	x = Value;
 	//	InputX = Value;
@@ -617,11 +620,13 @@ void AGammaCharacter::SetZ(float Value)
 void AGammaCharacter::ServerSetZ_Implementation(float Value)
 {
 	// Get move input Delta
-	float DeltaVal = FMath::Abs(Value - z) * 1.5f;
+	float CurrentInputSize = FVector(x, 0.0f, z).Size();
+	float DeltaVal = FMath::Abs(Value - CurrentInputSize);
+	//float DeltaVal = FMath::Abs(Value - z) * 1.5f;
 	float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
 	InputZ = Value * ValClamped;
 
-	//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Set InputZ: %f"), InputZ));
+	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Delta Z: %f"), DeltaVal));
 
 
 	// Speed and Acceleration
@@ -636,17 +641,18 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 
 	//GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("Input z: %f"), InputZ));
 
-	z = Value;
+	z = FMath::Clamp(Value, 0.0f, 1.0f);
 
 	//if (FMath::Abs(Value) > FMath::Abs(z))
 	//{
-	//	
 	//	// Get move input Delta
-	//	float DeltaVal = FMath::Abs(Value - z);
+	//	float CurrentInputSize = FVector(x, 0.0f, z).Size();
+	//	float DeltaVal = FMath::Abs(Value - CurrentInputSize);
+	//	//float DeltaVal = FMath::Abs(Value - z) * 1.5f;
 	//	float ValClamped = FMath::Clamp(DeltaVal, 1.0f, 10.0f);
 	//	InputZ = Value * ValClamped;
 
-	//	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Set InputZ: %f"), InputZ));
+	//	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Delta Z: %f"), DeltaVal));
 
 	//	
 	//	// Speed and Acceleration
@@ -663,7 +669,7 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 
 	//	z = Value;
 	//}
-	//else
+	//else if (Value == 0.0f)
 	//{
 	//	z = Value;
 	//	InputZ = Value;
@@ -919,7 +925,7 @@ void AGammaCharacter::ReleaseAttack()
 		&& ((PrefireTimer >= PrefireTime || ActiveFlash != nullptr)))
 	{
 		// Clean up previous flash
-		if ((ActiveFlash != nullptr))
+		if ((GetActiveFlash() != nullptr))
 		{
 			ActiveFlash->Destroy();
 			ActiveFlash = nullptr;
@@ -1050,18 +1056,20 @@ void AGammaCharacter::PrefireTiming()
 	}
 	else
 	{
-		if ((PrefireTimer >= PrefireTime)
+		if (GetActiveFlash() != nullptr
+			&& PrefireTimer < PrefireTime)
+		{
+			PrefireTimer += GetWorld()->GetDeltaSeconds();
+			//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("PREFIRE T: %f"), PrefireTimer));
+		}
+		else if ((PrefireTimer >= PrefireTime)
 			&& (Charge > 0)
 			&& ActiveAttack == nullptr
 			&& ActiveFlash != nullptr)
 		{
 			ReleaseAttack();
 		}
-		else if (GetActiveFlash() != nullptr)
-		{
-			PrefireTimer += GetWorld()->GetDeltaSeconds();
-			//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("PREFIRE T: %f"), PrefireTimer));
-		}
+		
 	}
 }
 void AGammaCharacter::ServerPrefireTiming_Implementation()

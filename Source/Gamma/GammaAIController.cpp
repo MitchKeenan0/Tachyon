@@ -45,21 +45,21 @@ void AGammaAIController::Tick(float DeltaSeconds)
 
 		if (Player != nullptr && Player->IsValidLowLevel())
 		{
+			// Got a player - stunt on'em
+			
 			// Debug AI to Player
 			/*DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(), Player->GetActorLocation(),
 				FColor::White, false, -1.0f, 0, 3.0f);*/
-
-			// Got a player - stunt on'em
-			// Update prefire
-			if (PrefireTimer >= PrefireTime)
-			{
-				MyCharacter->ReleaseAttack();
-			}
 
 			// Reation time
 			if (ReactionTiming(DeltaSeconds))
 			{
 				Tactical(FVector::ZeroVector);
+			}
+			// Update prefire
+			if (PrefireTimer >= PrefireTime)
+			{
+				MyCharacter->ReleaseAttack();
 			}
 
 			// Get some moves
@@ -293,12 +293,12 @@ void AGammaAIController::NavigateTo(FVector Target)
 		if (LateralDistance != 0.0f)
 		{
 			ValueX = FMath::Clamp(ToTarget.X, -1.0f, 1.0f);
-			MyCharacter->SetX(ValueX * 0.3f);
+			MyCharacter->SetX(ValueX);
 		}
 		if (VerticalDistance != 0.0f)
 		{
 			ValueZ = FMath::Clamp(ToTarget.Z, -1.0f, 1.0f);
-			MyCharacter->SetZ(ValueZ * 0.3f);
+			MyCharacter->SetZ(ValueZ);
 		}
 
 

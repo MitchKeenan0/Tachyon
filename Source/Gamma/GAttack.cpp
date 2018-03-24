@@ -301,7 +301,7 @@ void AGAttack::ReportHit(AActor* HitActor)
 	AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
 	if (PotentialPlayer != nullptr)
 	{
-		PotentialPlayer->ModifyHealth(-1.0f);
+		PotentialPlayer->ModifyHealth(-3.0f);
 		
 		// Marked killed AI for the reset sweep
 		if (PotentialPlayer->GetHealth() <= 0.0f
