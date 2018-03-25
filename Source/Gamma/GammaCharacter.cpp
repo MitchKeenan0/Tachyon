@@ -191,7 +191,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 	// Now setup the rotation of the controller based on the direction we are travelling
 	const FVector PlayerVelocity = GetVelocity();
-	float TravelDirection = FMath::Clamp(InputX * 100000.0f, -1.0f, 1.0f);
+	float TravelDirection = FMath::Clamp(InputX * 9000000.0f, -1.0f, 1.0f);
 	
 	// Set rotation so character faces direction of travel
 	if (Controller != nullptr) // && UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f
@@ -305,7 +305,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 
 				// Framing lone player by their velocity
-				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 1.68f;
+				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 2.1f;
 
 				// Clamp to max size
 				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(7000.0f);
@@ -592,7 +592,6 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 
 	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("DeltaVal Z: %f"), DeltaVal));
 
-
 	// Speed and Acceleration
 	float Scalar = FMath::Abs(InputZ);
 	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * FMath::Square(Scalar);
@@ -601,7 +600,6 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 	// Update delta
 	z = Value;
 	
-
 	if (ActorHasTag("Bot"))
 	{
 		MoveUp(InputZ);
@@ -639,14 +637,14 @@ void AGammaCharacter::NewMoveKick()
 		FVector MoveInputVector = FVector(InputX + x, 0.0f, InputZ + z);
 		FVector CurrentVelocity = GetCharacterMovement()->Velocity;
 		float TimeDelta = GetWorld()->DeltaTimeSeconds;
-		float RelativityToMaxSpeed = (MaxMoveSpeed) - CurrentVelocity.Size();
+		//float RelativityToMaxSpeed = (MaxMoveSpeed) - CurrentVelocity.Size();
 		//float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
 
 		// Force, clamp, & effect chara movement
 		FVector KickVector = MoveInputVector
 			* MoveFreshMultiplier
-			* RelativityToMaxSpeed;
-			//* DotScalar;
+			* 1000.0f //RelativityToMaxSpeed
+			* (1.0f + FMath::Abs(x));
 		//KickVector = KickVector.GetClampedToSize(0.0f, MaxMoveSpeed);
 		GetCharacterMovement()->AddImpulse(KickVector * TimeDelta);
 
