@@ -57,7 +57,8 @@ void AGammaAIController::Tick(float DeltaSeconds)
 				Tactical(FVector::ZeroVector);
 			}
 			// Update prefire
-			if (PrefireTimer >= PrefireTime)
+			if (PrefireTimer >= PrefireTime
+				&& MyCharacter->GetActiveFlash() != nullptr)
 			{
 				MyCharacter->ReleaseAttack();
 			}
@@ -202,7 +203,7 @@ void AGammaAIController::Tactical(FVector Target)
 				else
 				{
 					// Init Attack
-					if (!MyCharacter->GetActiveFlash()
+					if ((MyCharacter->GetActiveFlash() == nullptr) //  || bMultipleAttacks
 						&& ToPlayer.Size() <= PrimaryRange)
 					{
 						MyCharacter->InitAttack();

@@ -558,7 +558,7 @@ void AGammaCharacter::ServerSetX_Implementation(float Value)
 	float ValClamped = FMath::Clamp(DeltaVal * 0.68f, 0.1f, 1.0f);
 	InputX = Value + (Value * ValClamped);
 
-	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("DeltaVal X: %f"), DeltaVal));
+	///GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("DeltaVal X: %f"), DeltaVal));
 
 	// Speed and Acceleration
 	float Scalar = FMath::Abs(InputX);
@@ -590,7 +590,7 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 	float ValClamped = FMath::Clamp(DeltaVal * 0.68f, 0.1f, 1.0f);
 	InputZ = Value + (Value * ValClamped);
 
-	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("DeltaVal Z: %f"), DeltaVal));
+	///GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("DeltaVal Z: %f"), DeltaVal));
 
 	// Speed and Acceleration
 	float Scalar = FMath::Abs(InputZ);
