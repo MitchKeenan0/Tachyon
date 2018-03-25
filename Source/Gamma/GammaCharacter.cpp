@@ -604,18 +604,6 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 	{
 		MoveUp(InputZ);
 	}
-
-
-
-	//if (FMath::Abs(Value) > FMath::Abs(z))
-	//{
-	//	//
-	//}
-	//else if (Value == 0.0f)
-	//{
-	//	z = Value;
-	//	InputZ = Value;
-	//}
 }
 bool AGammaCharacter::ServerSetZ_Validate(float Value)
 {
