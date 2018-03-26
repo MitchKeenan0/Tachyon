@@ -188,15 +188,13 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 	// CAMERA UPDATE
 	UpdateCamera(DeltaTime);
-
-	// Now setup the rotation of the controller based on the direction we are travelling
-	const FVector PlayerVelocity = GetVelocity();
-	float TravelDirection = FMath::Clamp(InputX * 9000000.0f, -1.0f, 1.0f);
-	bool bTurningRight = false;
 	
-	// Set rotation so character faces direction of travel
-	if (Controller != nullptr) // && UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f
+
+	if (Controller != nullptr)
 	{
+
+		// Set rotation so character faces direction of travel
+		float TravelDirection = FMath::Clamp(InputX, -1.0f, 1.0f);
 		if (TravelDirection < 0.0f)
 		{
 			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 10.0f);
@@ -210,7 +208,6 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		else
 		{
 			// No Input - finish rotation
-
 			if (Controller->GetControlRotation().Yaw > 90.0f)
 			{
 				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 10.0f);
@@ -579,7 +576,7 @@ void AGammaCharacter::ServerSetX_Implementation(float Value)
 	// Speed and Acceleration
 	float Scalar = FMath::Abs(InputX);
 	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * FMath::Square(Scalar);
-	GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar);
+	GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar) + TurnSpeed;
 
 	// Update delta
 	x = Value;
@@ -611,7 +608,7 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 	// Speed and Acceleration
 	float Scalar = FMath::Abs(InputZ);
 	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * FMath::Square(Scalar);
-	GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar);
+	GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar) + TurnSpeed;
 
 	// Update delta
 	z = Value;

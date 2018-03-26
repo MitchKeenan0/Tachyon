@@ -81,7 +81,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 		else /// player is nullptr
 		{
 			// Locate "player" target
-			UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), PlayersArray);
+			UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray); // FramingActor for brawl
 			if (PlayersArray.Num() > 0)
 			{
 				for (int i = 0; i < PlayersArray.Num(); ++i)
@@ -326,13 +326,27 @@ void AGammaAIController::NavigateTo(FVector Target)
 		{
 			if (ValueX < 0.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
+				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 10.0f);
 				SetControlRotation(Fint);
 			}
 			else if (ValueX > 0.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
+				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 10.0f);
 				SetControlRotation(Fint);
+			}
+			else
+			{
+				// No Input - finish rotation
+				if (GetControlRotation().Yaw > 90.0f)
+				{
+					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 10.0f);
+					SetControlRotation(Fint);
+				}
+				else
+				{
+					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 10.0f);
+					SetControlRotation(Fint);
+				}
 			}
 		}
 	}
