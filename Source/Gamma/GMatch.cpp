@@ -282,7 +282,7 @@ void AGMatch::GetPlayers()
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Spectator"), TempPlayers);
 	if (TempPlayers.Num() > 0)
 	{
-		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), TempPlayers);
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), TempPlayers);
 		if (TempPlayers.Num() == 2)
 		{
 			LocalPlayer = Cast<AGammaCharacter>(TempPlayers[0]);
@@ -293,7 +293,7 @@ void AGMatch::GetPlayers()
 	{
 
 		// Proper game
-		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), TempPlayers);
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), TempPlayers);
 		if (GetWorld() && TempPlayers.Num() > 0)
 		{
 			// Loop through to deliberate local and opponent

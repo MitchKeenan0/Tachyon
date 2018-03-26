@@ -177,11 +177,6 @@ void AGammaCharacter::BeginPlay()
 // MAIN CHARACTER UPDATE
 void AGammaCharacter::UpdateCharacter(float DeltaTime)
 {
-	// Update prefire
-	if ((GetActiveFlash() != nullptr) && GetActiveFlash()->IsValidLowLevel())
-	{
-		PrefireTiming();
-	}
 
 	// Update animation to match the motion
 	//UpdateAnimation();
@@ -283,16 +278,28 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			bool bAlone = false;
 			if (FramingActors.Num() > 1)
 			{
-				// Ensure the second actor is valid and not our own
-				for (int i = 0; i < FramingActors.Num(); ++i)
+				// Find closest best candidate for Actor 2
+				if (Actor2 == nullptr
+					|| FVector::Dist(Actor2->GetActorLocation(), GetActorLocation()) > 5000.0f)
 				{
-					if (FramingActors[i] != nullptr 
-						&& FramingActors[i] != Actor1)
+					float DistToActor2 = 99999.0f;
+					for (int i = 0; i < FramingActors.Num(); ++i)
 					{
-						Actor2 = FramingActors[i];
+						if (FramingActors[i] != nullptr
+							&& FramingActors[i] != Actor1
+							&& !FramingActors[i]->ActorHasTag("Spectator"))
+						{
+							float DistToTemp = FVector::Dist(FramingActors[i]->GetActorLocation(), GetActorLocation());
+							if (DistToTemp < DistToActor2)
+							{
+								Actor2 = FramingActors[i];
+								DistToActor2 = DistToTemp;
+							}
+
+						}
 					}
 				}
-				
+
 				// If Actor2 isn't too far away, make 'Pair Framing'
 				if (Actor2 != nullptr && !Actor2->IsUnreachable()
 					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 3600.0f)
@@ -316,7 +323,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			// Lone player gets 'Velocity Framing'
 			if (bAlone || FramingActors.Num() == 1)
 			{
-
+				
 				// Framing lone player by their velocity
 				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 3.0f;
 
@@ -339,7 +346,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Positions done
 			// Find the midpoint
-			Midpoint = (PositionOne + PositionTwo) / 2.0f;
+			//Midpoint = (PositionOne + PositionTwo) / 2.0f;
+			Midpoint = PositionOne + ((PositionTwo - PositionOne) * 0.33f);
 			if (Midpoint.Size() > 0.001f)
 			{
 				// Distance
@@ -364,7 +372,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				else
 				{
 					// Spectator cam has auto tilt using position relativity
-					FVector Relativity = (PositionTwo - PositionOne);
+					FVector Relativity = (Midpoint - Actor1->GetActorLocation());
 					float ValZ = FMath::Clamp(Relativity.Z, -1.0f, 1.0f);
 					float ValX = FMath::Clamp(Relativity.X, -1.0f, 1.0f);
 					CameraTiltX = FMath::FInterpTo(CameraTiltX, ValZ * CameraTiltValue, DeltaTime, CameraTiltSpeed); // pitch
@@ -467,6 +475,12 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.25f)
 	{
 		UpdateCharacter(DeltaSeconds);
+	}
+
+	// Update prefire
+	if ((GetActiveFlash() != nullptr) && GetActiveFlash()->IsValidLowLevel())
+	{
+		PrefireTiming();
 	}
 
 

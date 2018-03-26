@@ -322,7 +322,7 @@ void AGammaAIController::NavigateTo(FVector Target)
 
 
 		// Sprite flipping
-		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
+		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.25f)
 		{
 			if (ValueX < 0.0f)
 			{
