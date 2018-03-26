@@ -98,7 +98,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 
 				// Just a hit
 				bMinorGG = true;
-				SetTimeScale((1 - GGTimescale) * 0.33f);
+				SetTimeScale((1 - GGTimescale) * 0.15f);
 				bReturn = true;
 			}
 		}

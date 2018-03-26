@@ -464,7 +464,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	
 	// Main update
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.68f)
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.25f)
 	{
 		UpdateCharacter(DeltaSeconds);
 	}
