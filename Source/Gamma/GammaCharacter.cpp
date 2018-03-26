@@ -145,7 +145,7 @@ void AGammaCharacter::BeginPlay()
 	// Camera needs some movement to wake up
 	if (Controller && Controller->IsLocalController())
 	{
-		AddMovementInput(FVector(0.0f, 0.0f, 1.0f), 1.0f);
+		AddMovementInput(FVector(0.0f, 0.0f, 1.0f), 100.0f);
 		GetCharacterMovement()->AddImpulse(FVector::UpVector * 100.0f);
 	}
 	else
@@ -192,19 +192,35 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	// Now setup the rotation of the controller based on the direction we are travelling
 	const FVector PlayerVelocity = GetVelocity();
 	float TravelDirection = FMath::Clamp(InputX * 9000000.0f, -1.0f, 1.0f);
+	bool bTurningRight = false;
 	
 	// Set rotation so character faces direction of travel
 	if (Controller != nullptr) // && UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f
 	{
 		if (TravelDirection < 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 20.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 10.0f);
 			Controller->SetControlRotation(Fint);
 		}
 		else if (TravelDirection > 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 20.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 10.0f);
 			Controller->SetControlRotation(Fint);
+		}
+		else
+		{
+			// No Input - finish rotation
+
+			if (Controller->GetControlRotation().Yaw > 90.0f)
+			{
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 10.0f);
+				Controller->SetControlRotation(Fint);
+			}
+			else
+			{
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 10.0f);
+				Controller->SetControlRotation(Fint);
+			}
 		}
 
 		// Locator scaling
@@ -305,7 +321,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 
 				// Framing lone player by their velocity
-				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 2.1f;
+				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 3.0f;
 
 				// Clamp to max size
 				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(7000.0f);
