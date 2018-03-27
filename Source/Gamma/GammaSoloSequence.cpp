@@ -138,7 +138,6 @@ void AGammaSoloSequence::SpawnDenizen()
 			
 			if (NewObstacle != nullptr)
 			{
-				NewObstacle->SetActorScale3D(FMath::VRand() * 2.0f);
 				ObstacleArray.Add(NewObstacle);
 			}
 		}
