@@ -182,7 +182,11 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	//UpdateAnimation();
 
 	// CAMERA UPDATE
-	UpdateCamera(DeltaTime);
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+	{
+		UpdateCamera(DeltaTime);
+	}
+	
 	
 
 	if (Controller != nullptr)
@@ -192,12 +196,12 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		float TravelDirection = FMath::Clamp(InputX, -1.0f, 1.0f);
 		if (TravelDirection < 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 10.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 15.0f);
 			Controller->SetControlRotation(Fint);
 		}
 		else if (TravelDirection > 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 10.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 15.0f);
 			Controller->SetControlRotation(Fint);
 		}
 		else
@@ -205,19 +209,21 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			// No Input - finish rotation
 			if (Controller->GetControlRotation().Yaw > 90.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 10.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 15.0f);
 				Controller->SetControlRotation(Fint);
 			}
 			else
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 10.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 15.0f);
 				Controller->SetControlRotation(Fint);
 			}
 		}
 
+		///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("TravelDirection: %f"), TravelDirection));
+
 		// Locator scaling
 		if (Controller->IsLocalController()
-			&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
+			&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.25f)
 		{
 			LocatorScaling();
 		}
@@ -242,26 +248,39 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 void AGammaCharacter::UpdateCamera(float DeltaTime)
 {
+	// Start by checking valid actor
+	AActor* Actor1 = nullptr;
+	AActor* Actor2 = nullptr;
+	if (!this->ActorHasTag("Spectator"))
+	{
+		Actor1 = this;
+	}
+
+
 	// Poll for framing actors
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
-	// TODO - add defense on running get?
-
-	if (FramingActors.Num() > 0)
+	/// TODO - add defense on running get?
+	if (FramingActors.Num() > 1)
 	{
-
-		// Start by checking valid actor
-		AActor* Actor1 = this;
-		AActor* Actor2 = nullptr;
-
-		// Edge case: player is spectator
-		if (Actor1->ActorHasTag("Spectator"))
+		// Edge case: player is spectator, find a sub
+		if (Actor1 == nullptr)
 		{
-			Actor1 = FramingActors[0];
+			for (int i = 0; i < FramingActors.Num(); ++i)
+			{
+				if (FramingActors[i] != nullptr
+					&& FramingActors[i] != this
+					&& !FramingActors[i]->ActorHasTag("Spectator")
+					&& !FramingActors[i]->ActorHasTag("Land"))
+				{
+					Actor1 = FramingActors[i];
+				}
+			}
 		}
 
 		// Let's go
 		if (Actor1 != nullptr && Actor1->IsValidLowLevelFast() && !Actor1->IsUnreachable())
 		{
+			float UnDilatedDeltaTime = DeltaTime / UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 
 			// Framing up first actor
 			FVector Actor1Velocity = Actor1->GetVelocity();
@@ -269,9 +288,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			Actor1Velocity.X *= 0.9f; /// lateral kerning
 			
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase);
-			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, CameraMoveSpeed);
+			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, UnDilatedDeltaTime, CameraMoveSpeed);
 			float CameraMinimumDistance = 1000.0f;
-			float CameraMaxDistance = 15555.5f;
+			float CameraMaxDistance = 20000.0f;
 			float CameraDistance = CameraDistanceScalar * 1.25f;
 
 			// Position two by another actor
@@ -280,29 +299,52 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				// Find closest best candidate for Actor 2
 				if (Actor2 == nullptr
-					|| FVector::Dist(Actor2->GetActorLocation(), GetActorLocation()) > 5000.0f)
+					|| FVector::Dist(Actor2->GetActorLocation(), GetActorLocation()) > 7000.0f)
 				{
-					float DistToActor2 = 99999.0f;
-					for (int i = 0; i < FramingActors.Num(); ++i)
+
+					// Try player targets first
+					UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), FramingActors);
+					if (FramingActors.Num() > 1)
 					{
-						if (FramingActors[i] != nullptr
-							&& FramingActors[i] != Actor1
-							&& !FramingActors[i]->ActorHasTag("Spectator"))
+						for (int i = 0; i < FramingActors.Num(); ++i)
 						{
-							float DistToTemp = FVector::Dist(FramingActors[i]->GetActorLocation(), GetActorLocation());
-							if (DistToTemp < DistToActor2)
+							if (FramingActors[i] != nullptr
+								&& FramingActors[i] != this
+								&& FramingActors[i] != Actor1)
 							{
 								Actor2 = FramingActors[i];
-								DistToActor2 = DistToTemp;
 							}
+						}
+					}
+					else
+					{
+						UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
+						if (FramingActors.Num() > 1)
+						{
+							float DistToActor2 = 99999.0f;
+							for (int i = 0; i < FramingActors.Num(); ++i)
+							{
+								if (FramingActors[i] != nullptr
+									&& FramingActors[i] != this
+									&& FramingActors[i] != Actor1
+									&& !FramingActors[i]->ActorHasTag("Spectator"))
+								{
+									float DistToTemp = FVector::Dist(FramingActors[i]->GetActorLocation(), GetActorLocation());
+									if (DistToTemp < DistToActor2)
+									{
+										Actor2 = FramingActors[i];
+										DistToActor2 = DistToTemp;
+									}
 
+								}
+							}
 						}
 					}
 				}
 
 				// If Actor2 isn't too far away, make 'Pair Framing'
 				if (Actor2 != nullptr && !Actor2->IsUnreachable()
-					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 3600.0f)
+					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 5000.0f)
 				{
 
 					// Framing up with second actor
@@ -312,7 +354,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 					// Declare Position Two
 					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase);
-					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, CameraMoveSpeed);
+					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, UnDilatedDeltaTime, CameraMoveSpeed);
 				}
 				else
 				{
@@ -332,7 +374,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Declare Position Two
 				FVector VelocityFraming = Actor1->GetActorLocation() + Actor1Velocity;
-				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, CameraMoveSpeed);
+				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, UnDilatedDeltaTime, CameraMoveSpeed);
 				
 				// Distance controls
 				CameraMaxDistance = 10000.0f;
@@ -345,8 +387,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 
 			// Positions done
-			// Find the midpoint
-			//Midpoint = (PositionOne + PositionTwo) / 2.0f;
+			// Find the midpoint, leaning to actor one
 			Midpoint = PositionOne + ((PositionTwo - PositionOne) * 0.33f);
 			if (Midpoint.Size() > 0.001f)
 			{
@@ -358,7 +399,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					CameraMinimumDistance,
 					CameraMaxDistance);
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength, 
-					TargetLengthClamped, DeltaTime, CameraMoveSpeed * 5.0f);
+					TargetLengthClamped, UnDilatedDeltaTime, CameraMoveSpeed * 5.0f);
 					
 				// Camera tilt
 				if ( !ActorHasTag("Spectator") )
@@ -366,8 +407,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					FVector InputVector = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 					FVector VelNormal = GetCharacterMovement()->Velocity.GetSafeNormal();
 					float DotScale = FMath::Abs(FVector::DotProduct(InputVector, VelNormal));
-					CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue * DotScale, DeltaTime, CameraTiltSpeed); // pitch
-					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * CameraTiltValue * DotScale, DeltaTime, CameraTiltSpeed); // yaw
+					CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue * DotScale, UnDilatedDeltaTime, CameraTiltSpeed); // pitch
+					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * CameraTiltValue * DotScale, UnDilatedDeltaTime, CameraTiltSpeed); // yaw
 				}
 				else
 				{
@@ -375,8 +416,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					FVector Relativity = (Midpoint - Actor1->GetActorLocation());
 					float ValZ = FMath::Clamp(Relativity.Z, -1.0f, 1.0f);
 					float ValX = FMath::Clamp(Relativity.X, -1.0f, 1.0f);
-					CameraTiltX = FMath::FInterpTo(CameraTiltX, ValZ * CameraTiltValue, DeltaTime, CameraTiltSpeed); // pitch
-					CameraTiltZ = FMath::FInterpTo(CameraTiltX, ValX * CameraTiltValue, DeltaTime, CameraTiltSpeed); // pitch
+					CameraTiltX = FMath::FInterpTo(CameraTiltX, ValZ * CameraTiltValue, UnDilatedDeltaTime, CameraTiltSpeed); // pitch
+					CameraTiltZ = FMath::FInterpTo(CameraTiltX, ValX * CameraTiltValue, UnDilatedDeltaTime, CameraTiltSpeed); // pitch
 				}
 				FRotator FTarget = FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue;
 				FTarget.Roll = 0.0f;
@@ -472,7 +513,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	
 	// Main update
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.25f)
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.1f)
 	{
 		UpdateCharacter(DeltaSeconds);
 	}
@@ -513,7 +554,7 @@ void AGammaCharacter::MoveRight(float Value)
 
 	if ((MoveTimer >= (1 / MovesPerSecond))
 		&& !bSliding
-		&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) >= 0.9f)
+		&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) >= 0.3f)
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
@@ -551,7 +592,7 @@ void AGammaCharacter::MoveUp(float Value)
 	// Abide moves per second
 	if ((MoveTimer >= (1 / MovesPerSecond))
 		&& !bSliding
-		&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) >= 0.9f)
+		&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) >= 0.3f)
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = (GetMovementComponent()->Velocity).GetSafeNormal();
@@ -583,14 +624,15 @@ void AGammaCharacter::ServerSetX_Implementation(float Value)
 	// Get delta move value
 	float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(x));
 	float ValClamped = FMath::Clamp(DeltaVal * 0.68f, 0.1f, 1.0f);
-	InputX = Value + (Value * ValClamped);
-
-	///GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("DeltaVal X: %f"), DeltaVal));
+	float TimeScaleInfluence = 1 + FMath::Abs(1 - UGameplayStatics::GetGlobalTimeDilation(GetWorld()));
+	InputX = Value + (Value * ValClamped) * TimeScaleInfluence;
 
 	// Speed and Acceleration
 	float Scalar = FMath::Abs(InputX);
 	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * FMath::Square(Scalar);
 	GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar) + TurnSpeed;
+
+	///GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Scalar: %f"), Scalar));
 
 	// Update delta
 	x = Value;
@@ -615,14 +657,15 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 	// Get move input Delta
 	float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(z));
 	float ValClamped = FMath::Clamp(DeltaVal * 0.68f, 0.1f, 1.0f);
-	InputZ = Value + (Value * ValClamped);
-
-	///GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("DeltaVal Z: %f"), DeltaVal));
+	float TimeScaleInfluence = 1 + FMath::Abs(1 - UGameplayStatics::GetGlobalTimeDilation(GetWorld()));
+	InputZ = Value + (Value * ValClamped) * TimeScaleInfluence;
 
 	// Speed and Acceleration
 	float Scalar = FMath::Abs(InputZ);
 	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * FMath::Square(Scalar);
 	GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar) + TurnSpeed;
+
+	///GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Scalar: %f"), Scalar));
 
 	// Update delta
 	z = Value;
@@ -653,15 +696,16 @@ void AGammaCharacter::NewMoveKick()
 		FVector CurrentVelocity = GetCharacterMovement()->Velocity;
 		float TimeDelta = GetWorld()->DeltaTimeSeconds;
 		//float RelativityToMaxSpeed = (MaxMoveSpeed) - CurrentVelocity.Size();
-		//float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
+		float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
 
 		// Force, clamp, & effect chara movement
 		FVector KickVector = MoveInputVector
 			* MoveFreshMultiplier
-			* 1000.0f //RelativityToMaxSpeed
-			* (1.0f + FMath::Abs(x));
+			* 1000.0f ///previously RelativityToMaxSpeed
+			* (1.0f + FMath::Abs(x))
+			* TimeDelta;
 		//KickVector = KickVector.GetClampedToSize(0.0f, MaxMoveSpeed);
-		GetCharacterMovement()->AddImpulse(KickVector * TimeDelta);
+		GetCharacterMovement()->AddImpulse(KickVector);
 
 		bMoved = false;
 		MoveTimer = 0.0f;
@@ -721,7 +765,8 @@ bool AGammaCharacter::ServerUpdateMoveParticles_Validate(FVector Move)
 	return true;
 }
 
-// AIM
+
+// NOT USED - WORLD TEMPO TING
 void AGammaCharacter::SetAim()
 {
 	// Fresh move 'kick it'
@@ -766,7 +811,7 @@ bool AGammaCharacter::ServerSetAim_Validate()
 }
 
 
-// RAISE CHARGE for attack 
+// RAISE CHARGE
 void AGammaCharacter::RaiseCharge()
 {
 	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.2f
@@ -879,7 +924,7 @@ void AGammaCharacter::ReleaseAttack()
 
 	if (AttackClass && (ActiveAttack == nullptr || bMultipleAttacks) && (Charge > 0.0f)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f)
-		&& ((PrefireTimer >= PrefireTime || ActiveFlash != nullptr)))
+		&& ((PrefireTimer >= (PrefireTime * 0.2f) && ActiveFlash != nullptr)))
 	{
 		// Clean up previous flash
 		if ((GetActiveFlash() != nullptr))
@@ -888,11 +933,6 @@ void AGammaCharacter::ReleaseAttack()
 			ActiveFlash = nullptr;
 			//ClearFlash();
 		}
-		/*if (ActiveChargeParticles != nullptr && ActiveChargeParticles->IsValidLowLevel())
-		{
-			ActiveChargeParticles->Destroy();
-			ActiveChargeParticles = nullptr;
-		}*/
 
 		// Direction & setting up
 		float AimClampedInputZ = FMath::Clamp(InputZ * 10.0f, -1.0f, 1.0f);
@@ -912,14 +952,13 @@ void AGammaCharacter::ReleaseAttack()
 				ActiveAttack = Cast<AGAttack>(GetWorld()->SpawnActor<AGAttack>(AttackClass, FirePosition, FireRotation, SpawnParams));
 				if (ActiveAttack != nullptr)
 				{
-					ActiveAttack->InitAttack(this, PrefireTimer, AimClampedInputZ);
-					//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Firing with AimClampedInputZ: %f"), AimClampedInputZ));
-					if (PrefireTimer > 1.1f)
-					{
-						GEngine->AddOnScreenDebugMessage(-1, 10000.f, FColor::Red, FString::Printf(TEXT("Bad PrefireTime: %f"), PrefireTimer));
-					}
 
-					if ((ActiveAttack != nullptr) && ActiveAttack->LockedEmitPoint)
+					// Imbue with magnitude by PrefireTimer
+					float Magnitood = FMath::Clamp(PrefireTimer, 0.1f, 1.0f);
+					ActiveAttack->InitAttack(this, Magnitood, AimClampedInputZ);
+
+					// Positional lock or naw
+					if (ActiveAttack->LockedEmitPoint)
 					{
 						ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
 					}
@@ -930,8 +969,8 @@ void AGammaCharacter::ReleaseAttack()
 				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No attack class to spawn"));
 			}
 
+			// Exit claus'
 			Charge -= ChargeGain;
-			
 		}
 
 		PrefireTimer = 0.0f;
@@ -1066,6 +1105,14 @@ void AGammaCharacter::PowerSlideEngage()
 		bSliding = true;
 		Charge = 0.0f;
 
+		// Attack cancel
+		if (GetActiveFlash() != nullptr)
+		{
+			ClearFlash();
+			PrefireTimer = 0.0f;
+		}
+
+		// Netcode emissary
 		if (Role < ROLE_Authority)
 		{
 			ServerPowerSlideEngage();

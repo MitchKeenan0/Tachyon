@@ -31,12 +31,12 @@ void AGMatch::Tick(float DeltaTime)
 		GGDelayTimer += DeltaTime;
 	}
 
+	// The show
 	if (!PlayersAccountedFor())
 	{
 		GetPlayers();
 	}
-	
-	if (Role == ROLE_Authority)
+	else if (Role == ROLE_Authority)
 	{
 		HandleTimeScale(DeltaTime);
 	}
@@ -46,13 +46,16 @@ void AGMatch::Tick(float DeltaTime)
 bool AGMatch::PlayersAccountedFor()
 {
 	bool Result = false;
-	
-	if ((LocalPlayer != nullptr && LocalPlayer->GetOwner()))
+	if (LocalPlayer != nullptr && LocalPlayer->IsValidLowLevel())
 	{
-		if (OpponentPlayer != nullptr && OpponentPlayer->GetOwner())
+		if (OpponentPlayer != nullptr && OpponentPlayer->IsValidLowLevel())
 		{
 			Result = true;
 		}
+	}
+	if (!Result)
+	{
+		GetPlayers();
 	}
 
 	return Result;
@@ -100,6 +103,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 				bMinorGG = true;
 				SetTimeScale((1 - GGTimescale) * 0.15f);
 				bReturn = true;
+				GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Blue, TEXT(">>--hit->"));
 			}
 		}
 	}
@@ -115,19 +119,57 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 
 void AGMatch::HandleTimeScale(float Delta)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Blue, TEXT("HANDLETIMESCALE"));
+
 	if (bGG)
 	{
-		bReturn = false;
+		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, TEXT("ggggg"));
+		return;
 	}
 
-	if (bReturn && UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 1.0f)
+	// Recovery timescale interpolation
+	bool bRecovering = false;
+	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+	if (bReturn && TimeDilat < 1.0f)
 	{
 		// ..Rise timescale back to 1
-		float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
 		float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed);
 		SetTimeScale(TimeT);
+		bRecovering = true;
+		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, TEXT("recovering.."));
 	}
 
+
+	// 'Natural' scaling by distance between fighers
+	if (!bReturn && !bRecovering && PlayersAccountedFor())
+	{
+		float TargetTimeScale = 1.0f;
+		float FightDistance = FVector::Dist(
+			LocalPlayer->GetActorLocation(), OpponentPlayer->GetActorLocation());
+		if (FightDistance <= 20000.0f)
+		{
+			TargetTimeScale = FMath::Clamp((FMath::Sqrt(FightDistance) * 0.0222f), 0.618f, 1.0f);
+			float TimeLerp = FMath::FInterpConstantTo(UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()), TargetTimeScale, Delta, TimescaleDropSpeed);
+			SetTimeScale(TimeLerp);
+		}
+
+		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("Timescale: %f"), UGameplayStatics::GetGlobalTimeDilation(this->GetWorld())));
+
+		/// Log timescale
+		/*float Ti = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("Ti: %f"), Ti));*/
+	}
+
+	// Return to 1nnocence
+	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) >= 1.0f)
+	{
+		SetTimeScale(1.0f);
+		bReturn = false;
+		bRecovering = false;
+	}
+
+	
+	// OLD SYSTEM
 	//// Handle gameover scenario - timing and score handouts
 	//if ( (bGG && (GGDelayTimer >= GGDelayTime) )
 	//	|| bMinorGG)
@@ -305,7 +347,7 @@ void AGMatch::GetPlayers()
 				{
 					// Check if controller is local
 					APlayerController* TempCont = Cast<APlayerController>(TempChar->GetController());
-					if (TempCont && TempCont->IsLocalController())
+					if (TempCont != nullptr && TempCont->IsLocalController())
 					{
 						LocalPlayer = Cast<AGammaCharacter>(TempChar);
 					}

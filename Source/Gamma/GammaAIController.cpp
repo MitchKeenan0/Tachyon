@@ -43,11 +43,11 @@ void AGammaAIController::Tick(float DeltaSeconds)
 			PrefireTime = MyCharacter->GetPrefireTime();
 		}
 
+		// Got a player - stunt on'em
 		if (Player != nullptr && Player->IsValidLowLevel())
 		{
-			// Got a player - stunt on'em
 			
-			// Debug AI to Player
+			// Finial line draw to Player
 			/*DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(), Player->GetActorLocation(),
 				FColor::White, false, -1.0f, 0, 3.0f);*/
 
@@ -56,7 +56,8 @@ void AGammaAIController::Tick(float DeltaSeconds)
 			{
 				Tactical(FVector::ZeroVector);
 			}
-			// Update prefire
+			
+			// Update attacks to be
 			if (PrefireTimer >= PrefireTime
 				&& MyCharacter->GetActiveFlash() != nullptr)
 			{
@@ -64,8 +65,8 @@ void AGammaAIController::Tick(float DeltaSeconds)
 			}
 
 			// Get some moves
-			if (TravelTimer >= 2.0f || 
-				(LocationTarget == FVector::ZeroVector))
+			if (TravelTimer >= 2.0f 
+				|| (LocationTarget == FVector::ZeroVector))
 			{
 				GetNewLocationTarget();
 				TravelTimer = 0.0f;
@@ -78,7 +79,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 				TravelTimer += DeltaSeconds;
 			}
 		}
-		else /// player is nullptr
+		else
 		{
 			// Locate "player" target
 			UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray); // FramingActor for brawl
@@ -122,30 +123,40 @@ bool AGammaAIController::ReactionTiming(float DeltaTime)
 }
 
 
+// TACTICAL ///////////////////////////////////////////////////////
 void AGammaAIController::Tactical(FVector Target)
 {
 	// Random number to evoke choice
 	float RandomDc = FMath::FRandRange(0.0f, 100.0f);
-	float HandBrakeVal = 25.0f;
+	float HandBrakeVal = 15.0f;
 	float ChargeVal = 50.0f;
 	float SecoVal = 70.0f;
 
+	// HANDBRAKE
 	if (RandomDc <= HandBrakeVal)
 	{
-		// Hand brake
-		FVector CurrentHeading = MyCharacter->GetCharacterMovement()->Velocity.GetSafeNormal();
-		FVector TargetHeading = (LocationTarget - MyPawn->GetActorLocation()).GetSafeNormal();
-		float DotToTarget = FVector::DotProduct(CurrentHeading, TargetHeading);
-		if (DotToTarget < -0.15f)
+		if (MyCharacter->GetCharge() > 0.0f)
 		{
-			MyCharacter->CheckPowerSlideOn();
+			// Moving on to charge...
 		}
 		else
 		{
-			MyCharacter->CheckPowerSlideOff();
+			// Hand brake
+			FVector CurrentHeading = MyCharacter->GetCharacterMovement()->Velocity.GetSafeNormal();
+			FVector TargetHeading = (LocationTarget - MyPawn->GetActorLocation()).GetSafeNormal();
+			float DotToTarget = FVector::DotProduct(CurrentHeading, TargetHeading);
+			if (DotToTarget < -0.15f)
+			{
+				MyCharacter->CheckPowerSlideOn();
+			}
+			else
+			{
+				MyCharacter->CheckPowerSlideOff();
+			}
 		}
 	}
 	
+	// CHARGE
 	if (RandomDc <= ChargeVal)
 	{
 		// Charge
@@ -159,16 +170,16 @@ void AGammaAIController::Tactical(FVector Target)
 			MyCharacter->CheckPowerSlideOn();
 		}
 	}
+
+	// COMBAT
 	else if (MyCharacter != nullptr)
 	{
-		bShootingSoon = true;
+		bShootingSoon = true; /// trivial?
+		
 		// Attack and Secondary
-		// 
 		FVector LocalForward = MyCharacter->GetAttackScene()->GetForwardVector();
 		FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
 		float VerticalDist = FMath::FloorToFloat(FMath::Clamp((ToPlayer.GetSafeNormal()).Z, -1.0f, 1.0f));
-		//float LateralDist = FMath::FloorToFloat(FMath::Clamp(ToPlayer.X, -1.0f, 1.0f));
-		
 
 		// Aim - leads to attacks and secondaries
 		float DotToPlayer = FVector::DotProduct(LocalForward.GetSafeNormal(), ToPlayer.GetSafeNormal());
@@ -203,27 +214,23 @@ void AGammaAIController::Tactical(FVector Target)
 				else
 				{
 					// Init Attack
-					if ((MyCharacter->GetActiveFlash() == nullptr) //  || bMultipleAttacks
+					if ((MyCharacter->GetActiveFlash() == nullptr)
 						&& ToPlayer.Size() <= PrimaryRange)
 					{
 						MyCharacter->InitAttack();
-						//PrefireTimer = 0.0f;
 					}
 					else
 					{
 						MyCharacter->ReleaseAttack();
 					}
-
-					
 				}
-
-				
 			}
 		}
 
 		bShootingSoon = false;
 	}
 }
+
 
 
 FVector AGammaAIController::GetNewLocationTarget()
@@ -260,6 +267,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 }
 
 
+
 void AGammaAIController::NavigateTo(FVector Target)
 {
 
@@ -278,7 +286,7 @@ void AGammaAIController::NavigateTo(FVector Target)
 		bCourseLayedIn = false;
 		return;
 	}
-	else if (GetWorld() && MoveTimer >= (1 / MovesPerSec))
+	else if (GetWorld()) //  && MoveTimer >= (1 / MovesPerSec)
 	{
 		// Use the handbrake if we're off target
 		float ValueX = 0.0f;
@@ -294,12 +302,12 @@ void AGammaAIController::NavigateTo(FVector Target)
 		if (LateralDistance != 0.0f)
 		{
 			ValueX = FMath::Clamp(ToTarget.X, -1.0f, 1.0f);
-			MyCharacter->SetX(ValueX * 0.7f);
+			MyCharacter->SetX(ValueX);
 		}
 		if (VerticalDistance != 0.0f)
 		{
 			ValueZ = FMath::Clamp(ToTarget.Z, -1.0f, 1.0f);
-			MyCharacter->SetZ(ValueZ * 0.7f);
+			MyCharacter->SetZ(ValueZ);
 		}
 
 
@@ -326,12 +334,12 @@ void AGammaAIController::NavigateTo(FVector Target)
 		{
 			if (ValueX < 0.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 10.0f);
+				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
 				SetControlRotation(Fint);
 			}
 			else if (ValueX > 0.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 10.0f);
+				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
 				SetControlRotation(Fint);
 			}
 			else
@@ -339,12 +347,12 @@ void AGammaAIController::NavigateTo(FVector Target)
 				// No Input - finish rotation
 				if (GetControlRotation().Yaw > 90.0f)
 				{
-					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 10.0f);
+					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
 					SetControlRotation(Fint);
 				}
 				else
 				{
-					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 10.0f);
+					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
 					SetControlRotation(Fint);
 				}
 			}
