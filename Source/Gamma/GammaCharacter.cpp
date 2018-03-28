@@ -924,7 +924,7 @@ void AGammaCharacter::ReleaseAttack()
 
 	if (AttackClass && (ActiveAttack == nullptr || bMultipleAttacks) && (Charge > 0.0f)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f)
-		&& ((PrefireTimer >= (PrefireTime * 0.2f) && ActiveFlash != nullptr)))
+		&& ((PrefireTimer >= (PrefireTime * 0.1f) && ActiveFlash != nullptr)))
 	{
 		// Clean up previous flash
 		if ((GetActiveFlash() != nullptr))
@@ -954,8 +954,13 @@ void AGammaCharacter::ReleaseAttack()
 				{
 
 					// Imbue with magnitude by PrefireTimer
-					float Magnitood = FMath::Clamp(PrefireTimer, 0.1f, 1.0f);
-					ActiveAttack->InitAttack(this, Magnitood, AimClampedInputZ);
+					float PrefireClamped = FMath::Clamp(PrefireTimer, 0.1f, 1.0f);
+					float PrefireCurve = FMath::Square(PrefireClamped) * 3.9f; /// curves out to max ~1
+
+					GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("PrefireClamped: %f"), PrefireClamped));
+					GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("PrefireCurve: %f"), PrefireCurve));
+					
+					ActiveAttack->InitAttack(this, PrefireCurve, AimClampedInputZ);
 
 					// Positional lock or naw
 					if (ActiveAttack->LockedEmitPoint)
