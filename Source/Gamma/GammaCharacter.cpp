@@ -924,7 +924,7 @@ void AGammaCharacter::ReleaseAttack()
 
 	if (AttackClass && (ActiveAttack == nullptr || bMultipleAttacks) && (Charge > 0.0f)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f)
-		&& ((PrefireTimer >= (PrefireTime * 0.1f) && ActiveFlash != nullptr)))
+		&& ((PrefireTimer >= (PrefireTime * 0.05f) && ActiveFlash != nullptr)))
 	{
 		// Clean up previous flash
 		if ((GetActiveFlash() != nullptr))
@@ -955,7 +955,8 @@ void AGammaCharacter::ReleaseAttack()
 
 					// Imbue with magnitude by PrefireTimer
 					float PrefireClamped = FMath::Clamp(PrefireTimer, 0.1f, 1.0f);
-					float PrefireCurve = FMath::Square(PrefireClamped) * 3.9f; /// curves out to max ~1
+					float PrefireCurve = FMath::Square(PrefireClamped) * 2.1f; /// curves out to max ~1
+					PrefireCurve = FMath::Clamp(PrefireCurve, 0.1f, 1.0f);
 
 					///GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("PrefireClamped: %f"), PrefireClamped));
 					///GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("PrefireCurve: %f"), PrefireCurve));

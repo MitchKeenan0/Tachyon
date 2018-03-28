@@ -32,11 +32,14 @@ void AGMatch::Tick(float DeltaTime)
 	}
 
 	// The show
-	if (!PlayersAccountedFor())
+	/*if (!PlayersAccountedFor())
 	{
 		GetPlayers();
-	}
-	else if (Role == ROLE_Authority)
+	}*/
+
+	GetPlayers();
+
+	if (Role == ROLE_Authority)
 	{
 		HandleTimeScale(DeltaTime);
 	}
