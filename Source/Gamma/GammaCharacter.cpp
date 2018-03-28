@@ -957,8 +957,8 @@ void AGammaCharacter::ReleaseAttack()
 					float PrefireClamped = FMath::Clamp(PrefireTimer, 0.1f, 1.0f);
 					float PrefireCurve = FMath::Square(PrefireClamped) * 3.9f; /// curves out to max ~1
 
-					GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("PrefireClamped: %f"), PrefireClamped));
-					GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("PrefireCurve: %f"), PrefireCurve));
+					///GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("PrefireClamped: %f"), PrefireClamped));
+					///GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("PrefireCurve: %f"), PrefireCurve));
 					
 					ActiveAttack->InitAttack(this, PrefireCurve, AimClampedInputZ);
 

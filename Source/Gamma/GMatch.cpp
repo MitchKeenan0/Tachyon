@@ -103,7 +103,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 				bMinorGG = true;
 				SetTimeScale((1 - GGTimescale) * 0.15f);
 				bReturn = true;
-				GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Blue, TEXT(">>--hit->"));
+				///GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Blue, TEXT(">>--hit->"));
 			}
 		}
 	}
@@ -119,11 +119,11 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 
 void AGMatch::HandleTimeScale(float Delta)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Blue, TEXT("HANDLETIMESCALE"));
+	///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Blue, TEXT("HANDLETIMESCALE"));
 
 	if (bGG)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, TEXT("ggggg"));
+		///GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, TEXT("ggggg"));
 		return;
 	}
 
@@ -136,7 +136,7 @@ void AGMatch::HandleTimeScale(float Delta)
 		float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed);
 		SetTimeScale(TimeT);
 		bRecovering = true;
-		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, TEXT("recovering.."));
+		///GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, TEXT("recovering.."));
 	}
 
 
@@ -153,7 +153,7 @@ void AGMatch::HandleTimeScale(float Delta)
 			SetTimeScale(TimeLerp);
 		}
 
-		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("Timescale: %f"), UGameplayStatics::GetGlobalTimeDilation(this->GetWorld())));
+		///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("Timescale: %f"), UGameplayStatics::GetGlobalTimeDilation(this->GetWorld())));
 
 		/// Log timescale
 		/*float Ti = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
