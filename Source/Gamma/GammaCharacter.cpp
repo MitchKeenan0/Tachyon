@@ -938,6 +938,7 @@ void AGammaCharacter::ReleaseAttack()
 		float AimClampedInputZ = FMath::Clamp(InputZ * 10.0f, -1.0f, 1.0f);
 		FVector FirePosition = AttackScene->GetComponentLocation();
 		FVector ToTarget = (PositionTwo - PositionOne);
+		ToTarget.Z = 0.0f;
 		FVector LocalForward = ToTarget.GetSafeNormal(); // AttackScene->GetForwardVector().ProjectOnToNormal(ToTarget.GetSafeNormal());
 		FRotator FireRotation = LocalForward.Rotation() + FRotator(AimClampedInputZ * 21.0f, 0.0f, 0.0f); // * 21.0f
 		FActorSpawnParameters SpawnParams;
