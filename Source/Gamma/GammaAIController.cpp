@@ -339,12 +339,12 @@ void AGammaAIController::NavigateTo(FVector Target)
 		{
 			if (ValueX < 0.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
+				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 20.0f);
 				SetControlRotation(Fint);
 			}
 			else if (ValueX > 0.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
+				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 20.0f);
 				SetControlRotation(Fint);
 			}
 			else
@@ -352,12 +352,12 @@ void AGammaAIController::NavigateTo(FVector Target)
 				// No Input - finish rotation
 				if (GetControlRotation().Yaw > 90.0f)
 				{
-					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
+					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 20.0f);
 					SetControlRotation(Fint);
 				}
 				else
 				{
-					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
+					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 20.0f);
 					SetControlRotation(Fint);
 				}
 			}

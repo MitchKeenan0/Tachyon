@@ -289,7 +289,8 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 		}
 
 		// Apply force to it
-		if (HitMeshComponent != nullptr)
+		if (HitMeshComponent != nullptr
+			&& HitMeshComponent->IsSimulatingPhysics())
 		{
 			HitMeshComponent->AddImpulse(AwayFromShooter * KnockScalar);
 		}

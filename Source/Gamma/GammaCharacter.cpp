@@ -182,7 +182,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	//UpdateAnimation();
 
 	// CAMERA UPDATE
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.1f)
 	{
 		UpdateCamera(DeltaTime);
 	}
@@ -196,12 +196,12 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		float TravelDirection = FMath::Clamp(InputX, -1.0f, 1.0f);
 		if (TravelDirection < 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 15.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 20.0f);
 			Controller->SetControlRotation(Fint);
 		}
 		else if (TravelDirection > 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 15.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 20.0f);
 			Controller->SetControlRotation(Fint);
 		}
 		else
@@ -209,12 +209,12 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			// No Input - finish rotation
 			if (Controller->GetControlRotation().Yaw > 90.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 15.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 20.0f);
 				Controller->SetControlRotation(Fint);
 			}
 			else
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 15.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 20.0f);
 				Controller->SetControlRotation(Fint);
 			}
 		}
@@ -251,6 +251,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 	// Start by checking valid actor
 	AActor* Actor1 = nullptr;
 	AActor* Actor2 = nullptr;
+	
 	if (!this->ActorHasTag("Spectator"))
 	{
 		Actor1 = this;
@@ -273,6 +274,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					&& !FramingActors[i]->ActorHasTag("Land"))
 				{
 					Actor1 = FramingActors[i];
+					break;
 				}
 			}
 		}
@@ -388,7 +390,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Positions done
 			// Find the midpoint, leaning to actor one
-			Midpoint = PositionOne + ((PositionTwo - PositionOne) * 0.33f);
+			Midpoint = PositionOne + ((PositionTwo - PositionOne) * 0.39f);
 			if (Midpoint.Size() > 0.001f)
 			{
 				// Distance
@@ -407,7 +409,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					FVector InputVector = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 					FVector VelNormal = GetCharacterMovement()->Velocity.GetSafeNormal();
 					float DotScale = FMath::Abs(FVector::DotProduct(InputVector, VelNormal));
-					CameraTiltX = -0.001 + FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue * DotScale, UnDilatedDeltaTime, CameraTiltSpeed); // pitch
+					CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue * DotScale, UnDilatedDeltaTime, CameraTiltSpeed); // pitch
 					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * CameraTiltValue * DotScale, UnDilatedDeltaTime, CameraTiltSpeed); // yaw
 				}
 				else

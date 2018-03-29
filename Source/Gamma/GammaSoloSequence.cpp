@@ -179,7 +179,7 @@ void AGammaSoloSequence::SpawnDenizen()
 			
 			AGammaAIController* DenizenController = Cast<AGammaAIController>(
 				GetWorld()->SpawnActor<AActor>(
-					AIControllerClass, SpawnLoc, GetActorRotation(), SpawnParams));
+					AIControllerClass, FVector::ZeroVector, GetActorRotation(), SpawnParams));
 
 			if (NewDenizen != nullptr
 				&& DenizenController != nullptr)
