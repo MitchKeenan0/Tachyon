@@ -174,9 +174,12 @@ void AGammaSoloSequence::SpawnDenizen()
 		if (PlayerSpawning != nullptr)
 		{
 			AGammaCharacter* NewDenizen = Cast<AGammaCharacter>(
-				GetWorld()->SpawnActor<AActor>(PlayerSpawning, SpawnLoc, GetActorRotation(), SpawnParams));
+				GetWorld()->SpawnActor<AActor>(
+					PlayerSpawning, SpawnLoc, GetActorRotation(), SpawnParams));
+			
 			AGammaAIController* DenizenController = Cast<AGammaAIController>(
-				GetWorld()->SpawnActor<AActor>(AIControllerClass, SpawnLoc, GetActorRotation(), SpawnParams));
+				GetWorld()->SpawnActor<AActor>(
+					AIControllerClass, SpawnLoc, GetActorRotation(), SpawnParams));
 
 			if (NewDenizen != nullptr
 				&& DenizenController != nullptr)

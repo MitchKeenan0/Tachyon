@@ -133,14 +133,11 @@ void AGammaAIController::Tactical(FVector Target)
 	float ChargeVal = 50.0f;
 	float SecoVal = 70.0f;
 
+
 	// HANDBRAKE
 	if (RandomDc <= HandBrakeVal)
 	{
 		if (MyCharacter->GetCharge() > 0.0f)
-		{
-			// Moving on to charge...
-		}
-		else
 		{
 			// Hand brake
 			FVector CurrentHeading = MyCharacter->GetCharacterMovement()->Velocity.GetSafeNormal();
@@ -155,13 +152,17 @@ void AGammaAIController::Tactical(FVector Target)
 				MyCharacter->CheckPowerSlideOff();
 			}
 		}
+		else
+		{
+			// Moving on to charge...
+		}
 	}
 	
 	// CHARGE
 	if (RandomDc <= ChargeVal)
 	{
 		// Charge
-		if (MyCharacter->GetCharge() <= 3.0f)
+		if (MyCharacter->GetCharge() <= 3.0f) /// dirty hardcode! ChargeMax unreachable until Epic fix
 		{
 			MyCharacter->CheckPowerSlideOff();
 			MyCharacter->RaiseCharge();
@@ -296,6 +297,7 @@ void AGammaAIController::NavigateTo(FVector Target)
 		// Compare movement priorites by distance
 		float VerticalDistance = FMath::Abs(ToTarget.Z);
 		float LateralDistance = FMath::Abs(ToTarget.X);
+		float LongitudeDistance = FMath::Abs(ToTarget.Y);
 
 		//bool bMoved = false;
 
@@ -305,9 +307,11 @@ void AGammaAIController::NavigateTo(FVector Target)
 			ValueX = FMath::Clamp(ToTarget.X, -1.0f, 1.0f);
 			MyCharacter->SetX(ValueX);
 		}
-		if (VerticalDistance != 0.0f)
+		if (VerticalDistance != 0.0f
+			|| LongitudeDistance != 0.0f)
 		{
 			ValueZ = FMath::Clamp(ToTarget.Z, -1.0f, 1.0f);
+
 			MyCharacter->SetZ(ValueZ);
 		}
 

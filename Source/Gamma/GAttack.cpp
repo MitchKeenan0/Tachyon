@@ -208,7 +208,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 	
 	FVector Start = GetActorLocation() + GetActorForwardVector();
 	FVector End = Start + (RaycastVector * RaycastHitRange);
-	End.Y = 0.0f; /// strange y-axis drift
+	//End.Y = 0.0f; /// strange y-axis drift
 	
 	FHitResult Hit;
 	

@@ -280,7 +280,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		// Let's go
 		if (Actor1 != nullptr && Actor1->IsValidLowLevelFast() && !Actor1->IsUnreachable())
 		{
-			float UnDilatedDeltaTime = DeltaTime / UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+			float UnDilatedDeltaTime = (DeltaTime / UGameplayStatics::GetGlobalTimeDilation(GetWorld())) * CameraMoveSpeed;
 
 			// Framing up first actor
 			FVector Actor1Velocity = Actor1->GetVelocity();
@@ -401,13 +401,13 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength, 
 					TargetLengthClamped, UnDilatedDeltaTime, CameraMoveSpeed * 5.0f);
 					
-				// Camera tilt
+				//// Camera tilt
 				if ( !ActorHasTag("Spectator") )
 				{
 					FVector InputVector = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 					FVector VelNormal = GetCharacterMovement()->Velocity.GetSafeNormal();
 					float DotScale = FMath::Abs(FVector::DotProduct(InputVector, VelNormal));
-					CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue * DotScale, UnDilatedDeltaTime, CameraTiltSpeed); // pitch
+					CameraTiltX = -0.001 + FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue * DotScale, UnDilatedDeltaTime, CameraTiltSpeed); // pitch
 					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * CameraTiltValue * DotScale, UnDilatedDeltaTime, CameraTiltSpeed); // yaw
 				}
 				else
@@ -427,9 +427,21 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				Midpoint.X -= (CameraTiltZ * (DesiredCameraDistance / 6));
 				Midpoint.Z -= (CameraTiltX * (DesiredCameraDistance / 6));
 
+				// New hawtness for handling y/depth movement
+				//FVector MidpointPerpendicular = Midpoint.RotateAngleAxis(90.0f, FVector::UpVector);
+				//MidpointPerpendicular.Z = 0.0f;
+				/*FVector ToMidpoint = (Midpoint - CameraBoom->GetComponentLocation()).GetSafeNormal();
+				SideViewCameraComponent->SetWorldRotation((ToMidpoint).Rotation());*/
+
 				// Make it so
 				CameraBoom->SetWorldLocation(Midpoint);
 				CameraBoom->TargetArmLength = DesiredCameraDistance;
+
+				/*
+				Out_Parallel = VectorToSplit.ProjectOnTo(ReferenceVector);
+				//vectorApar + vectorAper = vectorA
+				Out_Perpendicular = VectorToSplit - Out_Parallel;
+				*/
 			}
 		}
 	}
@@ -606,7 +618,7 @@ void AGammaCharacter::MoveUp(float Value)
 			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
 			//GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			//GetCharacterMovement()->MaxAcceleration = MoveByDot;
-			AddMovementInput(FVector(0.0f, -1.0f, 1.0f), InputZ * MoveByDot);
+			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot);
 		}
 	}
 
@@ -705,6 +717,8 @@ void AGammaCharacter::NewMoveKick()
 			* (1.0f + FMath::Abs(x))
 			* TimeDelta;
 		//KickVector = KickVector.GetClampedToSize(0.0f, MaxMoveSpeed);
+		KickVector.Z *= 0.7f;
+		KickVector.Y = 0.0f;
 		GetCharacterMovement()->AddImpulse(KickVector);
 
 		bMoved = false;
@@ -934,13 +948,15 @@ void AGammaCharacter::ReleaseAttack()
 			//ClearFlash();
 		}
 
-		// Direction & setting up
+		// Blend of input and Y-depth for Shooting Direction
 		float AimClampedInputZ = FMath::Clamp(InputZ * 10.0f, -1.0f, 1.0f);
 		FVector FirePosition = AttackScene->GetComponentLocation();
-		FVector ToTarget = (PositionTwo - PositionOne);
-		ToTarget.Z = 0.0f;
-		FVector LocalForward = ToTarget.GetSafeNormal(); // AttackScene->GetForwardVector().ProjectOnToNormal(ToTarget.GetSafeNormal());
-		FRotator FireRotation = LocalForward.Rotation() + FRotator(AimClampedInputZ * 21.0f, 0.0f, 0.0f); // * 21.0f
+		
+		FVector ToTarget = (PositionTwo - PositionOne).GetSafeNormal();
+		ToTarget.Z = 0.0f; /// leave this to the shooter
+		FVector LocalForward = AttackScene->GetForwardVector() + ToTarget; // ToTarget.GetSafeNormal(); // AttackScene->GetForwardVector().ProjectOnToNormal(ToTarget.GetSafeNormal());
+		
+		FRotator FireRotation = LocalForward.Rotation() + FRotator(AimClampedInputZ * 21.0f, 0.0f, 0.0f);
 		FActorSpawnParameters SpawnParams;
 
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Attack read InputZ: %f"), InputZ));
