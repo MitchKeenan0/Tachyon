@@ -89,17 +89,18 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	SetLifeSpan(DurationTime);
 
 	// Scale HitsPerSecond by Magnitude
-	HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 5.0f, 2000.0f);
+	HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 5.0f, 500.0f);
 
 	//// Last-second update to direction after fire
 	float DirRecalc = ShotDirection * ShootingAngle;
 	if (AngleSweep != 0.0f)
 	{
 		DirRecalc *= -1.68f;
+		FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
+		FRotator FireRotation = LocalForward.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
+		SetActorRotation(FireRotation);
 	}
-	FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
-	FRotator FireRotation = LocalForward.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
-	SetActorRotation(FireRotation);
+	
 
 	// Projectile movement
 	if (ProjectileSpeed > 0.0f)
@@ -137,6 +138,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		if (Chara)
 		{
 			float RecoilScalar = KineticForce * 1.5f;
+			FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
 			FRotator RecoilRotator = LocalForward.Rotation() + FRotator(ShotDirection * ShootingAngle, 0.0f, 0.0f);
 			Chara->GetCharacterMovement()->AddImpulse(RecoilRotator.Vector() * RecoilScalar);
 		}

@@ -606,7 +606,7 @@ void AGammaCharacter::MoveUp(float Value)
 			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
 			//GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			//GetCharacterMovement()->MaxAcceleration = MoveByDot;
-			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot);
+			AddMovementInput(FVector(0.0f, -1.0f, 1.0f), InputZ * MoveByDot);
 		}
 	}
 
@@ -937,7 +937,8 @@ void AGammaCharacter::ReleaseAttack()
 		// Direction & setting up
 		float AimClampedInputZ = FMath::Clamp(InputZ * 10.0f, -1.0f, 1.0f);
 		FVector FirePosition = AttackScene->GetComponentLocation();
-		FVector LocalForward = AttackScene->GetForwardVector();
+		FVector ToTarget = (PositionTwo - PositionOne);
+		FVector LocalForward = ToTarget.GetSafeNormal(); // AttackScene->GetForwardVector().ProjectOnToNormal(ToTarget.GetSafeNormal());
 		FRotator FireRotation = LocalForward.Rotation() + FRotator(AimClampedInputZ * 21.0f, 0.0f, 0.0f); // * 21.0f
 		FActorSpawnParameters SpawnParams;
 

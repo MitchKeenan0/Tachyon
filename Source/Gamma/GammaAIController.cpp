@@ -111,7 +111,8 @@ void AGammaAIController::Tick(float DeltaSeconds)
 bool AGammaAIController::ReactionTiming(float DeltaTime)
 {
 	bool Result = false;
-	ReactionTimer += DeltaTime;
+	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+	ReactionTimer += (DeltaTime / TimeDilat);
 	if (ReactionTimer >= ReactionTime)
 	{
 		Result = true;
