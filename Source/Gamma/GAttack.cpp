@@ -267,7 +267,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 	FVector AwayFromShooter = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 	TimeDilat = FMath::Clamp(TimeDilat, 0.75f, 1.0f);
-	float KnockScalar = FMath::Abs(KineticForce) * TimeDilat;
+	float KnockScalar = FMath::Abs(KineticForce); //  * TimeDilat
 
 	// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
