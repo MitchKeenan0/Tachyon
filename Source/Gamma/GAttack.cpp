@@ -386,7 +386,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 				ApplyKnockback(HitActor);
 				bLethal = false;
 				bHit = true;
-				return;
+				//return;
 			}
 		}
 	}

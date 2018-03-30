@@ -151,7 +151,7 @@ void AGMatch::HandleTimeScale(float Delta)
 			LocalPlayer->GetActorLocation(), OpponentPlayer->GetActorLocation());
 		if (FightDistance <= 20000.0f)
 		{
-			TargetTimeScale = FMath::Clamp((FMath::Sqrt(FightDistance) * 0.0222f), 0.5f, 1.0f);
+			TargetTimeScale = FMath::Clamp((FMath::Sqrt(FightDistance) * 0.0222f), 0.3f, 1.0f);
 			float TimeLerp = FMath::FInterpConstantTo(UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()), TargetTimeScale, Delta, TimescaleDropSpeed);
 			SetTimeScale(TimeLerp);
 		}

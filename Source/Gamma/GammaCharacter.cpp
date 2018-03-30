@@ -393,6 +393,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			Midpoint = PositionOne + ((PositionTwo - PositionOne) * 0.39f);
 			if (Midpoint.Size() > 0.001f)
 			{
+
 				// Distance
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo);
 				float VerticalDist = FMath::Abs((PositionTwo - PositionOne).Z);
@@ -400,8 +401,14 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 420.0f) * CameraDistance,
 					CameraMinimumDistance,
 					CameraMaxDistance);
+				if (PrefireTimer > 0.0f)
+				{
+					float PrefireScalarRaw = FMath::Sqrt(PrefireTimer * 0.618f);
+					float PrefireScalarClamped = FMath::Clamp(PrefireScalarRaw, 0.01f, 0.99f);
+					TargetLengthClamped *= (1 - PrefireScalarClamped);
+				}
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength, 
-					TargetLengthClamped, UnDilatedDeltaTime, CameraMoveSpeed * 5.0f);
+					TargetLengthClamped, UnDilatedDeltaTime, CameraMoveSpeed * 1.5f);
 					
 				//// Camera tilt
 				if ( !ActorHasTag("Spectator") )
@@ -938,9 +945,15 @@ void AGammaCharacter::ReleaseAttack()
 	// Less-clean burn
 	MoveParticles->bSuppressSpawning = false;
 
+	if (ActiveAttack != nullptr)
+	{
+		NullifyAttack();
+		return;
+	}
+
 	if (AttackClass && (ActiveAttack == nullptr || bMultipleAttacks) && (Charge > 0.0f)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f)
-		&& ((PrefireTimer >= (PrefireTime * 0.05f) && ActiveFlash != nullptr)))
+		&& ((PrefireTimer >= 0.02f && ActiveFlash != nullptr)))
 	{
 		// Clean up previous flash
 		if ((GetActiveFlash() != nullptr))
@@ -957,7 +970,7 @@ void AGammaCharacter::ReleaseAttack()
 		FVector ToTarget = (PositionTwo - PositionOne).GetSafeNormal();
 		ToTarget.Z = 0.0f; /// leave this to the shooter
 		FVector LocalForward = AttackScene->GetForwardVector() + ToTarget; // ToTarget.GetSafeNormal(); // AttackScene->GetForwardVector().ProjectOnToNormal(ToTarget.GetSafeNormal());
-		
+		LocalForward.Y = 0.0f;
 		FRotator FireRotation = LocalForward.Rotation() + FRotator(AimClampedInputZ * 21.0f, 0.0f, 0.0f);
 		FActorSpawnParameters SpawnParams;
 
