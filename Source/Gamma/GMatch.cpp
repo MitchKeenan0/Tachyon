@@ -31,14 +31,10 @@ void AGMatch::Tick(float DeltaTime)
 		GGDelayTimer += DeltaTime;
 	}
 
-	// The show
-	/*if (!PlayersAccountedFor())
-	{
-		GetPlayers();
-	}*/
-
+	// Maintain fix on players
 	GetPlayers();
 
+	// Timescaling
 	if (Role == ROLE_Authority)
 	{
 		HandleTimeScale(DeltaTime);
@@ -104,7 +100,9 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 
 				// Just a hit
 				bMinorGG = true;
-				SetTimeScale((1 - GGTimescale) * 0.15f);
+				LocalPlayer->CustomTimeDilation = (1 - GGTimescale) * 0.15f;
+				OpponentPlayer->CustomTimeDilation = (1 - GGTimescale) * 0.15f;
+				//SetTimeScale((1 - GGTimescale) * 0.15f);
 				bReturn = true;
 				///GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Blue, TEXT(">>--hit->"));
 			}
@@ -144,24 +142,24 @@ void AGMatch::HandleTimeScale(float Delta)
 
 
 	// 'Natural' scaling by distance between fighters
-	if (!bReturn && !bRecovering && PlayersAccountedFor())
-	{
-		float TargetTimeScale = 1.0f;
-		float FightDistance = FVector::Dist(
-			LocalPlayer->GetActorLocation(), OpponentPlayer->GetActorLocation());
-		if (FightDistance <= 20000.0f)
-		{
-			TargetTimeScale = FMath::Clamp((FMath::Sqrt(FightDistance) * 0.0222f), 0.6666f, 1.0f);
-			float TimeLerp = FMath::FInterpConstantTo(UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()), TargetTimeScale, Delta, TimescaleDropSpeed);
-			SetTimeScale(TimeLerp);
-		}
+	//if (!bReturn && !bRecovering && PlayersAccountedFor())
+	//{
+	//	float TargetTimeScale = 1.0f;
+	//	float FightDistance = FVector::Dist(
+	//		LocalPlayer->GetActorLocation(), OpponentPlayer->GetActorLocation());
+	//	if (FightDistance <= 20000.0f)
+	//	{
+	//		TargetTimeScale = FMath::Clamp((FMath::Sqrt(FightDistance) * 0.0222f), 0.6666f, 1.0f);
+	//		float TimeLerp = FMath::FInterpConstantTo(UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()), TargetTimeScale, Delta, TimescaleDropSpeed);
+	//		SetTimeScale(TimeLerp);
+	//	}
 
-		///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("Timescale: %f"), UGameplayStatics::GetGlobalTimeDilation(this->GetWorld())));
+	//	///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("Timescale: %f"), UGameplayStatics::GetGlobalTimeDilation(this->GetWorld())));
 
-		/// Log timescale
-		/*float Ti = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("Ti: %f"), Ti));*/
-	}
+	//	/// Log timescale
+	//	/*float Ti = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+	//	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("Ti: %f"), Ti));*/
+	//}
 
 	// Return to 1nnocence
 	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) >= 1.0f)

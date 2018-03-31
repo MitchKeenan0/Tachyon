@@ -192,6 +192,28 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	if (Controller != nullptr)
 	{
 
+		// Personal Timescale
+		float MyTimeDilation = CustomTimeDilation;
+		if (MyTimeDilation < 1.0f)
+		{
+			if (GetActiveFlash() != nullptr)
+			{
+				GetActiveFlash()->CustomTimeDilation = MyTimeDilation;
+			}
+			if (ActiveAttack != nullptr)
+			{
+				ActiveAttack->CustomTimeDilation = MyTimeDilation;
+			}
+			if (ActiveSecondary != nullptr)
+			{
+				ActiveSecondary->CustomTimeDilation = MyTimeDilation;
+			}
+
+			// Recovery
+			float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, DeltaTime, (FMath::Square(MyTimeDilation) * 5.0f));
+			CustomTimeDilation = ReturnTime;
+		}
+
 		// Set rotation so character faces direction of travel
 		float TravelDirection = FMath::Clamp(InputX, -1.0f, 1.0f);
 		if (TravelDirection < 0.0f)
@@ -236,10 +258,10 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	if (GetCharacterMovement() && !bMoved) //  HasAuthority() && 
 	{
 		// Clamp velocity
-		float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+		/*float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
 		float TimeScalar = FMath::Abs(SlowmoMoveBoost * (1 / TimeDilat));
 		GetCharacterMovement()->Velocity = 
-			GetCharacterMovement()->Velocity.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier * TimeScalar);
+			GetCharacterMovement()->Velocity.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier * TimeScalar);*/
 
 		MoveTimer += GetWorld()->DeltaTimeSeconds;
 	}
@@ -282,16 +304,16 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		// Let's go
 		if (Actor1 != nullptr && Actor1->IsValidLowLevelFast() && !Actor1->IsUnreachable())
 		{
-			float UnDilatedDeltaTime = (DeltaTime / UGameplayStatics::GetGlobalTimeDilation(GetWorld())) * CameraMoveSpeed;
-			float TimeDilationScalar = (1.0f / UGameplayStatics::GetGlobalTimeDilation(GetWorld())) + 0.01f;
-			float TimeDilationScalarClamped = FMath::Clamp(TimeDilationScalar, 0.1f, 1.0f);
+			float UnDilatedDeltaTime = (DeltaTime / CustomTimeDilation) * CameraMoveSpeed; /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
+			float TimeDilationScalar = (1.0f / CustomTimeDilation) + 0.01f; /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
+			float TimeDilationScalarClamped = FMath::Clamp(TimeDilationScalar, 0.5f, 1.5f);
 
 			// Framing up first actor
 			FVector Actor1Velocity = Actor1->GetVelocity();
 			Actor1Velocity.Z *= 0.9f; /// vertical kerning
 			Actor1Velocity.X *= 0.9f; /// lateral kerning
 			
-			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase * TimeDilationScalarClamped);
+			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, UnDilatedDeltaTime, CameraMoveSpeed);
 			float CameraMinimumDistance = 1000.0f;
 			float CameraMaxDistance = 20000.0f;
@@ -354,10 +376,10 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					// Framing up with second actor
 					FVector Actor2Velocity = Actor2->GetVelocity();
 					Actor2Velocity.Z *= 0.9f;
-					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(3000.0f);
+					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(3000.0f * CustomTimeDilation);
 
 					// Declare Position Two
-					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase * TimeDilationScalarClamped);
+					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase * CustomTimeDilation); // * TimeDilationScalarClamped
 					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, UnDilatedDeltaTime, CameraMoveSpeed);
 				}
 				else
@@ -374,11 +396,11 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 3.0f;
 
 				// Clamp to max size
-				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(7000.0f);
+				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(5000.0f * CustomTimeDilation);
 
 				// Declare Position Two
 				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity);
-				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, UnDilatedDeltaTime, CameraMoveSpeed);
+				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, CameraMoveSpeed); // UnDilatedDeltaTime
 				
 				// Distance controls
 				CameraMaxDistance = 10000.0f;
@@ -536,7 +558,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	
 	// Main update
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.1f)
+	if (CustomTimeDilation > 0.1f) /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
 	{
 		UpdateCharacter(DeltaSeconds);
 	}
@@ -577,7 +599,7 @@ void AGammaCharacter::MoveRight(float Value)
 
 	if ((MoveTimer >= (1 / MovesPerSecond))
 		&& !bSliding
-		&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) >= 0.3f)
+		&& CustomTimeDilation > 0.1f) /// UGameplayStatics::GetGlobalTimeDilation(GetWorld()
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
@@ -615,7 +637,7 @@ void AGammaCharacter::MoveUp(float Value)
 	// Abide moves per second
 	if ((MoveTimer >= (1 / MovesPerSecond))
 		&& !bSliding
-		&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) >= 0.3f)
+		&& CustomTimeDilation > 0.1f) /// UGameplayStatics::GetGlobalTimeDilation(GetWorld()) 
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = (GetMovementComponent()->Velocity).GetSafeNormal();
@@ -647,7 +669,7 @@ void AGammaCharacter::ServerSetX_Implementation(float Value)
 	// Get delta move value
 	float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(x));
 	float ValClamped = FMath::Clamp(DeltaVal * 0.68f, 0.1f, 1.0f);
-	float TimeScaleInfluence = 1 + FMath::Abs(1 - UGameplayStatics::GetGlobalTimeDilation(GetWorld()));
+	float TimeScaleInfluence = 1 + FMath::Abs(1 - CustomTimeDilation); /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
 	InputX = Value + (Value * ValClamped) * TimeScaleInfluence;
 
 	// Speed and Acceleration
@@ -680,7 +702,7 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 	// Get move input Delta
 	float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(z));
 	float ValClamped = FMath::Clamp(DeltaVal * 0.68f, 0.1f, 1.0f);
-	float TimeScaleInfluence = 1 + FMath::Abs(1 - UGameplayStatics::GetGlobalTimeDilation(GetWorld()));
+	float TimeScaleInfluence = 1 + FMath::Abs(1 - CustomTimeDilation); /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
 	InputZ = Value + (Value * ValClamped) * TimeScaleInfluence;
 
 	// Speed and Acceleration
