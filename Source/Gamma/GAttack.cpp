@@ -97,6 +97,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	{
 		DirRecalc *= -1.68f;
 		FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
+		LocalForward.Y = 0.0f;
 		FRotator FireRotation = LocalForward.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
 		SetActorRotation(FireRotation);
 	}

@@ -283,13 +283,15 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		if (Actor1 != nullptr && Actor1->IsValidLowLevelFast() && !Actor1->IsUnreachable())
 		{
 			float UnDilatedDeltaTime = (DeltaTime / UGameplayStatics::GetGlobalTimeDilation(GetWorld())) * CameraMoveSpeed;
+			float TimeDilationScalar = (1.0f / UGameplayStatics::GetGlobalTimeDilation(GetWorld())) + 0.01f;
+			float TimeDilationScalarClamped = FMath::Clamp(TimeDilationScalar, 0.1f, 1.0f);
 
 			// Framing up first actor
 			FVector Actor1Velocity = Actor1->GetVelocity();
 			Actor1Velocity.Z *= 0.9f; /// vertical kerning
 			Actor1Velocity.X *= 0.9f; /// lateral kerning
 			
-			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase);
+			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase * TimeDilationScalarClamped);
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, UnDilatedDeltaTime, CameraMoveSpeed);
 			float CameraMinimumDistance = 1000.0f;
 			float CameraMaxDistance = 20000.0f;
@@ -355,7 +357,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(3000.0f);
 
 					// Declare Position Two
-					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase);
+					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase * TimeDilationScalarClamped);
 					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, UnDilatedDeltaTime, CameraMoveSpeed);
 				}
 				else
@@ -375,7 +377,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(7000.0f);
 
 				// Declare Position Two
-				FVector VelocityFraming = Actor1->GetActorLocation() + Actor1Velocity;
+				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity);
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, UnDilatedDeltaTime, CameraMoveSpeed);
 				
 				// Distance controls
@@ -403,14 +405,14 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					CameraMaxDistance);
 				if (PrefireTimer > 0.0f)
 				{
-					float PrefireScalarRaw = FMath::Sqrt(PrefireTimer * 0.618f);
+					float PrefireScalarRaw = FMath::Sqrt(PrefireTimer * 0.618f) / (PrefireTime * 2.0f);
 					float PrefireScalarClamped = FMath::Clamp(PrefireScalarRaw, 0.01f, 0.99f);
 					TargetLengthClamped *= (1 - PrefireScalarClamped);
 				}
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength, 
 					TargetLengthClamped, UnDilatedDeltaTime, CameraMoveSpeed * 1.5f);
 					
-				//// Camera tilt
+				// Camera tilt
 				if ( !ActorHasTag("Spectator") )
 				{
 					FVector InputVector = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
@@ -899,15 +901,15 @@ void AGammaCharacter::InitAttack()
 	MoveParticles->bSuppressSpawning = true;
 
 	bool bFireAllowed = (bMultipleAttacks || (!bMultipleAttacks && ActiveAttack == nullptr));
-	if (bFireAllowed && (Charge > 0.0f) && FlashClass && (ActiveFlash == nullptr)
-		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f))
+	if (bFireAllowed && (Charge > 0.0f) && FlashClass
+		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.05f))
 	{
-		// Clean up previous attack
-		if (ActiveAttack && !bMultipleAttacks)
-		{
-			ActiveAttack->Destroy();
-			ActiveAttack = nullptr;
-		}
+		//// Clean up previous attack
+		//if (ActiveAttack && !bMultipleAttacks)
+		//{
+		//	ActiveAttack->Destroy();
+		//	ActiveAttack = nullptr;
+		//}
 
 		// Direction & setting up
 		FVector FirePosition = AttackScene->GetComponentLocation();
@@ -952,7 +954,7 @@ void AGammaCharacter::ReleaseAttack()
 	}
 
 	if (AttackClass && (ActiveAttack == nullptr || bMultipleAttacks) && (Charge > 0.0f)
-		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f)
+		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.05f)
 		&& ((PrefireTimer >= 0.02f && ActiveFlash != nullptr)))
 	{
 		// Clean up previous flash
