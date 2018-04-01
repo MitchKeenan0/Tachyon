@@ -112,7 +112,7 @@ bool AGammaAIController::ReactionTiming(float DeltaTime)
 {
 	bool Result = false;
 	float TimeDilat = MyCharacter->CustomTimeDilation;
-	ReactionTimer += (DeltaTime / TimeDilat);
+	ReactionTimer += (DeltaTime * TimeDilat);
 	if (ReactionTimer >= ReactionTime)
 	{
 		Result = true;

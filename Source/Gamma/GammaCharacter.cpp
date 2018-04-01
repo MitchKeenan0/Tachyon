@@ -199,18 +199,21 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			if (GetActiveFlash() != nullptr)
 			{
 				GetActiveFlash()->CustomTimeDilation = MyTimeDilation;
+				GetActiveFlash()->SetLifeSpan(GetActiveFlash()->GetLifeSpan() / MyTimeDilation);
 			}
 			if (ActiveAttack != nullptr)
 			{
 				ActiveAttack->CustomTimeDilation = MyTimeDilation;
+				ActiveAttack->SetLifeSpan(ActiveAttack->GetLifeSpan() / CustomTimeDilation);
 			}
 			if (ActiveSecondary != nullptr)
 			{
 				ActiveSecondary->CustomTimeDilation = MyTimeDilation;
+				ActiveSecondary->SetLifeSpan(ActiveSecondary->GetLifeSpan() / CustomTimeDilation);
 			}
 
 			// Recovery
-			float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, DeltaTime, (FMath::Square(MyTimeDilation) * 5.0f));
+			float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, DeltaTime, (FMath::Square(MyTimeDilation) * 10.0f));
 			CustomTimeDilation = ReturnTime;
 		}
 
@@ -370,17 +373,16 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// If Actor2 isn't too far away, make 'Pair Framing'
 				if (Actor2 != nullptr && !Actor2->IsUnreachable()
-					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 5000.0f)
+					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 4000.0f)
 				{
 
 					// Framing up with second actor
 					FVector Actor2Velocity = Actor2->GetVelocity();
-					Actor2Velocity.Z *= 0.9f;
 					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(3000.0f * CustomTimeDilation);
 
 					// Declare Position Two
 					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase * CustomTimeDilation); // * TimeDilationScalarClamped
-					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, UnDilatedDeltaTime, CameraMoveSpeed);
+					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, CameraMoveSpeed);
 				}
 				else
 				{
@@ -414,7 +416,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Positions done
 			// Find the midpoint, leaning to actor one
-			Midpoint = PositionOne + ((PositionTwo - PositionOne) * 0.39f);
+			Midpoint = PositionOne + ((PositionTwo - PositionOne) * 0.42f);
 			if (Midpoint.Size() > 0.001f)
 			{
 
@@ -739,7 +741,7 @@ void AGammaCharacter::NewMoveKick()
 		// Algo scaling for timescale & max velocity
 		FVector MoveInputVector = FVector(InputX + x, 0.0f, InputZ + z);
 		FVector CurrentVelocity = GetCharacterMovement()->Velocity;
-		float TimeDelta = GetWorld()->DeltaTimeSeconds;
+		float TimeDelta = (GetWorld()->DeltaTimeSeconds / CustomTimeDilation);
 		//float RelativityToMaxSpeed = (MaxMoveSpeed) - CurrentVelocity.Size();
 		float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
 
@@ -861,7 +863,7 @@ bool AGammaCharacter::ServerSetAim_Validate()
 // RAISE CHARGE
 void AGammaCharacter::RaiseCharge()
 {
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.2f
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.1f
 		&& Charge <= (ChargeMax - ChargeGain))
 	{
 
@@ -1118,7 +1120,7 @@ void AGammaCharacter::PrefireTiming()
 		if (GetActiveFlash() != nullptr
 			&& PrefireTimer < PrefireTime)
 		{
-			PrefireTimer += GetWorld()->GetDeltaSeconds();
+			PrefireTimer += GetWorld()->GetDeltaSeconds() * CustomTimeDilation;
 			//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("PREFIRE T: %f"), PrefireTimer));
 		}
 		else if ((PrefireTimer >= PrefireTime)
