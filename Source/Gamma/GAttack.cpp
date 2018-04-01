@@ -89,7 +89,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	SetLifeSpan(DurationTime);
 
 	// Scale HitsPerSecond by Magnitude
-	HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 5.0f, 500.0f);
+	HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 100.0f, 1000.0f);
 
 	//// Last-second update to direction after fire
 	float DirRecalc = ShotDirection * ShootingAngle;
@@ -305,7 +305,7 @@ void AGAttack::ReportHit(AActor* HitActor)
 	AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
 	if (PotentialPlayer != nullptr)
 	{
-		PotentialPlayer->ModifyHealth((-2.0f) + FMath::FloorToFloat((-AttackMagnitude * 2.0f)));
+		PotentialPlayer->ModifyHealth(-1.0f);
 		
 		// Marked killed AI for the reset sweep
 		if (PotentialPlayer->GetHealth() <= 0.0f

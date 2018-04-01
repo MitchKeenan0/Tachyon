@@ -213,8 +213,11 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			}
 
 			// Recovery
-			float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, DeltaTime, (FMath::Square(MyTimeDilation) * 10.0f));
+			float t = DeltaTime*DeltaTime * (3.0f - (2.0f * DeltaTime)) * 125.0f;	// DeltaTime*DeltaTime*DeltaTime * (DeltaTime * (100.0f * DeltaTime) + 1000.0f);
+			float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, t, (FMath::Square(MyTimeDilation) * 10.0f));
 			CustomTimeDilation = ReturnTime;
+
+			GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("t: %f"), t));
 		}
 
 		// Set rotation so character faces direction of travel
@@ -244,7 +247,6 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			}
 		}
 
-		///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("TravelDirection: %f"), TravelDirection));
 
 		// Locator scaling
 		if (Controller->IsLocalController()
@@ -938,7 +940,17 @@ void AGammaCharacter::InitAttack()
 		// Direction & setting up
 		FVector FirePosition = AttackScene->GetComponentLocation();
 		FVector FireDirection = AttackScene->GetForwardVector();
+		FireDirection.Y = 0.0f;
 		FRotator FireRotation = FireDirection.Rotation() + FRotator(InputZ, 0.0f, 0.0f); // InputZ * 21.0f
+		FireRotation.Yaw = GetActorRotation().Yaw;
+		if (FMath::Abs(FireRotation.Yaw) > 90.0f)
+		{
+			FireRotation.Yaw = 180.0f;
+		}
+		else
+		{
+			FireRotation.Yaw = 0.0f;
+		}
 		//FVector MoveInputVector = FVector(InputX, 0.0f, InputZ);
 
 		// Spawning
@@ -998,6 +1010,7 @@ void AGammaCharacter::ReleaseAttack()
 		FVector LocalForward = AttackScene->GetForwardVector() + ToTarget; // ToTarget.GetSafeNormal(); // AttackScene->GetForwardVector().ProjectOnToNormal(ToTarget.GetSafeNormal());
 		LocalForward.Y = 0.0f;
 		FRotator FireRotation = LocalForward.Rotation() + FRotator(AimClampedInputZ * 21.0f, 0.0f, 0.0f);
+		FireRotation.Yaw = GetActorRotation().Yaw;
 		FActorSpawnParameters SpawnParams;
 
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Attack read InputZ: %f"), InputZ));
