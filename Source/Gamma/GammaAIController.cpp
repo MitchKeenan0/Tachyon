@@ -65,7 +65,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 			}
 
 			// Get some moves
-			if (TravelTimer >= (2.0f * ReactionTime)
+			if (TravelTimer >= (10.0f * ReactionTime)
 				|| (LocationTarget == FVector::ZeroVector))
 			{
 				GetNewLocationTarget();

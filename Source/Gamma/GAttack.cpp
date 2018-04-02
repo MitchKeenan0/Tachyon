@@ -138,7 +138,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		ACharacter* Chara = Cast<ACharacter>(OwningShooter);
 		if (Chara)
 		{
-			float RecoilScalar = KineticForce * 1.5f;
+			float RecoilScalar = KineticForce * (10.0f * AttackMagnitude);
 			FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
 			FRotator RecoilRotator = LocalForward.Rotation() + FRotator(ShotDirection * ShootingAngle, 0.0f, 0.0f);
 			Chara->GetCharacterMovement()->AddImpulse(RecoilRotator.Vector() * RecoilScalar);
@@ -270,7 +270,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 	FVector AwayFromShooter = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 	TimeDilat = FMath::Clamp(TimeDilat, 0.75f, 1.0f);
-	float KnockScalar = FMath::Abs(KineticForce); //  * TimeDilat
+	float KnockScalar = FMath::Abs(KineticForce) * (1.0f + AttackMagnitude); //  * TimeDilat
 
 	// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);

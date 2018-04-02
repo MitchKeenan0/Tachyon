@@ -322,7 +322,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, UnDilatedDeltaTime, CameraMoveSpeed);
 			float CameraMinimumDistance = 1000.0f;
 			float CameraMaxDistance = 20000.0f;
-			float CameraDistance = CameraDistanceScalar * 1.25f;
 
 			// Position two by another actor
 			bool bAlone = false;
@@ -381,6 +380,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					// Framing up with second actor
 					FVector Actor2Velocity = Actor2->GetVelocity();
 					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(3000.0f * CustomTimeDilation);
+					Actor2Velocity.Z *= 0.75f;
 
 					// Declare Position Two
 					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase * CustomTimeDilation); // * TimeDilationScalarClamped
@@ -401,6 +401,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Clamp to max size
 				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(5000.0f * CustomTimeDilation);
+				Actor1Velocity.Z *= 0.75f;
 
 				// Declare Position Two
 				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity);
@@ -426,7 +427,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo);
 				float VerticalDist = FMath::Abs((PositionTwo - PositionOne).Z);
 				float TargetLength = DistBetweenActors + (300 / FramingActors.Num()) + VerticalDist;
-				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 420.0f) * CameraDistance,
+				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 1000.0f) * CameraDistanceScalar,
 					CameraMinimumDistance,
 					CameraMaxDistance);
 				if (PrefireTimer > 0.0f)
@@ -444,8 +445,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					FVector InputVector = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 					FVector VelNormal = GetCharacterMovement()->Velocity.GetSafeNormal();
 					float DotScale = FMath::Abs(FVector::DotProduct(InputVector, VelNormal));
-					CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ * CameraTiltValue * DotScale, UnDilatedDeltaTime, CameraTiltSpeed); // pitch
-					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX * CameraTiltValue * DotScale, UnDilatedDeltaTime, CameraTiltSpeed); // yaw
+					CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ*CameraTiltValue*DotScale, UnDilatedDeltaTime, CameraTiltSpeed); // pitch
+					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX*CameraTiltValue*DotScale, UnDilatedDeltaTime, CameraTiltSpeed); // yaw
 				}
 				else
 				{
@@ -461,8 +462,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				SideViewCameraComponent->SetRelativeRotation(FTarget);
 
 				// Adjust position to work angle
-				Midpoint.X -= (CameraTiltZ * (DesiredCameraDistance / 6));
-				Midpoint.Z -= (CameraTiltX * (DesiredCameraDistance / 6));
+				Midpoint.X -= (CameraTiltZ * (DesiredCameraDistance / 6)) * 0.5f;
+				Midpoint.Z -= (CameraTiltX * (DesiredCameraDistance / 6)) * 0.5f;
 
 				// New hawtness for handling y/depth movement
 				//FVector MidpointPerpendicular = Midpoint.RotateAngleAxis(90.0f, FVector::UpVector);
