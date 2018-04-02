@@ -213,7 +213,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			}
 
 			// Recovery
-			float t = DeltaTime*DeltaTime * (3.0f - (2.0f * DeltaTime)) * 125.0f;	// DeltaTime*DeltaTime*DeltaTime * (DeltaTime * (100.0f * DeltaTime) + 1000.0f);
+			float t = (MyTimeDilation * 100.0f) * DeltaTime;	// DeltaTime*DeltaTime * (3.0f - (2.0f * DeltaTime)) * 125.0f;
 			float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, t, (FMath::Square(MyTimeDilation) * 10.0f));
 			CustomTimeDilation = ReturnTime;
 
@@ -273,11 +273,15 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 }
 
 
+
+// UPDATE CAMERA
 void AGammaCharacter::UpdateCamera(float DeltaTime)
 {
 	// Start by checking valid actor
 	AActor* Actor1 = nullptr;
 	AActor* Actor2 = nullptr;
+
+	float VelocityCameraSpeed = CameraMoveSpeed;
 	
 	if (!this->ActorHasTag("Spectator"))
 	{
@@ -317,9 +321,12 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			FVector Actor1Velocity = Actor1->GetVelocity();
 			Actor1Velocity.Z *= 0.9f; /// vertical kerning
 			Actor1Velocity.X *= 0.9f; /// lateral kerning
+
+			// Set Velocity Camera Move Speed
+			VelocityCameraSpeed *= 1 + (Actor1Velocity.Size() / 10000.0f);
 			
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
-			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, UnDilatedDeltaTime, CameraMoveSpeed);
+			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 			float CameraMinimumDistance = 1000.0f;
 			float CameraMaxDistance = 20000.0f;
 
@@ -384,7 +391,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 					// Declare Position Two
 					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase * CustomTimeDilation); // * TimeDilationScalarClamped
-					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, CameraMoveSpeed);
+					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, VelocityCameraSpeed);
 				}
 				else
 				{
@@ -405,10 +412,10 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Declare Position Two
 				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity);
-				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, CameraMoveSpeed); // UnDilatedDeltaTime
+				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, VelocityCameraSpeed); // UnDilatedDeltaTime
 				
 				// Distance controls
-				CameraMaxDistance = 10000.0f;
+				CameraMaxDistance = 3000.0f;
 				CameraMinimumDistance = 1000.0f;
 
 				/// debug Velocity size
@@ -437,7 +444,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					TargetLengthClamped *= (1 - PrefireScalarClamped);
 				}
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength, 
-					TargetLengthClamped, UnDilatedDeltaTime, CameraMoveSpeed * 1.5f);
+					TargetLengthClamped, UnDilatedDeltaTime, VelocityCameraSpeed * 1.5f);
 					
 				// Camera tilt
 				if ( !ActorHasTag("Spectator") )
