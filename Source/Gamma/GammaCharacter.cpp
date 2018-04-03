@@ -328,7 +328,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 			float CameraMinimumDistance = 1000.0f;
-			float CameraMaxDistance = 20000.0f;
+			float CameraMaxDistance = 50000.0f;
 
 			// Position two by another actor
 			bool bAlone = false;
@@ -381,7 +381,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// If Actor2 isn't too far away, make 'Pair Framing'
 				if (Actor2 != nullptr && !Actor2->IsUnreachable()
-					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 3200.0f)
+					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 3500.0f)
 				{
 
 					// Framing up with second actor
@@ -433,8 +433,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// Distance
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo);
 				float VerticalDist = FMath::Abs((PositionTwo - PositionOne).Z);
-				float TargetLength = DistBetweenActors + VerticalDist;
-				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 100.0f) * CameraDistanceScalar,
+				float TargetLength = DistBetweenActors + VerticalDist * 10.0f;
+				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 1500.0f) * CameraDistanceScalar,
 					CameraMinimumDistance,
 					CameraMaxDistance);
 
@@ -450,16 +450,17 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float Timescale = Actor1->CustomTimeDilation;
 				if (Timescale < 1.0f)
 				{
-					float HitTimeScalar = FMath::Clamp(FMath::Square(Timescale) / 5.0f, 0.65f, 1.0f);
+					float GlobalTime = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+					float HitTimeScalar = FMath::Clamp(FMath::Square(Timescale) / 5.0f, 0.75f, 1.0f) * GlobalTime;
 					TargetLengthClamped *= HitTimeScalar;
 				}
 
-				///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("TargetLengthClamped: %f"), TargetLengthClamped));
+				GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("TargetLengthClamped: %f"), TargetLengthClamped));
 
 				// Set Camera Distance
 				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength,
-					TargetLengthClamped, DeltaTime, VelocityCameraSpeed / GlobalTimeScale);
+					TargetLengthClamped, DeltaTime / GlobalTimeScale, VelocityCameraSpeed / GlobalTimeScale);
 					
 				// Camera tilt
 				if ( !ActorHasTag("Spectator") )
@@ -1024,16 +1025,11 @@ void AGammaCharacter::ReleaseAttack()
 			//ClearFlash();
 		}
 
-		// Blend of input and Y-depth for Shooting Direction
+		// Aim by InputY
 		float AimClampedInputZ = FMath::Clamp(InputZ * 10.0f, -1.0f, 1.0f);
 		FVector FirePosition = AttackScene->GetComponentLocation();
-		
-		FVector ToTarget = (PositionTwo - PositionOne).GetSafeNormal();
-		ToTarget.Z = 0.0f; /// leave this to the shooter
-		FVector LocalForward = AttackScene->GetForwardVector() + ToTarget; // ToTarget.GetSafeNormal(); // AttackScene->GetForwardVector().ProjectOnToNormal(ToTarget.GetSafeNormal());
-		LocalForward.Y = 0.0f;
+		FVector LocalForward = AttackScene->GetForwardVector();
 		FRotator FireRotation = LocalForward.Rotation() + FRotator(AimClampedInputZ * 21.0f, 0.0f, 0.0f);
-		//FireRotation.Yaw = GetActorRotation().Yaw;
 		FActorSpawnParameters SpawnParams;
 
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Attack read InputZ: %f"), InputZ));
@@ -1062,6 +1058,19 @@ void AGammaCharacter::ReleaseAttack()
 					if (ActiveAttack->LockedEmitPoint)
 					{
 						ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
+					}
+					else
+					{
+						// Non-locked attacks must align to fighting plane
+						FRotator AttackRotation = ActiveAttack->GetActorRotation();
+						if (AttackRotation.Yaw > 90.0f)
+						{
+							ActiveAttack->SetActorRotation(FRotator(AttackRotation.Pitch, 180.0f, AttackRotation.Roll));
+						}
+						else
+						{
+							ActiveAttack->SetActorRotation(FRotator(AttackRotation.Pitch, 0.0f, AttackRotation.Roll));
+						}
 					}
 				}
 			}

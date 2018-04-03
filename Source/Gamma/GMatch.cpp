@@ -77,8 +77,9 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			{
 				bGG = true;
 
-				LocalPlayer->CustomTimeDilation = (1 - GGTimescale) * 0.15f;
-				OpponentPlayer->CustomTimeDilation = (1 - GGTimescale) * 0.15f;
+				SetTimeScale(GGTimescale);
+				//LocalPlayer->CustomTimeDilation = GGTimescale;
+				//OpponentPlayer->CustomTimeDilation = GGTimescale;
 
 				bReturn = false;
 				//SetTimeScale(GGTimescale);
@@ -89,9 +90,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 				if (ActorFlipbook != nullptr)
 				{
 					float CurrentPosition = FMath::FloorToInt(ActorFlipbook->GetPlaybackPosition());
-					//ActorFlipbook->SetPlayRate(1);
 					ActorFlipbook->SetPlaybackPositionInFrames(1, true);
-					///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("Got Flipbook"));
 				}
 
 				/*if (HitActor->ActorHasTag("Bot"))
@@ -106,9 +105,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 				bMinorGG = true;
 				LocalPlayer->CustomTimeDilation = (1 - GGTimescale) * 0.15f;
 				OpponentPlayer->CustomTimeDilation = (1 - GGTimescale) * 0.15f;
-				//SetTimeScale((1 - GGTimescale) * 0.15f);
 				bReturn = true;
-				///GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Blue, TEXT(">>--hit->"));
 			}
 		}
 	}
