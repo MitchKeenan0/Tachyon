@@ -26,7 +26,7 @@ void AGMatch::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// On gg wait for gg delay before freezing time
-	if ((bGG || bMinorGG) && GGDelayTimer <= GGDelayTime)
+	if (bGG && (GGDelayTimer <= GGDelayTime))
 	{
 		GGDelayTimer += DeltaTime;
 	}
@@ -76,6 +76,10 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			if (Reciever->GetHealth() <= 0.0f)
 			{
 				bGG = true;
+
+				LocalPlayer->CustomTimeDilation = (1 - GGTimescale) * 0.15f;
+				OpponentPlayer->CustomTimeDilation = (1 - GGTimescale) * 0.15f;
+
 				bReturn = false;
 				//SetTimeScale(GGTimescale);
 
@@ -123,31 +127,35 @@ void AGMatch::HandleTimeScale(float Delta)
 	float TimeToSet = 1.0f;
 	if (bGG && (GGDelayTimer >= GGDelayTime))
 	{
-		TimeToSet = GGTimescale;
+		SetTimeScale(GGTimescale);
+		//TimeToSet = GGTimescale;
 		GGDelayTimer = 0.0f;
 	}
+	//else
+	//{
+	//	// Recovery timescale interpolation
+	//	bool bRecovering = false;
+	//	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+	//	if (!bGG && bReturn && TimeDilat < 1.0f)
+	//	{
+	//		// ..Rise timescale back to 1
+	//		float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed);
+	//		TimeToSet = TimeT;
+	//		bRecovering = true;
+	//		///GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, TEXT("recovering.."));
+	//	}
 
-	// Recovery timescale interpolation
-	bool bRecovering = false;
-	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-	if (!bGG && bReturn && TimeDilat < 1.0f)
-	{
-		// ..Rise timescale back to 1
-		float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed);
-		TimeToSet = TimeT;
-		bRecovering = true;
-		///GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, TEXT("recovering.."));
-	}
+	//	// Return to 1nnocence
+	//	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) >= 1.0f)
+	//	{
+	//		TimeToSet = 1.0f;
+	//		bReturn = false;
+	//		bRecovering = false;
+	//	}
+	//}
 
-	// Return to 1nnocence
-	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) >= 1.0f)
-	{
-		TimeToSet = 1.0f;
-		bReturn = false;
-		bRecovering = false;
-	}
 
-	SetTimeScale(TimeToSet);
+	//SetTimeScale(TimeToSet);
 
 	
 	// OLD SYSTEM

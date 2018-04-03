@@ -213,9 +213,9 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			}
 
 			// Recovery
-			float t = (MyTimeDilation * 100.0f) * DeltaTime;	// DeltaTime*DeltaTime * (3.0f - (2.0f * DeltaTime)) * 125.0f;
+			float t = (FMath::Square(MyTimeDilation) * 100.0f) * DeltaTime;	// DeltaTime*DeltaTime * (3.0f - (2.0f * DeltaTime)) * 125.0f;
 			float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, t, (FMath::Square(MyTimeDilation) * 10.0f));
-			CustomTimeDilation = ReturnTime;
+			CustomTimeDilation = FMath::Clamp(ReturnTime, 0.01f, 1.0f);
 
 			//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("t: %f"), t));
 		}
@@ -381,7 +381,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// If Actor2 isn't too far away, make 'Pair Framing'
 				if (Actor2 != nullptr && !Actor2->IsUnreachable()
-					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 4000.0f)
+					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 3200.0f)
 				{
 
 					// Framing up with second actor
@@ -450,7 +450,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float Timescale = Actor1->CustomTimeDilation;
 				if (Timescale < 1.0f)
 				{
-					float HitTimeScalar = FMath::Clamp(FMath::Square(Timescale) / 5.0f, 0.5f, 1.0f);
+					float HitTimeScalar = FMath::Clamp(FMath::Square(Timescale) / 5.0f, 0.65f, 1.0f);
 					TargetLengthClamped *= HitTimeScalar;
 				}
 
