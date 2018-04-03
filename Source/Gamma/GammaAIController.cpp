@@ -129,9 +129,9 @@ void AGammaAIController::Tactical(FVector Target)
 {
 	// Random number to evoke choice
 	float RandomDc = FMath::FRandRange(0.0f, 100.0f);
-	float HandBrakeVal = 15.0f;
-	float ChargeVal = 50.0f;
-	float SecoVal = 70.0f;
+	float HandBrakeVal = 11.0f;
+	float ChargeVal = 51.0f;
+	float SecoVal = 66.0f;
 
 
 	// HANDBRAKE
@@ -205,6 +205,9 @@ void AGammaAIController::Tactical(FVector Target)
 					MyCharacter->SetZ(VerticalDist);
 				}
 
+				// Aim input
+				float XTarget = FMath::Clamp(ToPlayer.X, -1.0f, 1.0f);
+				MyCharacter->SetX(XTarget);
 				
 				// Fire Secondary
 				if (RandomDc < SecoVal
@@ -257,7 +260,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 		NextRand.Y = 0.0f;
 		FVector CombinedRand = RandomOffset + NextRand;
 		CombinedRand = CombinedRand.GetClampedToMaxSize(MoveRange);
-		CombinedRand.Z *= 0.5f;
+		CombinedRand.Z *= 0.25f;
 
 		// And serve
 		Result = PlayerAtSpeed + CombinedRand;

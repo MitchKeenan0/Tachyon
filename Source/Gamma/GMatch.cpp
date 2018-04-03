@@ -77,7 +77,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			{
 				bGG = true;
 				bReturn = false;
-				SetTimeScale(GGTimescale);
+				//SetTimeScale(GGTimescale);
 
 				//Calcify HitActor
 				UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
@@ -120,20 +120,17 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 
 void AGMatch::HandleTimeScale(float Delta)
 {
-	///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Blue, TEXT("HANDLETIMESCALE"));
-
 	float TimeToSet = 1.0f;
-
-	if (bGG)
+	if (bGG && (GGDelayTimer >= GGDelayTime))
 	{
-		///GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, TEXT("ggggg"));
-		return;
+		TimeToSet = GGTimescale;
+		GGDelayTimer = 0.0f;
 	}
 
 	// Recovery timescale interpolation
 	bool bRecovering = false;
 	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-	if (bReturn && TimeDilat < 1.0f)
+	if (!bGG && bReturn && TimeDilat < 1.0f)
 	{
 		// ..Rise timescale back to 1
 		float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed);
@@ -141,27 +138,6 @@ void AGMatch::HandleTimeScale(float Delta)
 		bRecovering = true;
 		///GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, TEXT("recovering.."));
 	}
-
-
-	// 'Natural' scaling by distance between fighters
-	//if (!bReturn && !bRecovering && PlayersAccountedFor())
-	//{
-	//	float TargetTimeScale = 1.0f;
-	//	float FightDistance = FVector::Dist(
-	//		LocalPlayer->GetActorLocation(), OpponentPlayer->GetActorLocation());
-	//	if (FightDistance <= 20000.0f)
-	//	{
-	//		TargetTimeScale = FMath::Clamp((FMath::Sqrt(FightDistance) * 0.0222f), 0.6666f, 1.0f);
-	//		float TimeLerp = FMath::FInterpConstantTo(UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()), TargetTimeScale, Delta, TimescaleDropSpeed);
-	//		SetTimeScale(TimeLerp);
-	//	}
-
-	//	///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("Timescale: %f"), UGameplayStatics::GetGlobalTimeDilation(this->GetWorld())));
-
-	//	/// Log timescale
-	//	/*float Ti = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-	//	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("Ti: %f"), Ti));*/
-	//}
 
 	// Return to 1nnocence
 	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) >= 1.0f)

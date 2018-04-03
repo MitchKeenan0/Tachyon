@@ -217,7 +217,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, t, (FMath::Square(MyTimeDilation) * 10.0f));
 			CustomTimeDilation = ReturnTime;
 
-			GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("t: %f"), t));
+			//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("t: %f"), t));
 		}
 
 		// Set rotation so character faces direction of travel
@@ -426,25 +426,40 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Positions done
 			// Find the midpoint, leaning to actor one
-			Midpoint = PositionOne + ((PositionTwo - PositionOne) * 0.42f);
+			Midpoint = PositionOne + ((PositionTwo - PositionOne) * 0.5f);
 			if (Midpoint.Size() > 0.001f)
 			{
 
 				// Distance
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo);
 				float VerticalDist = FMath::Abs((PositionTwo - PositionOne).Z);
-				float TargetLength = DistBetweenActors + (300 / FramingActors.Num()) + VerticalDist;
-				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 1000.0f) * CameraDistanceScalar,
+				float TargetLength = DistBetweenActors + VerticalDist;
+				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 100.0f) * CameraDistanceScalar,
 					CameraMinimumDistance,
 					CameraMaxDistance);
+
+				// Modifier for prefire timing
 				if (PrefireTimer > 0.0f)
 				{
 					float PrefireScalarRaw = FMath::Sqrt(PrefireTimer * 0.618f) / (PrefireTime * 2.0f);
 					float PrefireScalarClamped = FMath::Clamp(PrefireScalarRaw, 0.01f, 0.99f);
 					TargetLengthClamped *= (1 - PrefireScalarClamped);
 				}
-				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength, 
-					TargetLengthClamped, UnDilatedDeltaTime, VelocityCameraSpeed * 1.5f);
+
+				// Modifier for hit/gg
+				float Timescale = Actor1->CustomTimeDilation;
+				if (Timescale < 1.0f)
+				{
+					float HitTimeScalar = FMath::Clamp(FMath::Square(Timescale) / 5.0f, 0.5f, 1.0f);
+					TargetLengthClamped *= HitTimeScalar;
+				}
+
+				///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("TargetLengthClamped: %f"), TargetLengthClamped));
+
+				// Set Camera Distance
+				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength,
+					TargetLengthClamped, DeltaTime, VelocityCameraSpeed / GlobalTimeScale);
 					
 				// Camera tilt
 				if ( !ActorHasTag("Spectator") )
@@ -1018,7 +1033,7 @@ void AGammaCharacter::ReleaseAttack()
 		FVector LocalForward = AttackScene->GetForwardVector() + ToTarget; // ToTarget.GetSafeNormal(); // AttackScene->GetForwardVector().ProjectOnToNormal(ToTarget.GetSafeNormal());
 		LocalForward.Y = 0.0f;
 		FRotator FireRotation = LocalForward.Rotation() + FRotator(AimClampedInputZ * 21.0f, 0.0f, 0.0f);
-		FireRotation.Yaw = GetActorRotation().Yaw;
+		//FireRotation.Yaw = GetActorRotation().Yaw;
 		FActorSpawnParameters SpawnParams;
 
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Attack read InputZ: %f"), InputZ));
