@@ -455,7 +455,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					TargetLengthClamped *= HitTimeScalar;
 				}
 
-				GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("TargetLengthClamped: %f"), TargetLengthClamped));
+				//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("TargetLengthClamped: %f"), TargetLengthClamped));
 
 				// Set Camera Distance
 				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());

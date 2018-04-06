@@ -164,6 +164,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AGDamage> DamageClass = nullptr;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TSubclassOf<AGDamage> BlockedClass = nullptr;
+
 
 	// Replicated Variables /////////////////////////////////////////
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
@@ -171,6 +174,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	bool bHit = false;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+	int numHits = 1;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	bool bStillHitting = false;
