@@ -327,7 +327,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
-			float CameraMinimumDistance = 1000.0f;
+			float CameraMinimumDistance = 300.0f;
 			float CameraMaxDistance = 50000.0f;
 
 			// Position two by another actor
@@ -381,12 +381,12 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// If Actor2 isn't too far away, make 'Pair Framing'
 				if (Actor2 != nullptr && !Actor2->IsUnreachable()
-					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 3500.0f)
+					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 5000.0f)
 				{
 
 					// Framing up with second actor
 					FVector Actor2Velocity = Actor2->GetVelocity();
-					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(3000.0f * CustomTimeDilation);
+					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(1000.0f * CustomTimeDilation);
 					Actor2Velocity.Z *= 0.75f;
 
 					// Declare Position Two
@@ -416,7 +416,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				
 				// Distance controls
 				CameraMaxDistance = 3000.0f;
-				CameraMinimumDistance = 1000.0f;
+				CameraMinimumDistance = 600.0f;
 
 				/// debug Velocity size
 				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,
@@ -890,7 +890,8 @@ bool AGammaCharacter::ServerSetAim_Validate()
 void AGammaCharacter::RaiseCharge()
 {
 	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.1f
-		&& Charge <= (ChargeMax - ChargeGain))
+		&& Charge <= (ChargeMax - ChargeGain)
+		&& ActiveAttack == nullptr)
 	{
 
 		if (Charge < ChargeMax)
