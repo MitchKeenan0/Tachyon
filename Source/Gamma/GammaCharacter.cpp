@@ -416,7 +416,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				
 				// Distance controls
 				CameraMaxDistance = 3000.0f;
-				CameraMinimumDistance = 600.0f;
+				CameraMinimumDistance = 1000.0f;
 
 				/// debug Velocity size
 				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,

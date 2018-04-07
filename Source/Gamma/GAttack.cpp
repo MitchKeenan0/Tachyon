@@ -303,7 +303,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 void AGAttack::ReportHit(AActor* HitActor)
 {
 	// Track hits curvature
-	numHits += numHits;
+	numHits = FMath::Clamp((numHits += numHits), 1, 50);
 
 	// Damage
 	AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
