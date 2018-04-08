@@ -194,6 +194,8 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 		// Personal Timescale
 		float MyTimeDilation = CustomTimeDilation;
+		
+		// Attacks and Seconary Recovery
 		if (MyTimeDilation < 1.0f)
 		{
 			if (GetActiveFlash() != nullptr)
@@ -211,14 +213,14 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 				ActiveSecondary->CustomTimeDilation = MyTimeDilation;
 				ActiveSecondary->SetLifeSpan(ActiveSecondary->GetLifeSpan() / CustomTimeDilation);
 			}
-
-			// Recovery
-			float t = (FMath::Square(MyTimeDilation) * 100.0f) * DeltaTime;	// DeltaTime*DeltaTime * (3.0f - (2.0f * DeltaTime)) * 125.0f;
-			float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, t, (FMath::Square(MyTimeDilation) * 10.0f));
-			CustomTimeDilation = FMath::Clamp(ReturnTime, 0.01f, 1.0f);
-
-			//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("t: %f"), t));
 		}
+
+		// Personal Recovery
+		float t = (FMath::Square(MyTimeDilation) * 100.0f) * DeltaTime;
+		float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, t, (FMath::Square(MyTimeDilation) * 10.0f));
+		CustomTimeDilation = FMath::Clamp(ReturnTime, 0.01f, 1.0f);
+		///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("t: %f"), t));
+
 
 		// Set rotation so character faces direction of travel
 		float TravelDirection = FMath::Clamp(InputX, -1.0f, 1.0f);
@@ -381,7 +383,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// If Actor2 isn't too far away, make 'Pair Framing'
 				if (Actor2 != nullptr && !Actor2->IsUnreachable()
-					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 3900.0f)
+					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 3600.0f)
 				{
 
 					// Framing up with second actor

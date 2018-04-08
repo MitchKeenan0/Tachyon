@@ -56,6 +56,12 @@ void AGAttack::BeginPlay()
 		float Spinoff = Current + FMath::FRandRange(-0.3f, 0.0f);
 		AttackSound->SetPitchMultiplier(Spinoff);
 	}
+
+	if (ActorHasTag("Obstacle"))
+	{
+		InitAttack(this, 1.0f, 0.0f);
+		numHits = 10;
+	}
 }
 
 
@@ -236,6 +242,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 	
 	if (!bHit && HitResult)
 	{
+		//FVector ClosestHit = Hit.Component.Get()->GetClosestPointOnCollision(Hit.ImpactPoint, Hit.ImpactPoint);
 		HitActor = Hit.Actor.Get();
 		if (HitActor != nullptr)
 		{
@@ -252,8 +259,16 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 		// Spawning damage fx
 		FActorSpawnParameters SpawnParams;
 		FRotator Forward = GetActorForwardVector().Rotation(); //HitActor->GetActorRotation();
-		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, HitPoint, Forward, SpawnParams));
-		DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
+
+		// Get closest point on bounds of HitActor
+		FVector OutFVector = FVector::ZeroVector;
+		UPrimitiveComponent* HitPrimitive = Cast<UPrimitiveComponent>(HitActor->GetRootComponent());
+		if (HitPrimitive != nullptr)
+		{
+			float ClosestPointDist = HitPrimitive->GetClosestPointOnCollision(HitPoint, OutFVector);
+			AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, OutFVector, Forward, SpawnParams)); /// HitPoint
+			DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
+		}
 	}
 	else
 	{
