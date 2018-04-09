@@ -457,8 +457,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					TargetLengthClamped *= HitTimeScalar;
 				}
 
-				//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("TargetLengthClamped: %f"), TargetLengthClamped));
-
 				// Set Camera Distance
 				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength,
@@ -499,6 +497,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// Make it so
 				CameraBoom->SetWorldLocation(Midpoint);
 				CameraBoom->TargetArmLength = DesiredCameraDistance;
+
+				GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("DesiredCameraDistance: %f"), DesiredCameraDistance));
 
 				/*
 				Out_Parallel = VectorToSplit.ProjectOnTo(ReferenceVector);
@@ -953,8 +953,13 @@ void AGammaCharacter::InitAttack()
 	// Clean burn
 	MoveParticles->bSuppressSpawning = true;
 
-	bool bFireAllowed = (bMultipleAttacks || (!bMultipleAttacks && ActiveAttack == nullptr));
-	if (bFireAllowed && (Charge > 0.0f) && FlashClass
+	if (!bMultipleAttacks && ActiveAttack != nullptr)
+	{
+		ActiveAttack->Nullify(0);
+	}
+
+	bool bFireAllowed = (bMultipleAttacks || (!bMultipleAttacks && ActiveAttack == nullptr)) && GetActiveFlash() == nullptr;
+	if (bFireAllowed && (Charge > 0.0f) && (FlashClass != nullptr)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.05f))
 	{
 		//// Clean up previous attack

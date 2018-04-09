@@ -95,7 +95,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	SetLifeSpan(DurationTime);
 
 	// Scale HitsPerSecond by Magnitude
-	HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 115.0f, 1000.0f);
+	HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 55.0f, 1000.0f);
 
 	//// Last-second update to direction after fire
 	float DirRecalc = ShotDirection * ShootingAngle;
@@ -318,7 +318,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 void AGAttack::ReportHit(AActor* HitActor)
 {
 	// Track hits curvature
-	numHits = FMath::Clamp((numHits += numHits), 1, 50);
+	numHits = FMath::Clamp((numHits += (numHits - 1)), 2, 50);
 
 	// Damage
 	AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
