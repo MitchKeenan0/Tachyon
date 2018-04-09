@@ -182,9 +182,14 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	//UpdateAnimation();
 
 	// CAMERA UPDATE
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.1f)
+	if ( (!ActorHasTag("Bot")) && UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.1f)
 	{
 		UpdateCamera(DeltaTime);
+	}
+	// Disable camera on Bots
+	if (ActorHasTag("Bot") && GetCameraBoom()->IsActive())
+	{
+		GetCameraBoom()->Deactivate();
 	}
 	
 	
@@ -338,7 +343,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				// Find closest best candidate for Actor 2
 				if (Actor2 == nullptr
-					|| FVector::Dist(Actor2->GetActorLocation(), GetActorLocation()) > 7000.0f)
+					|| FVector::Dist(Actor2->GetActorLocation(), GetActorLocation()) > 5000.0f)
 				{
 
 					// Try player targets first
@@ -358,24 +363,26 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					else
 					{
 						UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
-						if (FramingActors.Num() > 1)
-						{
-							float DistToActor2 = 99999.0f;
-							for (int i = 0; i < FramingActors.Num(); ++i)
-							{
-								if (FramingActors[i] != nullptr
-									&& FramingActors[i] != this
-									&& FramingActors[i] != Actor1
-									&& !FramingActors[i]->ActorHasTag("Spectator"))
-								{
-									float DistToTemp = FVector::Dist(FramingActors[i]->GetActorLocation(), GetActorLocation());
-									if (DistToTemp < DistToActor2)
-									{
-										Actor2 = FramingActors[i];
-										DistToActor2 = DistToTemp;
-									}
+						
+					}
+				}
 
-								}
+				// Update target Actor by nominating closest
+				if (FramingActors.Num() > 1)
+				{
+					float DistToActor2 = 99999.0f;
+					for (int i = 0; i < FramingActors.Num(); ++i)
+					{
+						if (FramingActors[i] != nullptr
+							&& FramingActors[i] != this
+							&& FramingActors[i] != Actor1
+							&& !FramingActors[i]->ActorHasTag("Spectator"))
+						{
+							float DistToTemp = FVector::Dist(FramingActors[i]->GetActorLocation(), GetActorLocation());
+							if (DistToTemp < DistToActor2)
+							{
+								Actor2 = FramingActors[i];
+								DistToActor2 = DistToTemp;
 							}
 						}
 					}

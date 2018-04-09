@@ -10,6 +10,12 @@ void AGammaAIController::BeginPlay()
 	// Get our Gamma Character
 	MyPawn = GetPawn();
 	MyCharacter = Cast<AGammaCharacter>(MyPawn);
+
+	if (MyCharacter != nullptr)
+	{
+		MyCharacter->Tags.Add("Bot");
+	}
+
 	RandStream = new FRandomStream;
 	if (RandStream != nullptr)
 	{
@@ -90,7 +96,8 @@ void AGammaAIController::Tick(float DeltaSeconds)
 					if (PlayersArray[i] != nullptr
 						&& PlayersArray[i] != MyPawn
 						&& PlayersArray[i] != MyCharacter
-						&& !PlayersArray[i]->ActorHasTag("Spectator"))
+						&& !PlayersArray[i]->ActorHasTag("Spectator")
+						&& !PlayersArray[i]->ActorHasTag("Bot"))
 					{
 						AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(PlayersArray[i]);
 						if (PotentialPlayer != nullptr)
