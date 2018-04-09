@@ -485,8 +485,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				SideViewCameraComponent->SetRelativeRotation(FTarget);
 
 				// Adjust position to work angle
-				Midpoint.X -= (CameraTiltZ * (DesiredCameraDistance / 6)) * 0.5f;
-				Midpoint.Z -= (CameraTiltX * (DesiredCameraDistance / 6)) * 0.5f;
+				Midpoint.X -= (CameraTiltZ * (DesiredCameraDistance / 5.0f)) * 0.5f;
+				Midpoint.Z -= (CameraTiltX * (DesiredCameraDistance / 5.0f)) * 0.5f;
 
 				// New hawtness for handling y/depth movement
 				//FVector MidpointPerpendicular = Midpoint.RotateAngleAxis(90.0f, FVector::UpVector);
