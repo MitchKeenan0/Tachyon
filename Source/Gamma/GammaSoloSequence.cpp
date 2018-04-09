@@ -97,7 +97,7 @@ void AGammaSoloSequence::SpawnDenizen()
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No Player, Extrapolating..."));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No Player, Extrapolating..."));
 		float Rando = FMath::FRandRange(0.0f, 1000.0f);
 		PlayerWiseLocation += FVector(Rando, 0.0f, Rando);
 	}

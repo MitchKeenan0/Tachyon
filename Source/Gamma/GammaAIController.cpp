@@ -88,24 +88,51 @@ void AGammaAIController::Tick(float DeltaSeconds)
 		else
 		{
 			// Locate "player" target
+			bool bPlayerFound = false;
 			UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray); // FramingActor for brawl
 			if (PlayersArray.Num() > 0)
 			{
 				for (int i = 0; i < PlayersArray.Num(); ++i)
 				{
-					if (PlayersArray[i] != nullptr
-						&& PlayersArray[i] != MyPawn
-						&& PlayersArray[i] != MyCharacter
-						&& !PlayersArray[i]->ActorHasTag("Spectator")
-						&& !PlayersArray[i]->ActorHasTag("Bot"))
+					AActor* TempActor = PlayersArray[i];
+					if (TempActor != nullptr
+						&& TempActor != MyPawn
+						&& TempActor != MyCharacter
+						&& !TempActor->ActorHasTag("Spectator")
+						&& !TempActor->ActorHasTag("Bot"))
 					{
-						AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(PlayersArray[i]);
+						AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(TempActor);
 						if (PotentialPlayer != nullptr)
 						{
 							Player = PotentialPlayer;
+							bPlayerFound = true;
 							/*GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::White,
 							FString::Printf(TEXT("p %s   targeting %s"), *MyCharacter->GetName(), *Player->GetName()));*/
 							break;
+						}
+					}
+				}
+			}
+			if (!bPlayerFound)
+			{
+				// Edge case for spectator match with no players
+				UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Bot"), PlayersArray);
+				if (PlayersArray.Num() > 0)
+				{
+					for (int i = 0; i < PlayersArray.Num(); ++i)
+					{
+						AActor* TempActor = PlayersArray[i];
+						if (TempActor != nullptr
+							&& TempActor != MyPawn
+							&& TempActor != MyCharacter)
+						{
+							AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(TempActor);
+							if (PotentialPlayer != nullptr)
+							{
+								Player = PotentialPlayer;
+								bPlayerFound = true;
+								break;
+							}
 						}
 					}
 				}

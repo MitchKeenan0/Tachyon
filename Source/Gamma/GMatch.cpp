@@ -323,32 +323,41 @@ void AGMatch::GetPlayers()
 		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), TempPlayers);
 		if (GetWorld() && TempPlayers.Num() > 0)
 		{
-			// Loop through to deliberate local and opponent
+			float BestDistance = 999999.0f;
+			
+			// Loop through to deliberate local player
 			for (int i = 0; i < TempPlayers.Num(); ++i)
 			{
+
+				// Qualify valid player object
 				ACharacter* TempChar = Cast<ACharacter>(TempPlayers[i]);
 				if (TempChar != nullptr
 					&& !TempChar->ActorHasTag("Spectator"))
 				{
+					
 					// Check if controller is local
 					APlayerController* TempCont = Cast<APlayerController>(TempChar->GetController());
-					if (TempCont != nullptr && TempCont->IsLocalController())
+					if (TempCont != nullptr && (TempCont->IsLocalController() || TempCont->ActorHasTag("Bot")))
 					{
 						LocalPlayer = Cast<AGammaCharacter>(TempChar);
 					}
-					else // or opponent
+					
+					// Get closest opponent
+					else if ((TempChar != nullptr) && (TempChar != LocalPlayer) && (!TempChar->ActorHasTag("Spectator"))
+						&& LocalPlayer != nullptr)
 					{
-						OpponentPlayer = Cast<AGammaCharacter>(TempChar);
+						float DistToTemp = FVector::Dist(TempChar->GetActorLocation(), LocalPlayer->GetActorLocation());
+						if (DistToTemp < BestDistance)
+						{
+							OpponentPlayer = Cast<AGammaCharacter>(TempChar);
+							BestDistance = DistToTemp;
+						}
 					}
 				}
-				//else // ...or client's opponent
-				//{
-				//	OpponentPlayer = Cast<AGammaCharacter>(TempChar);
-				//}
 			}
 		}
 	}
-	
+
 
 	//// Spectator case
 	//UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Spectator"), TempPlayers);

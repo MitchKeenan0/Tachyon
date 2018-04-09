@@ -186,7 +186,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	{
 		UpdateCamera(DeltaTime);
 	}
-	// Disable camera on Bots
+	// One-time disable camera on Bots
 	if (ActorHasTag("Bot") && GetCameraBoom()->IsActive())
 	{
 		GetCameraBoom()->Deactivate();
@@ -222,7 +222,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 		// Personal Recovery
 		float t = (FMath::Square(MyTimeDilation) * 100.0f) * DeltaTime;
-		float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, t, (FMath::Square(MyTimeDilation)));
+		float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, DeltaTime, 2.6f); // t or DeltaTime
 		CustomTimeDilation = FMath::Clamp(ReturnTime, 0.01f, 1.0f);
 		///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("t: %f"), t));
 
@@ -330,7 +330,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			Actor1Velocity.X *= 0.9f; /// lateral kerning
 
 			// Set Velocity Camera Move Speed
-			VelocityCameraSpeed *= 1 + (Actor1Velocity.Size() / 10000.0f);
+			VelocityCameraSpeed *= (1 + (Actor1Velocity.Size() / 10000.0f));
 			
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
@@ -443,31 +443,33 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo);
 				float VerticalDist = FMath::Abs((PositionTwo - PositionOne).Z);
 				float TargetLength = DistBetweenActors + VerticalDist * 10.0f;
-				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 1200.0f) * CameraDistanceScalar,
-					CameraMinimumDistance,
-					CameraMaxDistance);
 
 				// Modifier for prefire timing
 				if (PrefireTimer > 0.0f)
 				{
 					float PrefireScalarRaw = FMath::Sqrt(PrefireTimer * 0.618f) / (PrefireTime * 2.0f);
 					float PrefireScalarClamped = FMath::Clamp(PrefireScalarRaw, 0.01f, 0.99f);
-					TargetLengthClamped *= (1 - PrefireScalarClamped);
+					TargetLength *= (1 - PrefireScalarClamped);
 				}
 
 				// Modifier for hit/gg
-				float Timescale = Actor1->CustomTimeDilation;
+				float Timescale = (Actor1->CustomTimeDilation + Actor2->CustomTimeDilation) / 2.0f;
 				if (Timescale < 1.0f)
 				{
 					float GlobalTime = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
-					float HitTimeScalar = FMath::Clamp(FMath::Square(Timescale) / 5.0f, 0.75f, 1.0f) * GlobalTime;
-					TargetLengthClamped *= HitTimeScalar;
+					float HitTimeScalar = FMath::Clamp(FMath::Square(Timescale), 0.75f, 1.0f) * GlobalTime;
+					TargetLength *= HitTimeScalar;
 				}
+
+				// Clamp useable distance
+				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 1200.0f) * CameraDistanceScalar,
+					CameraMinimumDistance,
+					CameraMaxDistance);
 
 				// Set Camera Distance
 				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength,
-					TargetLengthClamped, DeltaTime / GlobalTimeScale, VelocityCameraSpeed / GlobalTimeScale);
+					TargetLengthClamped, DeltaTime / GlobalTimeScale, (VelocityCameraSpeed / GlobalTimeScale) * 2.1f);
 					
 				// Camera tilt
 				if ( !ActorHasTag("Spectator") )
