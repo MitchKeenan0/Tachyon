@@ -217,7 +217,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 		// Personal Recovery
 		float t = (FMath::Square(MyTimeDilation) * 100.0f) * DeltaTime;
-		float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, t, (FMath::Square(MyTimeDilation) * 10.0f));
+		float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, t, (FMath::Square(MyTimeDilation)));
 		CustomTimeDilation = FMath::Clamp(ReturnTime, 0.01f, 1.0f);
 		///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("t: %f"), t));
 
@@ -436,7 +436,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo);
 				float VerticalDist = FMath::Abs((PositionTwo - PositionOne).Z);
 				float TargetLength = DistBetweenActors + VerticalDist * 10.0f;
-				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 1500.0f) * CameraDistanceScalar,
+				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 1200.0f) * CameraDistanceScalar,
 					CameraMinimumDistance,
 					CameraMaxDistance);
 
@@ -498,7 +498,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				CameraBoom->SetWorldLocation(Midpoint);
 				CameraBoom->TargetArmLength = DesiredCameraDistance;
 
-				GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("DesiredCameraDistance: %f"), DesiredCameraDistance));
+				///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("DesiredCameraDistance: %f"), DesiredCameraDistance));
 
 				/*
 				Out_Parallel = VectorToSplit.ProjectOnTo(ReferenceVector);
