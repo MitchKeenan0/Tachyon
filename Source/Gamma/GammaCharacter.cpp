@@ -182,7 +182,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	//UpdateAnimation();
 
 	// CAMERA UPDATE
-	if ( (!ActorHasTag("Bot")) && UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.1f)
+	if ( (!ActorHasTag("Bot")) && UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
 	{
 		UpdateCamera(DeltaTime);
 	}
@@ -200,7 +200,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		// Personal Timescale
 		float MyTimeDilation = CustomTimeDilation;
 		
-		// Attacks and Seconary Recovery
+		// Attacks and Secondary Recovery
 		if (MyTimeDilation < 1.0f)
 		{
 			if (GetActiveFlash() != nullptr)
@@ -330,11 +330,11 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			Actor1Velocity.X *= 0.9f; /// lateral kerning
 
 			// Set Velocity Camera Move Speed
-			VelocityCameraSpeed *= (1 + (Actor1Velocity.Size() / 10000.0f));
+			VelocityCameraSpeed *= (1 + (Actor1Velocity.Size() / 30000.0f));
 			
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
-			float CameraMinimumDistance = 300.0f;
+			float CameraMinimumDistance = 1000.0f;
 			float CameraMaxDistance = 50000.0f;
 
 			// Position two by another actor
@@ -395,12 +395,12 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 					// Framing up with second actor
 					FVector Actor2Velocity = Actor2->GetVelocity();
-					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(1000.0f * CustomTimeDilation);
+					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(1000.0f * (CustomTimeDilation + 0.5f));
 					Actor2Velocity.Z *= 0.75f;
 
 					// Declare Position Two
-					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase * CustomTimeDilation); // * TimeDilationScalarClamped
-					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, VelocityCameraSpeed);
+					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
+					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, UnDilatedDeltaTime, VelocityCameraSpeed);
 				}
 				else
 				{
@@ -416,16 +416,15 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 3.0f;
 
 				// Clamp to max size
-				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(5000.0f * CustomTimeDilation);
+				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(5000.0f * (CustomTimeDilation + 0.5f));
 				Actor1Velocity.Z *= 0.75f;
 
 				// Declare Position Two
 				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity);
-				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, VelocityCameraSpeed); // UnDilatedDeltaTime
+				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, UnDilatedDeltaTime, VelocityCameraSpeed); // UnDilatedDeltaTime
 				
 				// Distance controls
 				CameraMaxDistance = 3000.0f;
-				CameraMinimumDistance = 1000.0f;
 
 				/// debug Velocity size
 				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,
@@ -435,7 +434,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Positions done
 			// Find the midpoint, leaning to actor one
-			Midpoint = PositionOne + ((PositionTwo - PositionOne) * 0.5f);
+			FVector TargetMidpoint = PositionOne + ((PositionTwo - PositionOne) * FMath::Clamp(Actor1->CustomTimeDilation, 0.3f, 0.7f));
+			Midpoint = FMath::VInterpTo(Midpoint, TargetMidpoint, UnDilatedDeltaTime, VelocityCameraSpeed);
 			if (Midpoint.Size() > 0.001f)
 			{
 
@@ -472,30 +472,31 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					TargetLengthClamped, DeltaTime / GlobalTimeScale, (VelocityCameraSpeed / GlobalTimeScale) * 2.1f);
 					
 				// Camera tilt
+				float TiltDistanceScalar = (1.0f / DistBetweenActors) * 150.0f;
 				if ( !ActorHasTag("Spectator") )
 				{
 					FVector InputVector = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 					FVector VelNormal = GetCharacterMovement()->Velocity.GetSafeNormal();
 					float DotScale = FMath::Abs(FVector::DotProduct(InputVector, VelNormal));
-					CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ*CameraTiltValue*DotScale, UnDilatedDeltaTime, CameraTiltSpeed); // pitch
-					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX*CameraTiltValue*DotScale, UnDilatedDeltaTime, CameraTiltSpeed); // yaw
+					CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ*CameraTiltValue*DotScale, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
+					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX*CameraTiltValue*DotScale, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // yaw
 				}
 				else
 				{
 					// Spectator cam has auto tilt using position relativity
-					FVector Relativity = (Midpoint - Actor1->GetActorLocation());
+					FVector Relativity = (TargetMidpoint - Actor1->GetActorLocation());
 					float ValZ = FMath::Clamp(Relativity.Z, -1.0f, 1.0f);
 					float ValX = FMath::Clamp(Relativity.X, -1.0f, 1.0f);
-					CameraTiltX = FMath::FInterpTo(CameraTiltX, ValZ * CameraTiltValue, UnDilatedDeltaTime, CameraTiltSpeed); // pitch
-					CameraTiltZ = FMath::FInterpTo(CameraTiltX, ValX * CameraTiltValue, UnDilatedDeltaTime, CameraTiltSpeed); // pitch
+					CameraTiltX = FMath::FInterpTo(CameraTiltX, ValZ * CameraTiltValue, UnDilatedDeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
+					CameraTiltZ = FMath::FInterpTo(CameraTiltX, ValX * CameraTiltValue, UnDilatedDeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
 				}
 				FRotator FTarget = FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue;
 				FTarget.Roll = 0.0f;
 				SideViewCameraComponent->SetRelativeRotation(FTarget);
 
 				// Adjust position to work angle
-				Midpoint.X -= (CameraTiltZ * (DesiredCameraDistance / 5.0f)) * 0.5f;
-				Midpoint.Z -= (CameraTiltX * (DesiredCameraDistance / 5.0f)) * 0.5f;
+				Midpoint.X -= ((CameraTiltZ * (DesiredCameraDistance / 15.0f))) * DeltaTime;
+				Midpoint.Z -= ((CameraTiltX * (DesiredCameraDistance / 15.0f))) * DeltaTime;
 
 				// New hawtness for handling y/depth movement
 				//FVector MidpointPerpendicular = Midpoint.RotateAngleAxis(90.0f, FVector::UpVector);
@@ -701,7 +702,10 @@ void AGammaCharacter::MoveUp(float Value)
 // SET X & Z SERVERSIDE
 void AGammaCharacter::SetX(float Value)
 {
-	ServerSetX(Value);
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
+	{
+		ServerSetX(Value);
+	}
 }
 void AGammaCharacter::ServerSetX_Implementation(float Value)
 {
@@ -734,7 +738,10 @@ bool AGammaCharacter::ServerSetX_Validate(float Value)
 
 void AGammaCharacter::SetZ(float Value)
 {
-	ServerSetZ(Value);
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
+	{
+		ServerSetZ(Value);
+	}
 }
 void AGammaCharacter::ServerSetZ_Implementation(float Value)
 {
