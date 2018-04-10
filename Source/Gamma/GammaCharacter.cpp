@@ -354,7 +354,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 						{
 							if (FramingActors[i] != nullptr
 								&& FramingActors[i] != this
-								&& FramingActors[i] != Actor1)
+								&& FramingActors[i] != Actor1
+								&& !FramingActors[i]->ActorHasTag("Spectator"))
 							{
 								Actor2 = FramingActors[i];
 							}
@@ -363,7 +364,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					else
 					{
 						UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
-						
 					}
 				}
 
@@ -424,7 +424,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, UnDilatedDeltaTime, VelocityCameraSpeed); // UnDilatedDeltaTime
 				
 				// Distance controls
-				CameraMaxDistance = 3000.0f;
+				CameraMaxDistance = 6000.0f;
 
 				/// debug Velocity size
 				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,
@@ -434,7 +434,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Positions done
 			// Find the midpoint, leaning to actor one
-			FVector TargetMidpoint = PositionOne + ((PositionTwo - PositionOne) * FMath::Clamp(Actor1->CustomTimeDilation, 0.3f, 0.7f));
+			FVector TargetMidpoint = PositionOne + ((PositionTwo - PositionOne) * FMath::Clamp(Actor1->CustomTimeDilation, 0.1f, 0.4f));
 			Midpoint = FMath::VInterpTo(Midpoint, TargetMidpoint, UnDilatedDeltaTime, VelocityCameraSpeed);
 			if (Midpoint.Size() > 0.001f)
 			{
@@ -442,7 +442,12 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// Distance
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo);
 				float VerticalDist = FMath::Abs((PositionTwo - PositionOne).Z);
-				float TargetLength = DistBetweenActors + VerticalDist * 10.0f;
+				// If paired, widescreen edges are vulnerable to overshoot
+				if (!bAlone)
+				{
+					VerticalDist *= 21.0f;
+				}
+				float TargetLength = DistBetweenActors + VerticalDist;
 
 				// Modifier for prefire timing
 				if (PrefireTimer > 0.0f)
@@ -469,17 +474,20 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// Set Camera Distance
 				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength,
-					TargetLengthClamped, DeltaTime / GlobalTimeScale, (VelocityCameraSpeed / GlobalTimeScale) * 2.1f);
+					TargetLengthClamped, DeltaTime / GlobalTimeScale, (VelocityCameraSpeed / GlobalTimeScale) * 1.15f);
 					
 				// Camera tilt
-				float TiltDistanceScalar = (1.0f / DistBetweenActors) * 150.0f;
+				float TiltDistanceScalar = FMath::Clamp((1.0f / DistBetweenActors) * 200.0f, 0.1f, 1.0f);
+				GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("TiltDistanceScalar: %f"), TiltDistanceScalar));
 				if ( !ActorHasTag("Spectator") )
 				{
 					FVector InputVector = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 					FVector VelNormal = GetCharacterMovement()->Velocity.GetSafeNormal();
-					float DotScale = FMath::Abs(FVector::DotProduct(InputVector, VelNormal));
-					CameraTiltX = FMath::FInterpTo(CameraTiltX, InputZ*CameraTiltValue*DotScale, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
-					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, InputX*CameraTiltValue*DotScale, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // yaw
+					float DotScale = 1.0f; //FMath::Abs(FVector::DotProduct(InputVector, VelNormal));
+					float ClampedTargetTiltX = FMath::Clamp((InputZ*CameraTiltValue*DotScale), -CameraTiltClamp, CameraTiltClamp);
+					float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DotScale), -CameraTiltClamp, CameraTiltClamp);
+					CameraTiltX = FMath::FInterpTo(CameraTiltX, ClampedTargetTiltX, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
+					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, ClampedTargetTiltZ, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // yaw
 				}
 				else
 				{
