@@ -447,7 +447,11 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				{
 					VerticalDist *= 21.0f;
 				}
-				float TargetLength = DistBetweenActors + VerticalDist;
+
+				// Handle horizontal bias
+				float DistancePreClamp = FMath::Sqrt(VerticalDist) * 100.0f;
+				GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("DistancePreClamp: %f"), DistancePreClamp));
+				float TargetLength = FMath::Clamp((DistBetweenActors + DistancePreClamp), CameraMinimumDistance, CameraMaxDistance);
 
 				// Modifier for prefire timing
 				if (PrefireTimer > 0.0f)
@@ -477,8 +481,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					TargetLengthClamped, DeltaTime / GlobalTimeScale, (VelocityCameraSpeed / GlobalTimeScale) * 1.15f);
 					
 				// Camera tilt
-				float TiltDistanceScalar = FMath::Clamp((1.0f / DistBetweenActors) * 200.0f, 0.1f, 1.0f);
-				GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("TiltDistanceScalar: %f"), TiltDistanceScalar));
+				float TiltDistanceScalar = FMath::Clamp((1.0f / DistBetweenActors) * 100.0f, 0.1f, 0.5f);
 				if ( !ActorHasTag("Spectator") )
 				{
 					FVector InputVector = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
