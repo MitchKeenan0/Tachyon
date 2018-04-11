@@ -445,7 +445,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// If paired, widescreen edges are vulnerable to overshoot
 				if (!bAlone)
 				{
-					VerticalDist *= 21.0f;
+					VerticalDist *= 11.0f;
 				}
 
 				// Handle horizontal bias
@@ -486,7 +486,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				{
 					FVector InputVector = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 					FVector VelNormal = GetCharacterMovement()->Velocity.GetSafeNormal();
-					float DotScale = 1.0f; //FMath::Abs(FVector::DotProduct(InputVector, VelNormal));
+					float DotScale = FMath::Clamp((GetCharacterMovement()->Velocity.Size() / 15.0f), 0.1f, 1.0f); //FMath::Abs(FVector::DotProduct(InputVector, VelNormal));
 					float ClampedTargetTiltX = FMath::Clamp((InputZ*CameraTiltValue*DotScale), -CameraTiltClamp, CameraTiltClamp);
 					float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DotScale), -CameraTiltClamp, CameraTiltClamp);
 					CameraTiltX = FMath::FInterpTo(CameraTiltX, ClampedTargetTiltX, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
