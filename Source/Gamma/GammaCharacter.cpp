@@ -445,7 +445,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// If paired, widescreen edges are vulnerable to overshoot
 				if (!bAlone)
 				{
-					VerticalDist *= 11.0f;
+					VerticalDist *= 15.0f;
 				}
 
 				// Handle horizontal bias
@@ -1042,15 +1042,17 @@ void AGammaCharacter::ReleaseAttack()
 	// Less-clean burn
 	MoveParticles->bSuppressSpawning = false;
 
-	if (ActiveAttack != nullptr)
+	if (!bMultipleAttacks && ActiveAttack != nullptr)
 	{
 		NullifyAttack();
 		return;
 	}
 
-	if (AttackClass && (ActiveAttack == nullptr || bMultipleAttacks) && (Charge > 0.0f)
+	if (	AttackClass != nullptr
+		&& (ActiveAttack == nullptr || bMultipleAttacks) 
+		&& (Charge > 0.0f)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.05f)
-		&& ((PrefireTimer >= 0.02f && ActiveFlash != nullptr)))
+		&& ((PrefireTimer >= 0.001f && ActiveFlash != nullptr)))
 	{
 		// Clean up previous flash
 		if ((GetActiveFlash() != nullptr))
