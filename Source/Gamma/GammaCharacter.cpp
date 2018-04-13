@@ -182,7 +182,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	//UpdateAnimation();
 
 	// CAMERA UPDATE
-	if ( (!ActorHasTag("Bot")) && UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
+	if ( (!ActorHasTag("Bot")) && UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 	{
 		UpdateCamera(DeltaTime);
 	}
@@ -221,10 +221,14 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		}
 
 		// Personal Recovery
-		float t = (FMath::Square(MyTimeDilation) * 100.0f) * DeltaTime;
-		float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, DeltaTime, 2.6f); // t or DeltaTime
-		CustomTimeDilation = FMath::Clamp(ReturnTime, 0.01f, 1.0f);
-		///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("t: %f"), t));
+		float GlobalTimeDil = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+		if (GlobalTimeDil > 0.3f)
+		{
+			float t = (FMath::Square(MyTimeDilation) * 100.0f) * DeltaTime;
+			float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, DeltaTime, 2.6f); // t or DeltaTime
+			CustomTimeDilation = FMath::Clamp(ReturnTime, 0.01f, 1.0f);
+			///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("t: %f"), t));
+		}
 
 
 		// Set rotation so character faces direction of travel
@@ -257,7 +261,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 		// Locator scaling
 		if (Controller->IsLocalController()
-			&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.25f)
+			&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 		{
 			LocatorScaling();
 		}
@@ -326,8 +330,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Framing up first actor
 			FVector Actor1Velocity = Actor1->GetVelocity();
-			Actor1Velocity.Z *= 0.9f; /// vertical kerning
-			Actor1Velocity.X *= 0.9f; /// lateral kerning
 
 			// Set Velocity Camera Move Speed
 			VelocityCameraSpeed *= (1 + (Actor1Velocity.Size() / 30000.0f));
@@ -390,13 +392,13 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// If Actor2 isn't too far away, make 'Pair Framing'
 				if (Actor2 != nullptr && !Actor2->IsUnreachable()
-					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 3600.0f)
+					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 4200.0f)
 				{
 
 					// Framing up with second actor
 					FVector Actor2Velocity = Actor2->GetVelocity();
-					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(1000.0f * (CustomTimeDilation + 0.5f));
-					Actor2Velocity.Z *= 0.75f;
+					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(5000.0f * (CustomTimeDilation + 0.5f));
+					Actor2Velocity.Z *= 0.15f;
 
 					// Declare Position Two
 					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
@@ -424,7 +426,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, UnDilatedDeltaTime, VelocityCameraSpeed); // UnDilatedDeltaTime
 				
 				// Distance controls
-				CameraMaxDistance = 6000.0f;
+				CameraMaxDistance = 11000.0f;
 
 				/// debug Velocity size
 				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,
@@ -449,7 +451,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}
 
 				// Handle horizontal bias
-				float DistancePreClamp = FMath::Sqrt(VerticalDist) * 100.0f;
+				float DistancePreClamp = FMath::Sqrt(VerticalDist) * 155.0f;
 				GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("DistancePreClamp: %f"), DistancePreClamp));
 				float TargetLength = FMath::Clamp((DistBetweenActors + DistancePreClamp), CameraMinimumDistance, CameraMaxDistance);
 
@@ -465,8 +467,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float Timescale = (Actor1->CustomTimeDilation + Actor2->CustomTimeDilation) / 2.0f;
 				if (Timescale < 1.0f)
 				{
-					float GlobalTime = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
-					float HitTimeScalar = FMath::Clamp(FMath::Square(Timescale), 0.75f, 1.0f) * GlobalTime;
+					float HitTimeScalar = FMath::Clamp(FMath::Square(Timescale), 0.55f, 1.0f);
 					TargetLength *= HitTimeScalar;
 				}
 
@@ -476,7 +477,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					CameraMaxDistance);
 
 				// Set Camera Distance
-				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+				float GlobalTimeScale = 1.0f; //UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength,
 					TargetLengthClamped, DeltaTime / GlobalTimeScale, (VelocityCameraSpeed / GlobalTimeScale) * 1.15f);
 					
@@ -486,7 +487,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				{
 					FVector InputVector = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 					FVector VelNormal = GetCharacterMovement()->Velocity.GetSafeNormal();
-					float DotScale = FMath::Clamp((GetCharacterMovement()->Velocity.Size() / 15.0f), 0.1f, 1.0f); //FMath::Abs(FVector::DotProduct(InputVector, VelNormal));
+					//float DotScale = FMath::Abs(FVector::DotProduct(InputVector, VelNormal));
+					float DotScale = TargetLengthClamped * 0.0001f;
 					float ClampedTargetTiltX = FMath::Clamp((InputZ*CameraTiltValue*DotScale), -CameraTiltClamp, CameraTiltClamp);
 					float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DotScale), -CameraTiltClamp, CameraTiltClamp);
 					CameraTiltX = FMath::FInterpTo(CameraTiltX, ClampedTargetTiltX, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
@@ -543,7 +545,7 @@ void AGammaCharacter::ResetLocator()
 void AGammaCharacter::LocatorScaling()
 {
 	// Player locator
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.2f)
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 	{
 		// Scaling down
 		if (Locator->RelativeScale3D.Size() >= 0.01f)
@@ -713,7 +715,7 @@ void AGammaCharacter::MoveUp(float Value)
 // SET X & Z SERVERSIDE
 void AGammaCharacter::SetX(float Value)
 {
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 	{
 		ServerSetX(Value);
 	}
@@ -749,7 +751,7 @@ bool AGammaCharacter::ServerSetX_Validate(float Value)
 
 void AGammaCharacter::SetZ(float Value)
 {
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 	{
 		ServerSetZ(Value);
 	}
@@ -791,7 +793,7 @@ void AGammaCharacter::NewMoveKick()
 		return;
 	}
 
-	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f)
+	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
 	{
 		// Algo scaling for timescale & max velocity
 		FVector MoveInputVector = FVector(InputX + x, 0.0f, InputZ + z);
@@ -918,7 +920,7 @@ bool AGammaCharacter::ServerSetAim_Validate()
 // RAISE CHARGE
 void AGammaCharacter::RaiseCharge()
 {
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.1f
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f
 		&& Charge <= (ChargeMax - ChargeGain)
 		&& ActiveAttack == nullptr)
 	{
@@ -987,7 +989,7 @@ void AGammaCharacter::InitAttack()
 
 	bool bFireAllowed = (bMultipleAttacks || (!bMultipleAttacks && ActiveAttack == nullptr)) && GetActiveFlash() == nullptr;
 	if (bFireAllowed && (Charge > 0.0f) && (FlashClass != nullptr)
-		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.05f))
+		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
 	{
 		//// Clean up previous attack
 		//if (ActiveAttack && !bMultipleAttacks)
@@ -1051,7 +1053,7 @@ void AGammaCharacter::ReleaseAttack()
 	if (	AttackClass != nullptr
 		&& (ActiveAttack == nullptr || bMultipleAttacks) 
 		&& (Charge > 0.0f)
-		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.05f)
+		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
 		&& ((PrefireTimer >= 0.001f && ActiveFlash != nullptr)))
 	{
 		// Clean up previous flash
@@ -1141,7 +1143,7 @@ bool AGammaCharacter::ServerReleaseAttack_Validate()
 void AGammaCharacter::FireSecondary()
 {
 	if (SecondaryClass && (ActiveSecondary == nullptr)
-		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.2f))
+		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
 	{
 		// Clean burn
 		MoveParticles->bSuppressSpawning = true;

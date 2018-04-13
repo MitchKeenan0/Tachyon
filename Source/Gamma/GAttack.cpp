@@ -417,7 +417,11 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	{
 		SpawnDamage(HitActor, HitPoint);
 		ApplyKnockback(HitActor);
-		ReportHit(HitActor);
+
+		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+		{
+			ReportHit(HitActor);
+		}
 	}
 	else
 	{
