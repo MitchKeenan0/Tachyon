@@ -451,7 +451,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// If paired, widescreen edges are vulnerable to overshoot
 				if (!bAlone)
 				{
-					VerticalDist *= 15.0f;
+					VerticalDist *= 9.0f;
 				}
 
 				// Handle horizontal bias
@@ -600,9 +600,14 @@ void AGammaCharacter::UpdateAnimation()
 float AGammaCharacter::GetChargePercentage()
 {
 	float Percentage = 0.0f;
-	if (Charge > 0)
+	if (Charge >= 0)
 	{
 		Percentage = Charge / ChargeMax;
+	}
+	else
+	{
+		// Subzero charge is absolute
+		Percentage = Charge;
 	}
 	return Percentage;
 }
@@ -966,7 +971,12 @@ void AGammaCharacter::RaiseCharge()
 		&& Charge <= (ChargeMax - ChargeGain)
 		&& ActiveAttack == nullptr)
 	{
+		// Noobish recovery from empty-case -1 charge
+		if (Charge < 0.0f) {
+			Charge = 0.0f;
+		}
 
+		// Charge growth
 		if (Charge < ChargeMax)
 		{
 			Charge += ChargeGain;
@@ -983,20 +993,15 @@ void AGammaCharacter::RaiseCharge()
 		{
 			NewMoveKick();
 		}
-		/*else
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("Boost failed! :("));
-		}*/
 
-
-		// Sound fx -.-
+		// Sound fx
 		if (PlayerSound != nullptr)
 		{
 			//PlayerSound->SetPitchMultiplier(Charge * 0.3f);
 			PlayerSound->Play();
 		}
 
-		// Spawn charge vfx
+		// visual charge vfx
 		if (ChargeParticles != nullptr)
 		{
 			FActorSpawnParameters SpawnParams;
@@ -1031,6 +1036,13 @@ bool AGammaCharacter::ServerRaiseCharge_Validate()
 // PRE-ATTACK flash spawning
 void AGammaCharacter::InitAttack()
 {
+	if (Charge < ChargeGain)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("CHARGE [SPACEBAR], [DOWN] %f"), Charge));
+		Charge = -1.0f;
+		return;
+	}
+
 	// Clean burn
 	MoveParticles->bSuppressSpawning = true;
 
@@ -1312,7 +1324,17 @@ void AGammaCharacter::PowerSlideEngage()
 	{
 		GetCharacterMovement()->BrakingFrictionFactor = PowerSlideSpeed;
 		bSliding = true;
-		Charge = 0.0f;
+		
+		// Neutralizing charge
+		// Armed player goes to -1, triggering a warning
+		if (Charge > 0.0f)
+		{
+			Charge = -1.0f;
+		}
+		else
+		{
+			Charge = 0.0f;
+		}
 
 		// Attack cancel
 		if (GetActiveFlash() != nullptr)

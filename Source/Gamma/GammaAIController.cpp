@@ -163,9 +163,9 @@ void AGammaAIController::Tactical(FVector Target)
 {
 	// Random number to evoke choice
 	float RandomDc = FMath::FRandRange(0.0f, 100.0f);
-	float HandBrakeVal = 11.0f;
-	float ChargeVal = 51.0f;
-	float SecoVal = 66.0f;
+	float HandBrakeVal = 5.5f;
+	float ChargeVal = 69.0f;
+	float SecoVal = 81.0f;
 
 
 	// HANDBRAKE
