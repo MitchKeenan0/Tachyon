@@ -156,7 +156,7 @@ void AGammaCharacter::BeginPlay()
 	ResetLocator();
 
 	// Init charge
-	Charge = FMath::FloorToFloat(ChargeMax / 2);
+	Charge = FMath::FloorToFloat(ChargeMax / 2.0f);
 
 	// Init camera
 	FVector PlayerLocation = GetActorLocation();
@@ -164,7 +164,7 @@ void AGammaCharacter::BeginPlay()
 	CameraBoom->SetRelativeLocation(PlayerLocation);
 	PositionOne = PlayerLocation;
 	PositionTwo = PlayerLocation;
-	CameraBoom->TargetArmLength = 3000;
+	CameraBoom->TargetArmLength = 30000.0f;
 
 	// Init location (obstacles can currently deset players)
 	FVector ActorLoc = GetActorLocation();
@@ -1065,13 +1065,20 @@ void AGammaCharacter::ReleaseAttack()
 		}
 
 		// Aim by InputY
-		float AimClampedInputZ = FMath::Clamp(InputZ * 10.0f, -1.0f, 1.0f);
+		float AimClampedInputZ = FMath::Clamp((InputZ * 10.0f), -1.0f, 1.0f);
 		FVector FirePosition = AttackScene->GetComponentLocation();
 		FVector LocalForward = AttackScene->GetForwardVector();
-		FRotator FireRotation = LocalForward.Rotation() + FRotator(AimClampedInputZ * 21.0f, 0.0f, 0.0f);
-		FActorSpawnParameters SpawnParams;
-
-		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Attack read InputZ: %f"), InputZ));
+		LocalForward.Y = 0.0f;
+		FRotator FireRotation = LocalForward.Rotation() + FRotator(InputZ * 21.0f, 0.0f, 0.0f); /// AimClampedInputZ
+		FireRotation.Yaw = GetActorRotation().Yaw;
+		if (FMath::Abs(FireRotation.Yaw) > 90.0f)
+		{
+			FireRotation.Yaw = 180.0f;
+		}
+		else
+		{
+			FireRotation.Yaw = 0.0f;
+		}
 
 
 		// Spawning
@@ -1079,6 +1086,7 @@ void AGammaCharacter::ReleaseAttack()
 		{
 			if (AttackClass != nullptr || bMultipleAttacks)
 			{
+				FActorSpawnParameters SpawnParams;
 				ActiveAttack = Cast<AGAttack>(GetWorld()->SpawnActor<AGAttack>(AttackClass, FirePosition, FireRotation, SpawnParams));
 				if (ActiveAttack != nullptr)
 				{
@@ -1098,19 +1106,19 @@ void AGammaCharacter::ReleaseAttack()
 					{
 						ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
 					}
-					else
-					{
-						// Non-locked attacks must align to fighting plane
-						FRotator AttackRotation = ActiveAttack->GetActorRotation();
-						if (AttackRotation.Yaw > 90.0f)
-						{
-							ActiveAttack->SetActorRotation(FRotator(AttackRotation.Pitch, 180.0f, AttackRotation.Roll));
-						}
-						else
-						{
-							ActiveAttack->SetActorRotation(FRotator(AttackRotation.Pitch, 0.0f, AttackRotation.Roll));
-						}
-					}
+					//else
+					//{
+					//	// Non-locked attacks must align to fighting plane
+					//	FRotator AttackRotation = ActiveAttack->GetActorRotation();
+					//	if (AttackRotation.Yaw > 90.0f)
+					//	{
+					//		ActiveAttack->SetActorRotation(FRotator(AttackRotation.Pitch, 180.0f, AttackRotation.Roll));
+					//	}
+					//	else
+					//	{
+					//		ActiveAttack->SetActorRotation(FRotator(AttackRotation.Pitch, 0.0f, AttackRotation.Roll));
+					//	}
+					//}
 				}
 			}
 			else

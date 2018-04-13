@@ -77,14 +77,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			{
 				bGG = true;
 
-				SetTimeScale(GGTimescale);
-				//LocalPlayer->CustomTimeDilation = GGTimescale;
-				//OpponentPlayer->CustomTimeDilation = GGTimescale;
-
-				bReturn = false;
-				//SetTimeScale(GGTimescale);
-
-				//Calcify HitActor
+				//Calcify killed HitActor
 				UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
 					(HitActor->FindComponentByClass<UPaperFlipbookComponent>());
 				if (ActorFlipbook != nullptr)
@@ -93,6 +86,15 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 					ActorFlipbook->SetPlaybackPositionInFrames(1, true);
 				}
 
+				// Transfer timescaling to global
+				HitActor->CustomTimeDilation = 1.0f;
+				Winner->CustomTimeDilation = 1.0f;
+				SetTimeScale(GGTimescale);
+
+				bReturn = false;
+
+				
+				// Clear shot-out NPCs
 				/*if (HitActor->ActorHasTag("Bot"))
 				{
 					HitActor->Tags.Add("Doomed");
