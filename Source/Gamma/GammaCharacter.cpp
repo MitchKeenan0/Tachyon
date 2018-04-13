@@ -121,6 +121,7 @@ void AGammaCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 	PlayerInputComponent->BindAction("PowerSlide", IE_Pressed, this, &AGammaCharacter::CheckPowerSlideOn);
 	PlayerInputComponent->BindAction("PowerSlide", IE_Released, this, &AGammaCharacter::CheckPowerSlideOff);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AGammaCharacter::RaiseCharge);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AGammaCharacter::DisengageKick);
 	PlayerInputComponent->BindAction("Secondary", IE_Pressed, this, &AGammaCharacter::FireSecondary);
 	PlayerInputComponent->BindAction("Rematch", IE_Pressed, this, &AGammaCharacter::Rematch);
 
@@ -154,9 +155,12 @@ void AGammaCharacter::BeginPlay()
 	}
 
 	ResetLocator();
+	TextComponent->SetText(FText::FromString(CharacterName));
 
 	// Init charge
 	Charge = FMath::FloorToFloat(ChargeMax / 2.0f);
+	// Init health
+	Health = MaxHealth;
 
 	// Init camera
 	FVector PlayerLocation = GetActorLocation();
@@ -418,7 +422,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 3.0f;
 
 				// Clamp to max size
-				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(5000.0f * (CustomTimeDilation + 0.5f));
+				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(3000.0f * (CustomTimeDilation + 0.5f));
 				Actor1Velocity.Z *= 0.75f;
 
 				// Declare Position Two
@@ -451,9 +455,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}
 
 				// Handle horizontal bias
-				float DistancePreClamp = FMath::Sqrt(VerticalDist) * 155.0f;
-				GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("DistancePreClamp: %f"), DistancePreClamp));
-				float TargetLength = FMath::Clamp((DistBetweenActors + DistancePreClamp), CameraMinimumDistance, CameraMaxDistance);
+				float DistancePreClamp = (DistBetweenActors + (FMath::Sqrt(VerticalDist) * 155.0f)) * 2.1f;
+				///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("DistancePreClamp: %f"), DistancePreClamp));
+				float TargetLength = FMath::Clamp(DistancePreClamp, CameraMinimumDistance, CameraMaxDistance);
 
 				// Modifier for prefire timing
 				if (PrefireTimer > 0.0f)
@@ -622,11 +626,17 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		PrefireTiming();
 	}
 
+	// Update boosting
+	if (bBoosting)
+	{
+		KickPropulsion();
+	}
+
 
 	// Update player pitch
 	if (PlayerSound != nullptr)
 	{
-		float VectorScale = GetCharacterMovement()->Velocity.Size() * 0.001f;
+		float VectorScale = FMath::Sqrt(GetCharacterMovement()->Velocity.Size()) * 0.033f;
 		float Scalar = FMath::Clamp(VectorScale, 0.2f, 4.0f) * 0.5f;
 		PlayerSound->SetPitchMultiplier(Scalar);
 	}
@@ -787,53 +797,15 @@ bool AGammaCharacter::ServerSetZ_Validate(float Value)
 // BOOST KICK HUSTLE DASH
 void AGammaCharacter::NewMoveKick()
 {
-	if (Role == ROLE_AutonomousProxy) // < ROLE_Authority
+	if (!bBoosting)
 	{
-		ServerNewMoveKick();
-		return;
-	}
+		if (Role == ROLE_AutonomousProxy) // < ROLE_Authority
+		{
+			ServerNewMoveKick();
+			return;
+		}
 
-	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
-	{
-		// Algo scaling for timescale & max velocity
-		FVector MoveInputVector = FVector(InputX + x, 0.0f, InputZ + z);
-		FVector CurrentVelocity = GetCharacterMovement()->Velocity;
-		float TimeDelta = (GetWorld()->DeltaTimeSeconds / CustomTimeDilation);
-		//float RelativityToMaxSpeed = (MaxMoveSpeed) - CurrentVelocity.Size();
-		float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
-
-		// Force, clamp, & effect chara movement
-		FVector KickVector = MoveInputVector
-			* MoveFreshMultiplier
-			* 1000.0f ///previously RelativityToMaxSpeed
-			* (1.0f + FMath::Abs(x))
-			* TimeDelta;
-		//KickVector = KickVector.GetClampedToSize(0.0f, MaxMoveSpeed);
-		KickVector.Z *= 0.7f;
-		KickVector.Y = 0.0f;
-		GetCharacterMovement()->AddImpulse(KickVector);
-
-		bMoved = false;
-		MoveTimer = 0.0f;
-
-		// Spawn visuals
-		FActorSpawnParameters SpawnParams;
-		FVector PlayerVelocity = GetCharacterMovement()->Velocity;
-		FRotator PlayerVelRotator = PlayerVelocity.Rotation();
-		FRotator InputRotator = MoveInputVector.Rotation();
-
-		PlayerVelocity.Z *= 0.01f;
-		FVector SpawnLocation = GetActorLocation(); /// + (PlayerVelocity / 3);
-		
-		GetWorld()->SpawnActor<AActor>
-			(BoostClass, SpawnLocation, InputRotator, SpawnParams); /// PlayerVelRotator
-		
-		ForceNetUpdate();
-
-		//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
-		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
-		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("vel  %f"), (GetCharacterMovement()->Velocity.Size())));
-		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("time scalar   %f"), TimeScalar));
+		bBoosting = true;
 	}
 }
 void AGammaCharacter::ServerNewMoveKick_Implementation()
@@ -844,6 +816,121 @@ bool AGammaCharacter::ServerNewMoveKick_Validate()
 {
 	return true;
 }
+
+
+// DISENGAGE LE KICK
+void AGammaCharacter::DisengageKick()
+{
+	if (Role == ROLE_AutonomousProxy)
+	{
+		ServerDisengageKick();
+		return;
+	}
+
+	// Clear existing boost
+	if (ActiveBoost != nullptr)
+	{
+		ActiveBoost->Destroy();
+		ActiveBoost = nullptr;
+		///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("KICK DISENGAGED.."));
+	}
+	if (ActiveChargeParticles != nullptr)
+	{
+		ActiveChargeParticles->Destroy();
+		ActiveChargeParticles = nullptr;
+	}
+
+	//bBoosting = false;
+}
+void AGammaCharacter::ServerDisengageKick_Implementation()
+{
+	DisengageKick();
+}
+bool AGammaCharacter::ServerDisengageKick_Validate()
+{
+	return true;
+}
+
+
+// LE KICK PROPULSION
+void AGammaCharacter::KickPropulsion()
+{
+	if (Role == ROLE_AutonomousProxy)
+	{
+		ServerKickPropulsion();
+		return;
+	}
+
+	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
+	{
+
+		// Conditions met - (Charge FX are active) and (We're within acceptable speed)
+		if (((ActiveChargeParticles != nullptr) && ActiveChargeParticles->IsValidLowLevel() && !ActiveChargeParticles->IsPendingKillOrUnreachable()) 
+			&& GetCharacterMovement()->Velocity.Size() < (MaxMoveSpeed * 5.0f))
+		{
+			// Algo scaling for timescale & max velocity
+			FVector MoveInputVector = FVector(InputX + x, 0.0f, InputZ + z);
+			FVector CurrentVelocity = GetCharacterMovement()->Velocity;
+			float TimeDelta = (GetWorld()->DeltaTimeSeconds / CustomTimeDilation);
+			//float RelativityToMaxSpeed = (MaxMoveSpeed) - CurrentVelocity.Size();
+			float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
+
+			// Force, clamp, & effect chara movement
+			FVector KickVector = MoveInputVector
+				* MoveFreshMultiplier
+				* 1000.0f ///previously RelativityToMaxSpeed
+				* (1.0f + FMath::Abs(x))
+				* TimeDelta;
+			
+			// Trimming
+			KickVector.Z *= 0.7f;
+			KickVector.Y = 0.0f;
+			GetCharacterMovement()->AddImpulse(KickVector);
+
+			bMoved = false;
+			MoveTimer = 0.0f;
+
+			// Spawn visuals
+			if (BoostClass != nullptr && ActiveBoost == nullptr)
+			{
+				FActorSpawnParameters SpawnParams;
+				FVector PlayerVelocity = GetCharacterMovement()->Velocity;
+				FRotator PlayerVelRotator = PlayerVelocity.Rotation();
+				FRotator InputRotator = MoveInputVector.Rotation();
+
+				PlayerVelocity.Z *= 0.01f;
+				FVector SpawnLocation = GetActorLocation(); /// + (PlayerVelocity / 3);
+
+				ActiveBoost = GetWorld()->SpawnActor<AActor>
+					(BoostClass, SpawnLocation, InputRotator, SpawnParams); /// PlayerVelRotator
+
+				//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, TEXT("SPAWNING KICK..."));
+			}
+
+			ForceNetUpdate();
+
+			GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("MoveInputVector  %f"), MoveInputVector.Size()));
+			//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
+			//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
+			//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("vel  %f"), (GetCharacterMovement()->Velocity.Size())));
+			//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("time scalar   %f"), TimeScalar));
+		}
+		else
+		{
+			DisengageKick();
+		}
+		
+	}
+}
+void AGammaCharacter::ServerKickPropulsion_Implementation()
+{
+	KickPropulsion();
+}
+bool AGammaCharacter::ServerKickPropulsion_Validate()
+{
+	return true;
+}
+
 
 // BOOST PARTICLES
 void AGammaCharacter::UpdateMoveParticles(FVector Move)
@@ -867,51 +954,6 @@ void AGammaCharacter::ServerUpdateMoveParticles_Implementation(FVector Move)
 	UpdateMoveParticles(Move);
 }
 bool AGammaCharacter::ServerUpdateMoveParticles_Validate(FVector Move)
-{
-	return true;
-}
-
-
-// NOT USED - WORLD TEMPO TING
-void AGammaCharacter::SetAim()
-{
-	// Fresh move 'kick it'
-	FVector CurrentMove = FVector(InputX, 0.0f, InputZ);
-	if ((CurrentMove != PrevMoveInput) 
-		&& (CurrentMove != FVector::ZeroVector))
-	{
-		// Tempo timing
-		CurrentMoveTime = GetWorld()->TimeSeconds;
-		float TimeDelta = (CurrentMoveTime - LastMoveTime);
-
-		// Respect tempo
-		if (TimeDelta > (0.1f * UGameplayStatics::GetGlobalTimeDilation(GetWorld())))
-		{
-			//NewMoveKick();
-			//UpdateMoveParticles(CurrentMove);
-
-			if (PlayerSound != nullptr)
-			{
-				PlayerSound->SetPitchMultiplier(Charge);
-				PlayerSound->Play();
-			}
-		}
-	}
-
-	LastMoveTime = CurrentMoveTime;
-	PrevMoveInput = CurrentMove;
-	//bNewMove = false;
-
-	if (Role == ROLE_AutonomousProxy) //< ROLE_Authority
-	{
-		ServerSetAim();
-	}
-}
-void AGammaCharacter::ServerSetAim_Implementation()
-{
-	SetAim();
-}
-bool AGammaCharacter::ServerSetAim_Validate()
 {
 	return true;
 }
@@ -955,9 +997,12 @@ void AGammaCharacter::RaiseCharge()
 		}
 
 		// Spawn charge vfx
-		FActorSpawnParameters SpawnParams;
-		ActiveChargeParticles = Cast<AActor>(GetWorld()->SpawnActor<AActor>(ChargeParticles, GetActorLocation(), GetActorRotation(), SpawnParams));
-		ActiveChargeParticles->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+		if (ChargeParticles != nullptr)
+		{
+			FActorSpawnParameters SpawnParams;
+			ActiveChargeParticles = Cast<AActor>(GetWorld()->SpawnActor<AActor>(ChargeParticles, GetActorLocation(), GetActorRotation(), SpawnParams));
+			ActiveChargeParticles->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+		}
 
 		//GEngine->AddOnScreenDebugMessage(-1, 0.68f, FColor::White, FString::Printf(TEXT("%f % CHARGE"), Charge), true, FVector2D::UnitVector * 2);
 
@@ -966,6 +1011,13 @@ void AGammaCharacter::RaiseCharge()
 		//float Scalar = Charge / ChargeMax;
 		//ActiveChargeParticles->SetActorRelativeScale3D(ActiveChargeParticles->GetActorRelativeScale3D() * Scalar);
 	}
+
+	//// Catch edgecase 'dead key' and refire
+	//if ((ActiveChargeParticles == nullptr && GetActiveBoost() == nullptr) || ((GetActiveBoost() != nullptr) && GetActiveBoost()->IsPendingKillOrUnreachable()))
+	//{
+	//	///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("N E W  K I C K I N G"));
+	//	NewMoveKick();
+	//}
 }
 void AGammaCharacter::ServerRaiseCharge_Implementation()
 {
@@ -1015,7 +1067,7 @@ void AGammaCharacter::InitAttack()
 		//FVector MoveInputVector = FVector(InputX, 0.0f, InputZ);
 
 		// Spawning
-		if (HasAuthority())
+		if (HasAuthority() && (FlashClass != nullptr))
 		{
 			// Spawn eye heat
 			FActorSpawnParameters SpawnParams;
@@ -1163,7 +1215,7 @@ void AGammaCharacter::FireSecondary()
 		FActorSpawnParameters SpawnParams;
 
 		// Spawning
-		if (HasAuthority())
+		if (HasAuthority() && (SecondaryClass != nullptr))
 		{
 			ActiveSecondary = GetWorld()->SpawnActor<AGAttack>(SecondaryClass, FirePosition, FireRotation, SpawnParams); //  Cast<AActor>());
 
@@ -1374,7 +1426,7 @@ void AGammaCharacter::ResetFlipbook()
 	CameraBoom->SetRelativeLocation(PlayerLocation);
 	PositionOne = PlayerLocation;
 	PositionTwo = PlayerLocation;
-	CameraBoom->TargetArmLength = 5000;
+	CameraBoom->TargetArmLength = 9000.0f;
 }
 
 
@@ -1393,6 +1445,7 @@ void AGammaCharacter::GetLifetimeReplicatedProps(TArray <FLifetimeProperty> & Ou
 	DOREPLIFETIME(AGammaCharacter, z);
 	DOREPLIFETIME(AGammaCharacter, MoveTimer);
 	DOREPLIFETIME(AGammaCharacter, bSliding);
+	DOREPLIFETIME(AGammaCharacter, bBoosting);
 
 	DOREPLIFETIME(AGammaCharacter, Charge);
 	DOREPLIFETIME(AGammaCharacter, bCharging);

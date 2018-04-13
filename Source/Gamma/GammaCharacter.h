@@ -145,6 +145,7 @@ protected:
 
 	// ARRAYS ///////////////////////////////////////////////////////////////
 	// Camera partners
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<AActor*> FramingActors;
 
 
@@ -171,9 +172,15 @@ protected:
 	TSubclassOf<AActor> ChargeParticles;
 	class AActor* ActiveChargeParticles = nullptr;
 
+	// Killed FX object
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TSubclassOf<AActor> KilledFX;
+	class AActor* ActiveKilledFX = nullptr;
+
 	// Boost object
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AActor> BoostClass;
+	class AActor* ActiveBoost = nullptr;
 
 	// Replicated functions
 	void Rematch();
@@ -196,18 +203,18 @@ protected:
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation) // see chrome
 	void ServerNewMoveKick();
 
+	void KickPropulsion();
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerKickPropulsion();
+
 	void UpdateMoveParticles(FVector Move);
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerUpdateMoveParticles(FVector Move);
 
-	void SetAim();
-	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
-	void ServerSetAim();
-
 public:
 	AActor* GetActiveFlash() { return ActiveFlash; }
 	AActor* GetActiveSecondary() { return ActiveSecondary; }
-
+	AActor* GetActiveBoost() { return ActiveBoost; }
 
 
 	// REPLICATED COMBAT FUNCTIONS ////////////////////////////////
@@ -218,6 +225,10 @@ public:
 	void RaiseCharge();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerRaiseCharge();
+
+	void DisengageKick();
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerDisengageKick();
 
 	void ReleaseAttack();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
@@ -293,6 +304,8 @@ protected:
 	bool bMoved = false;
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
 	bool bSliding = false;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	bool bBoosting = false;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
 	float Charge = 0.0f;
@@ -313,43 +326,45 @@ protected:
 
 	// Player movement
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float MoveSpeed = 1000.0f;
+	float MaxHealth = 100.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float MovesPerSecond = 30.0f;
+	float MoveSpeed = 50.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float TurnSpeed = -0.1f;
+	float MovesPerSecond = 1000.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float TurnSpeed = 5000.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float MoveFreshMultiplier = 100.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float SlowmoMoveBoost = 1.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float MaxMoveSpeed = 5000.0f;
+	float MaxMoveSpeed = 1000.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float MoveAccelerationSpeed = 1000.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float DecelerationSpeed = 0.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float PowerSlideSpeed = 0.0f;
+	float PowerSlideSpeed = 50.0f;
 
 	// Camera movement
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float CameraMoveSpeed = 0.6f;
+	float CameraMoveSpeed = 1.5f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float CameraVelocityChase = 1.5f;
+	float CameraVelocityChase = 0.7f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float CameraSoloVelocityChase = 1.5f;
+	float CameraSoloVelocityChase = 1.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float CameraDistanceScalar = 1.3f;
+	float CameraDistanceScalar = 0.7f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float CameraTiltValue = 10.0f;
+	float CameraTiltValue = 3.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float CameraTiltSpeed = 0.36f;
+	float CameraTiltSpeed = 11.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float CameraTiltClamp = 1.0f;
+	float CameraTiltClamp = 5.0f;
 
 	// Charge properties
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float PrefireTime = 0.1f;
+	float PrefireTime = 0.5f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float ChargeMax = 4.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)

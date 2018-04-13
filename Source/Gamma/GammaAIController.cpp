@@ -195,15 +195,23 @@ void AGammaAIController::Tactical(FVector Target)
 	// CHARGE
 	if (RandomDc <= ChargeVal)
 	{
-		// Charge
-		if (MyCharacter->GetCharge() <= 3.0f) /// dirty hardcode! ChargeMax unreachable until Epic fix
+		// Call-off existing charge boost if there is one
+		if ((MyCharacter->GetActiveBoost() != nullptr) && (MyCharacter->GetActiveBoost()->IsValidLowLevel()) && (!MyCharacter->GetActiveBoost()->IsPendingKillOrUnreachable()))
 		{
-			MyCharacter->CheckPowerSlideOff();
-			MyCharacter->RaiseCharge();
+			MyCharacter->DisengageKick();
 		}
 		else
 		{
-			MyCharacter->CheckPowerSlideOn();
+			// Charge
+			if (MyCharacter->GetCharge() <= 3.0f) /// dirty hardcode! ChargeMax unreachable until Epic fix
+			{
+				MyCharacter->CheckPowerSlideOff();
+				MyCharacter->RaiseCharge();
+			}
+			else
+			{
+				MyCharacter->CheckPowerSlideOn();
+			}
 		}
 	}
 
@@ -341,13 +349,13 @@ void AGammaAIController::NavigateTo(FVector Target)
 		// Simulating decision between vertical and lateral
 		if (LateralDistance != 0.0f)
 		{
-			ValueX = FMath::Clamp(ToTarget.X, -1.0f, 1.0f);
+			ValueX = FMath::Clamp((ToTarget.X * 0.01f), -1.0f, 1.0f);
 			MyCharacter->SetX(ValueX);
 		}
 		if (VerticalDistance != 0.0f
 			|| LongitudeDistance != 0.0f)
 		{
-			ValueZ = FMath::Clamp(ToTarget.Z, -1.0f, 1.0f);
+			ValueZ = FMath::Clamp((ToTarget.Z * 0.01f), -1.0f, 1.0f);
 
 			MyCharacter->SetZ(ValueZ);
 		}

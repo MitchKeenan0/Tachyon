@@ -85,7 +85,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	// Lifespan
 	if (MagnitudeTimeScalar != 1.0f)
 	{
-		DurationTime = DurationTime + AttackMagnitude;
+		DurationTime = (DurationTime + AttackMagnitude) * MagnitudeTimeScalar;
 		LethalTime = DurationTime * 0.5f;
 	}
 	else
