@@ -186,7 +186,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	//UpdateAnimation();
 
 	// CAMERA UPDATE
-	if ( (!ActorHasTag("Bot")) && UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+	if (!ActorHasTag("Bot"))
 	{
 		UpdateCamera(DeltaTime);
 	}
@@ -455,7 +455,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}
 
 				// Handle horizontal bias
-				float DistancePreClamp = (DistBetweenActors + (FMath::Sqrt(VerticalDist) * 155.0f)) * 2.1f;
+				float DistancePreClamp = (DistBetweenActors + (FMath::Sqrt(VerticalDist) * 155.0f)) * 1.15f;
 				///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("DistancePreClamp: %f"), DistancePreClamp));
 				float TargetLength = FMath::Clamp(DistancePreClamp, CameraMinimumDistance, CameraMaxDistance);
 
@@ -475,38 +475,27 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					TargetLength *= HitTimeScalar;
 				}
 
+				// Last modifier for global time dilation
+				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld()) * 2.1f;
+				float RefinedGScalar = FMath::Clamp(GlobalTimeScale, 0.21f, 1.0f);
+				TargetLength *= RefinedGScalar;
+
 				// Clamp useable distance
 				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 1200.0f) * CameraDistanceScalar,
-					CameraMinimumDistance,
+					CameraMinimumDistance * RefinedGScalar,
 					CameraMaxDistance);
 
 				// Set Camera Distance
-				float GlobalTimeScale = 1.0f; //UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength,
-					TargetLengthClamped, DeltaTime / GlobalTimeScale, (VelocityCameraSpeed / GlobalTimeScale) * 1.15f);
+					TargetLengthClamped, DeltaTime, (VelocityCameraSpeed * 1.15f));
 					
 				// Camera tilt
 				float TiltDistanceScalar = FMath::Clamp((1.0f / DistBetweenActors) * 100.0f, 0.1f, 0.5f);
-				if ( !ActorHasTag("Spectator") )
-				{
-					FVector InputVector = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
-					FVector VelNormal = GetCharacterMovement()->Velocity.GetSafeNormal();
-					//float DotScale = FMath::Abs(FVector::DotProduct(InputVector, VelNormal));
-					float DotScale = TargetLengthClamped * 0.0001f;
-					float ClampedTargetTiltX = FMath::Clamp((InputZ*CameraTiltValue*DotScale), -CameraTiltClamp, CameraTiltClamp);
-					float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DotScale), -CameraTiltClamp, CameraTiltClamp);
-					CameraTiltX = FMath::FInterpTo(CameraTiltX, ClampedTargetTiltX, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
-					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, ClampedTargetTiltZ, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // yaw
-				}
-				else
-				{
-					// Spectator cam has auto tilt using position relativity
-					FVector Relativity = (TargetMidpoint - Actor1->GetActorLocation());
-					float ValZ = FMath::Clamp(Relativity.Z, -1.0f, 1.0f);
-					float ValX = FMath::Clamp(Relativity.X, -1.0f, 1.0f);
-					CameraTiltX = FMath::FInterpTo(CameraTiltX, ValZ * CameraTiltValue, UnDilatedDeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
-					CameraTiltZ = FMath::FInterpTo(CameraTiltX, ValX * CameraTiltValue, UnDilatedDeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
-				}
+				float DistScalar = TargetLengthClamped * 0.0001f;
+				float ClampedTargetTiltX = FMath::Clamp((InputZ*CameraTiltValue*DistScalar), -CameraTiltClamp, CameraTiltClamp);
+				float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DistScalar), -CameraTiltClamp, CameraTiltClamp);
+				CameraTiltX = FMath::FInterpTo(CameraTiltX, ClampedTargetTiltX, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
+				CameraTiltZ = FMath::FInterpTo(CameraTiltZ, ClampedTargetTiltZ, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // yaw
 				FRotator FTarget = FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue;
 				FTarget.Roll = 0.0f;
 				SideViewCameraComponent->SetRelativeRotation(FTarget);
@@ -514,12 +503,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// Adjust position to work angle
 				Midpoint.X -= ((CameraTiltZ * (DesiredCameraDistance / 15.0f))) * DeltaTime;
 				Midpoint.Z -= ((CameraTiltX * (DesiredCameraDistance / 15.0f))) * DeltaTime;
-
-				// New hawtness for handling y/depth movement
-				//FVector MidpointPerpendicular = Midpoint.RotateAngleAxis(90.0f, FVector::UpVector);
-				//MidpointPerpendicular.Z = 0.0f;
-				/*FVector ToMidpoint = (Midpoint - CameraBoom->GetComponentLocation()).GetSafeNormal();
-				SideViewCameraComponent->SetWorldRotation((ToMidpoint).Rotation());*/
 
 				// Make it so
 				CameraBoom->SetWorldLocation(Midpoint);

@@ -163,30 +163,34 @@ void AGAttack::Tick(float DeltaTime)
 	LifeTimer += DeltaTime;
 	HitTimer += DeltaTime;
 
-	// Neutralize before smooth visual exit
-	if (LifeTimer >= LethalTime)
-	{
-		bLethal = false;
-	}
-
-	// End-of-life activities
-	float CloseEnough = DurationTime * 0.97f;
-	if (LifeTimer >= CloseEnough || this->IsPendingKillOrUnreachable())
-	{
-		AttackParticles->bSuppressSpawning = true;
-
-		AGammaCharacter* PotentialGamma = Cast<AGammaCharacter>(OwningShooter);
-		if (PotentialGamma)
-		{
-			bool Input = bSecondary;
-			Nullify(Input);
-		}
-	}
-
 	// Healthy attack activities
 	if (bLethal && HasAuthority())
 	{
 		UpdateAttack(DeltaTime);
+	}
+
+	// Life-tracking activities
+	float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+	if (GlobalTimeScale > 0.3f)
+	{
+		float CloseEnough = DurationTime * 0.97f;
+		if (LifeTimer >= CloseEnough || this->IsPendingKillOrUnreachable())
+		{
+			AttackParticles->bSuppressSpawning = true;
+
+			AGammaCharacter* PotentialGamma = Cast<AGammaCharacter>(OwningShooter);
+			if (PotentialGamma)
+			{
+				bool Input = bSecondary;
+				Nullify(Input);
+			}
+		}
+
+		// Neutralize before smooth visual exit
+		if (LifeTimer >= LethalTime)
+		{
+			bLethal = false;
+		}
 	}
 }
 
@@ -396,11 +400,13 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	{
 		if (Atk->OwningShooter != nullptr
 			&& this->OwningShooter != nullptr
-			&& Atk->OwningShooter != this->OwningShooter)
+			&& Atk->OwningShooter != this->OwningShooter
+			&& !Atk->ActorHasTag("Obstacle"))
 		{
 
 			// Collide off shield
-			if (HitActor->ActorHasTag("Shield"))
+			if (HitActor->ActorHasTag("Shield")
+				&& !HitActor->ActorHasTag("Obstacle"))
 			{
 				SpawnDamage(HitActor, HitPoint);
 				ApplyKnockback(HitActor);
