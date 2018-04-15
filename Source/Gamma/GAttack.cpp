@@ -269,10 +269,18 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 		UPrimitiveComponent* HitPrimitive = Cast<UPrimitiveComponent>(HitActor->GetRootComponent());
 		if (HitPrimitive != nullptr)
 		{
+			// Root capsules are easy
 			float ClosestPointDist = HitPrimitive->GetClosestPointOnCollision(HitPoint, OutFVector);
-			AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, OutFVector, Forward, SpawnParams)); /// HitPoint
-			DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
 		}
+		else
+		{
+			// else do it the old fashioned way
+			OutFVector = HitPoint;
+		}
+
+		// Spawn!
+		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, OutFVector, Forward, SpawnParams)); /// HitPoint
+		DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
 	}
 	else
 	{
@@ -395,30 +403,44 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	HitTimer = 0.0f;
 
 	// Hit another attack?
-	AGAttack* Atk = Cast<AGAttack>(HitActor);
-	if (Atk != nullptr)
+	AGAttack* OtherAttack = Cast<AGAttack>(HitActor);
+	if (OtherAttack != nullptr)
 	{
-		if (Atk->OwningShooter != nullptr
-			&& this->OwningShooter != nullptr
-			&& Atk->OwningShooter != this->OwningShooter
-			&& !Atk->ActorHasTag("Obstacle"))
-		{
+		SpawnDamage(HitActor, HitPoint);
 
+		if (OtherAttack->OwningShooter != nullptr
+			&& this->OwningShooter != nullptr
+			&& OtherAttack->OwningShooter != this->OwningShooter)
+		{
 			// Collide off shield
 			if (HitActor->ActorHasTag("Shield")
 				&& !HitActor->ActorHasTag("Obstacle"))
 			{
-				SpawnDamage(HitActor, HitPoint);
 				ApplyKnockback(HitActor);
+
 				bLethal = false;
 				bHit = true;
 				//return;
+			}
+
+			// Locked weapons' wielders are pushed away
+			if (OtherAttack->LockedEmitPoint
+				&& !OtherAttack->ActorHasTag("Obstacle"))
+			{
+				AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(OtherAttack->OwningShooter);
+				if (PotentialPlayer != nullptr)
+				{
+					ApplyKnockback(PotentialPlayer);
+					ApplyKnockback(PotentialPlayer);
+					ApplyKnockback(PotentialPlayer);
+					ApplyKnockback(PotentialPlayer); // Pending Refactor - add scalar argument to ApKnk!
+				}
 			}
 		}
 	}
 
 	// Real hit Consequences
-	else if (!HitActor->ActorHasTag("Attack")
+	if (bLethal && !HitActor->ActorHasTag("Attack")
 		&& !HitActor->ActorHasTag("Doomed")) /// && (HitTimer >= (1.0f / HitsPerSecond)))
 	{
 		SpawnDamage(HitActor, HitPoint);

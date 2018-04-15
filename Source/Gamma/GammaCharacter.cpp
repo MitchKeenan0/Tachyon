@@ -1046,10 +1046,11 @@ void AGammaCharacter::InitAttack()
 		//}
 
 		// Direction & setting up
+		float AimClampedInputZ = FMath::Clamp((InputZ * 10.0f), -1.0f, 1.0f);
 		FVector FirePosition = AttackScene->GetComponentLocation();
-		FVector FireDirection = AttackScene->GetForwardVector();
-		FireDirection.Y = 0.0f;
-		FRotator FireRotation = FireDirection.Rotation() + FRotator(InputZ, 0.0f, 0.0f); // InputZ * 21.0f
+		FVector LocalForward = AttackScene->GetForwardVector();
+		LocalForward.Y = 0.0f;
+		FRotator FireRotation = LocalForward.Rotation() + FRotator(InputZ * 21.0f, 0.0f, 0.0f); /// AimClampedInputZ
 		FireRotation.Yaw = GetActorRotation().Yaw;
 		if (FMath::Abs(FireRotation.Yaw) > 90.0f)
 		{
@@ -1059,7 +1060,6 @@ void AGammaCharacter::InitAttack()
 		{
 			FireRotation.Yaw = 0.0f;
 		}
-		//FVector MoveInputVector = FVector(InputX, 0.0f, InputZ);
 
 		// Spawning
 		if (HasAuthority() && (FlashClass != nullptr))
