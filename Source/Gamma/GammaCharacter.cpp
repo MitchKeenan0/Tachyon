@@ -341,7 +341,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 			float CameraMinimumDistance = 1000.0f;
-			float CameraMaxDistance = 50000.0f;
+			float CameraMaxDistance = 150000.0f;
 
 			// Position two by another actor
 			bool bAlone = false;
@@ -395,8 +395,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}
 
 				// If Actor2 isn't too far away, make 'Pair Framing'
+				float PairDistanceThreshold = 3300.0f * CameraDistanceScalar;
 				if (Actor2 != nullptr && !Actor2->IsUnreachable()
-					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= 4200.0f)
+					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= PairDistanceThreshold)
 				{
 
 					// Framing up with second actor
@@ -451,7 +452,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// If paired, widescreen edges are vulnerable to overshoot
 				if (!bAlone)
 				{
-					VerticalDist *= 9.0f;
+					VerticalDist *= 10.0f;
 				}
 
 				// Handle horizontal bias
@@ -853,8 +854,8 @@ void AGammaCharacter::KickPropulsion()
 	{
 
 		// Conditions met - (Charge FX are active) and (We're within acceptable speed)
-		if (((ActiveChargeParticles != nullptr) && ActiveChargeParticles->IsValidLowLevel() && !ActiveChargeParticles->IsPendingKillOrUnreachable()) 
-			&& GetCharacterMovement()->Velocity.Size() < (MaxMoveSpeed * 5.0f))
+		if (((ActiveChargeParticles != nullptr) && (!ActiveChargeParticles->IsPendingKillOrUnreachable()))
+			&& (GetCharacterMovement()->Velocity.Size() < (MaxMoveSpeed * 5.0f)))
 		{
 			// Algo scaling for timescale & max velocity
 			FVector MoveInputVector = FVector(InputX + x, 0.0f, InputZ + z);
@@ -879,7 +880,7 @@ void AGammaCharacter::KickPropulsion()
 			MoveTimer = 0.0f;
 
 			// Spawn visuals
-			if (BoostClass != nullptr && ActiveBoost == nullptr)
+			if ((BoostClass != nullptr) && (ActiveBoost == nullptr))
 			{
 				FActorSpawnParameters SpawnParams;
 				FVector PlayerVelocity = GetCharacterMovement()->Velocity;
