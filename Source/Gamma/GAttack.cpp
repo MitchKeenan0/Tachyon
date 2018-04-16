@@ -139,7 +139,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 
 	// Recoil &
 	// Init Success
-	if (OwningShooter != nullptr)
+	if ((OwningShooter != nullptr) && (CurrentMatch != nullptr))
 	{
 		ACharacter* Chara = Cast<ACharacter>(OwningShooter);
 		if (Chara)
@@ -198,7 +198,7 @@ void AGAttack::Tick(float DeltaTime)
 void AGAttack::UpdateAttack(float DeltaTime)
 {
 	bool bTime = (HitTimer >= (1 / HitsPerSecond));
-	if (bTime && !bHit && OwningShooter != nullptr)
+	if (bTime && !bHit && (OwningShooter != nullptr))
 	{
 		DetectHit(GetActorForwardVector());
 	}
@@ -224,7 +224,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 	FHitResult Hit;
 	
 	// Swords, etc, get tangible ray space
-	if (bRaycastOnMesh && AttackSprite->GetSprite() != nullptr)
+	if (bRaycastOnMesh && (AttackSprite->GetSprite() != nullptr))
 	{
 		float AttackBodyLength = (AttackSprite->Bounds.BoxExtent.X) * RaycastHitRange;
 		Start	= GetActorLocation() + (GetActorForwardVector());
@@ -312,13 +312,14 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 		UStaticMeshComponent* HitMeshComponent = nullptr;
 		TArray<UStaticMeshComponent*> Components;
 		HitActor->GetComponents<UStaticMeshComponent>(Components);
-		for (int32 i = 0; i < Components.Num(); ++i)
+		int LoopSize = Components.Num();
+		for (int i = 0; i < LoopSize; ++i)
 		{
 			HitMeshComponent = Components[i];
 		}
 
 		// Apply force to it
-		if (HitMeshComponent != nullptr
+		if ((HitMeshComponent != nullptr)
 			&& HitMeshComponent->IsSimulatingPhysics())
 		{
 			HitMeshComponent->AddImpulse(AwayFromShooter * KnockScalar);
@@ -401,6 +402,7 @@ void AGAttack::Nullify(int AttackType)
 void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 {
 	HitTimer = 0.0f;
+	bool bSpawnDamage = false;
 
 	// Hit another attack?
 	AGAttack* OtherAttack = Cast<AGAttack>(HitActor);
@@ -430,8 +432,6 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 				AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(OtherAttack->OwningShooter);
 				if (PotentialPlayer != nullptr)
 				{
-					ApplyKnockback(PotentialPlayer);
-					ApplyKnockback(PotentialPlayer);
 					ApplyKnockback(PotentialPlayer);
 					ApplyKnockback(PotentialPlayer); // Pending Refactor - add scalar argument to ApKnk!
 				}

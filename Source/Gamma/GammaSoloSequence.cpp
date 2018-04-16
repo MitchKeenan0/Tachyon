@@ -34,9 +34,10 @@ void AGammaSoloSequence::AquirePlayer()
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
 	if (PlayersArray.Num() > 0)
 	{
-		if (PlayersArray[0] != nullptr)
+		AActor* PlayerActor = PlayersArray[0];
+		if (PlayerActor != nullptr)
 		{
-			Player = Cast<AGammaCharacter>(PlayersArray[0]);
+			Player = Cast<AGammaCharacter>(PlayerActor);
 		}
 	}
 	if (Player == nullptr)
@@ -44,9 +45,10 @@ void AGammaSoloSequence::AquirePlayer()
 		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), PlayersArray);
 		if (PlayersArray.Num() > 0)
 		{
-			if (PlayersArray[0] != nullptr)
+			AActor* PlayerActor = PlayersArray[0];
+			if (PlayerActor != nullptr)
 			{
-				Player = Cast<AGammaCharacter>(PlayersArray[0]);
+				Player = Cast<AGammaCharacter>(PlayerActor);
 			}
 		}
 	}
@@ -207,9 +209,9 @@ int AGammaSoloSequence::NumDenizens()
 	// Loop to ensure validity of denizens
 	for (int i = 0; i < DenizenArray.Num(); ++i)
 	{
-		if (DenizenArray[i] != nullptr)
+		AActor* Act = DenizenArray[i];
+		if (Act != nullptr)
 		{
-			AActor* Act = DenizenArray[i];
 			if (Act != Cast<AActor>(KaraokeClass->GetOwnerClass())
 				&& Act != Cast<AActor>(PeaceGiantClass->GetOwnerClass())
 				&& Act != Cast<AActor>(BaetylusClass->GetOwnerClass()))

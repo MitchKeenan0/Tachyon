@@ -328,7 +328,8 @@ void AGMatch::GetPlayers()
 			float BestDistance = 999999.0f;
 			
 			// Loop through to deliberate local player
-			for (int i = 0; i < TempPlayers.Num(); ++i)
+			int LoopSize = TempPlayers.Num();
+			for (int i = 0; i < LoopSize; ++i)
 			{
 
 				// Qualify valid player object

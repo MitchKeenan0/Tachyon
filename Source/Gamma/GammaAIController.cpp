@@ -92,7 +92,8 @@ void AGammaAIController::Tick(float DeltaSeconds)
 			UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray); // FramingActor for brawl
 			if (PlayersArray.Num() > 0)
 			{
-				for (int i = 0; i < PlayersArray.Num(); ++i)
+				int LoopCount = PlayersArray.Num();
+				for (int i = 0; i < LoopCount; ++i)
 				{
 					AActor* TempActor = PlayersArray[i];
 					if (TempActor != nullptr

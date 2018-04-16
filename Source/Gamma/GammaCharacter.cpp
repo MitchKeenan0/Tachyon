@@ -312,14 +312,16 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		// Edge case: player is spectator, find a sub
 		if (Actor1 == nullptr)
 		{
-			for (int i = 0; i < FramingActors.Num(); ++i)
+			int LoopSize = FramingActors.Num();
+			for (int i = 0; i < LoopSize; ++i)
 			{
-				if (FramingActors[i] != nullptr
-					&& FramingActors[i] != this
-					&& !FramingActors[i]->ActorHasTag("Spectator")
-					&& !FramingActors[i]->ActorHasTag("Land"))
+				AActor* Actore = FramingActors[i];
+				if (Actore != nullptr
+					&& Actore != this
+					&& !Actore->ActorHasTag("Spectator")
+					&& !Actore->ActorHasTag("Land"))
 				{
-					Actor1 = FramingActors[i];
+					Actor1 = Actore;
 					break;
 				}
 			}
@@ -356,14 +358,16 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), FramingActors);
 					if (FramingActors.Num() > 1)
 					{
-						for (int i = 0; i < FramingActors.Num(); ++i)
+						int LoopCount = FramingActors.Num();
+						for (int i = 0; i < LoopCount; ++i)
 						{
-							if (FramingActors[i] != nullptr
-								&& FramingActors[i] != this
-								&& FramingActors[i] != Actor1
-								&& !FramingActors[i]->ActorHasTag("Spectator"))
+							AActor* Actoir = FramingActors[i];
+							if (Actoir != nullptr
+								&& Actoir != this
+								&& Actoir != Actor1
+								&& !Actoir->ActorHasTag("Spectator"))
 							{
-								Actor2 = FramingActors[i];
+								Actor2 = Actoir;
 							}
 						}
 					}
@@ -377,17 +381,19 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				if (FramingActors.Num() > 1)
 				{
 					float DistToActor2 = 99999.0f;
-					for (int i = 0; i < FramingActors.Num(); ++i)
+					int LoopCount = FramingActors.Num();
+					for (int i = 0; i < LoopCount; ++i)
 					{
-						if (FramingActors[i] != nullptr
-							&& FramingActors[i] != this
-							&& FramingActors[i] != Actor1
-							&& !FramingActors[i]->ActorHasTag("Spectator"))
+						AActor* Actorr = FramingActors[i];
+						if (Actorr != nullptr
+							&& Actorr != this
+							&& Actorr != Actor1
+							&& !Actorr->ActorHasTag("Spectator"))
 						{
-							float DistToTemp = FVector::Dist(FramingActors[i]->GetActorLocation(), GetActorLocation());
+							float DistToTemp = FVector::Dist(Actorr->GetActorLocation(), GetActorLocation());
 							if (DistToTemp < DistToActor2)
 							{
-								Actor2 = FramingActors[i];
+								Actor2 = Actorr;
 								DistToActor2 = DistToTemp;
 							}
 						}
@@ -898,7 +904,7 @@ void AGammaCharacter::KickPropulsion()
 
 			ForceNetUpdate();
 
-			GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("MoveInputVector  %f"), MoveInputVector.Size()));
+			//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("MoveInputVector  %f"), MoveInputVector.Size()));
 			//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
 			//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
 			//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("vel  %f"), (GetCharacterMovement()->Velocity.Size())));
@@ -1147,10 +1153,14 @@ void AGammaCharacter::ReleaseAttack()
 					///GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("PrefireClamped: %f"), PrefireClamped));
 					///GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("PrefireCurve: %f"), PrefireCurve));
 					
-					ActiveAttack->InitAttack(this, PrefireCurve, AimClampedInputZ);
+					// To avoid potential problems if someone destroys us early. TODO Fix
+					if (ActiveAttack != nullptr)
+					{
+						ActiveAttack->InitAttack(this, PrefireCurve, AimClampedInputZ);
+					}
 
 					// Positional lock or naw
-					if (ActiveAttack->LockedEmitPoint)
+					if ((ActiveAttack != nullptr) && ActiveAttack->LockedEmitPoint)
 					{
 						ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
 					}
