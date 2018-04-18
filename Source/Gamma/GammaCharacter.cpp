@@ -87,7 +87,7 @@ AGammaCharacter::AGammaCharacter()
 
 	MoveParticles = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("MoveParticles"));
 	MoveParticles->SetupAttachment(RootComponent);
-	MoveParticles->bAutoActivate = false;
+	///MoveParticles->bAutoActivate = false;
 
 	/*AmbientParticles = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("AmbientParticles"));
 	AmbientParticles->SetupAttachment(RootComponent);*/
@@ -429,7 +429,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 3.0f;
 
 				// Clamp to max size
-				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(3000.0f * (CustomTimeDilation + 0.5f));
+				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(2200.0f * (CustomTimeDilation + 0.25f));
 				Actor1Velocity.Z *= 0.75f;
 
 				// Declare Position Two
@@ -1040,8 +1040,8 @@ void AGammaCharacter::InitAttack()
 		return;
 	}
 
-	// Clean burn
-	MoveParticles->bSuppressSpawning = true;
+	/// Clean burn
+	///MoveParticles->bSuppressSpawning = true;
 
 	// Singleton shooters, clean up first
 	if (!bMultipleAttacks &&
@@ -1104,8 +1104,8 @@ bool AGammaCharacter::ServerInitAttack_Validate()
 // ATTACK
 void AGammaCharacter::ReleaseAttack()
 {
-	// Less-clean burn
-	MoveParticles->bSuppressSpawning = false;
+	/// Less-clean burn
+	///MoveParticles->bSuppressSpawning = false;
 
 	if (!bMultipleAttacks && ActiveAttack != nullptr)
 	{
@@ -1220,8 +1220,8 @@ void AGammaCharacter::FireSecondary()
 	if (SecondaryClass && (ActiveSecondary == nullptr)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
 	{
-		// Clean burn
-		MoveParticles->bSuppressSpawning = true;
+		/// Clean burn
+		///MoveParticles->bSuppressSpawning = true;
 
 		// Direction & setting up
 		FVector FirePosition = GetActorLocation();
