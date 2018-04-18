@@ -627,6 +627,14 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		KickPropulsion();
 	}
 
+	// Update charge to catch lost input
+	if (bCharging &&
+		((ActiveAttack == nullptr) || (!ActiveAttack->IsValidLowLevel()) || (ActiveAttack->IsPendingKillOrUnreachable())))
+	{
+		RaiseCharge();
+		bCharging = false;
+		///GEngine->AddOnScreenDebugMessage(-1, 2.1f, FColor::White, FString::Printf(TEXT("Caught a lost Charge, firing %f"), 1.0f));
+	}
 
 	// Update player pitch
 	if (PlayerSound != nullptr)
@@ -822,20 +830,21 @@ void AGammaCharacter::DisengageKick()
 		return;
 	}
 
-	// Clear existing boost
+	// Clear existing boost object
 	if (ActiveBoost != nullptr)
 	{
 		ActiveBoost->Destroy();
 		ActiveBoost = nullptr;
-		///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("KICK DISENGAGED.."));
 	}
-	if ((ActiveChargeParticles != nullptr) && (!ActiveChargeParticles->IsPendingKillOrUnreachable()))
+
+	// Clear existing charge object
+	if ((ActiveChargeParticles != nullptr) 
+		&& (ActiveChargeParticles->IsValidLowLevel()) 
+		&& (!ActiveChargeParticles->IsPendingKillOrUnreachable()))
 	{
 		ActiveChargeParticles->Destroy();
 		ActiveChargeParticles = nullptr;
 	}
-
-	//bBoosting = false;
 }
 void AGammaCharacter::ServerDisengageKick_Implementation()
 {
@@ -859,9 +868,11 @@ void AGammaCharacter::KickPropulsion()
 	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
 	{
 
-		// Conditions met - (Charge FX are active) and (We're within acceptable speed)
-		if (((ActiveChargeParticles != nullptr) && (!ActiveChargeParticles->IsPendingKillOrUnreachable()))
-			&& (GetCharacterMovement()->Velocity.Size() < (MaxMoveSpeed * 5.0f))) // CRASH HERE
+		// Conditions for propulsion
+		if (((ActiveChargeParticles != nullptr) 
+			&& (ActiveChargeParticles->IsValidLowLevel()) 
+			&& (!ActiveChargeParticles->IsPendingKillOrUnreachable()))
+			&& (GetCharacterMovement()->Velocity.Size() < (MaxMoveSpeed * 5.0f)))
 		{
 			// Algo scaling for timescale & max velocity
 			FVector MoveInputVector = FVector(InputX + x, 0.0f, InputZ + z);
@@ -888,6 +899,9 @@ void AGammaCharacter::KickPropulsion()
 			// Spawn visuals
 			if ((BoostClass != nullptr) && (ActiveBoost == nullptr))
 			{
+				// Initial kick
+				GetCharacterMovement()->AddImpulse(KickVector * 9.0f);
+
 				FActorSpawnParameters SpawnParams;
 				FVector PlayerVelocity = GetCharacterMovement()->Velocity;
 				FRotator PlayerVelRotator = PlayerVelocity.Rotation();
@@ -898,8 +912,6 @@ void AGammaCharacter::KickPropulsion()
 
 				ActiveBoost = GetWorld()->SpawnActor<AActor>
 					(BoostClass, SpawnLocation, InputRotator, SpawnParams); /// PlayerVelRotator
-
-				//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, TEXT("SPAWNING KICK..."));
 			}
 
 			ForceNetUpdate();
@@ -957,9 +969,10 @@ bool AGammaCharacter::ServerUpdateMoveParticles_Validate(FVector Move)
 // RAISE CHARGE
 void AGammaCharacter::RaiseCharge()
 {
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f
-		&& Charge <= (ChargeMax - ChargeGain)
-		&& ActiveAttack == nullptr)
+	if ((UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+		&& (Charge <= (ChargeMax - ChargeGain))
+		&& (ActiveAttack == nullptr)
+		&& (!ActiveAttack->IsValidLowLevel() || ActiveAttack->IsPendingKillOrUnreachable()))
 	{
 		// Noobish recovery from empty-case -1 charge
 		if (Charge < 0.0f) {
@@ -1001,21 +1014,14 @@ void AGammaCharacter::RaiseCharge()
 				ActiveChargeParticles->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
 			}
 		}
-
-		//GEngine->AddOnScreenDebugMessage(-1, 0.68f, FColor::White, FString::Printf(TEXT("%f % CHARGE"), Charge), true, FVector2D::UnitVector * 2);
-
-
-		//// Scale up charge vfx
-		//float Scalar = Charge / ChargeMax;
-		//ActiveChargeParticles->SetActorRelativeScale3D(ActiveChargeParticles->GetActorRelativeScale3D() * Scalar);
 	}
 
-	//// Catch edgecase 'dead key' and refire
-	//if ((ActiveChargeParticles == nullptr && GetActiveBoost() == nullptr) || ((GetActiveBoost() != nullptr) && GetActiveBoost()->IsPendingKillOrUnreachable()))
-	//{
-	//	///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("N E W  K I C K I N G"));
-	//	NewMoveKick();
-	//}
+	// Catch misfire - if we were shooting, etc
+	if (ActiveChargeParticles == nullptr)
+	{
+		///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("Charging = TRUE"));
+		bCharging = true;
+	}
 }
 void AGammaCharacter::ServerRaiseCharge_Implementation()
 {
@@ -1029,32 +1035,31 @@ bool AGammaCharacter::ServerRaiseCharge_Validate()
 // PRE-ATTACK flash spawning
 void AGammaCharacter::InitAttack()
 {
+	// If we're shooting dry, trigger ChargeBar warning by going sub-zero
 	if (Charge < ChargeGain)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("CHARGE [SPACEBAR], [DOWN] %f"), Charge));
-		Charge = -1.0f;
+		Charge = (-1.0f);
 		return;
 	}
 
 	// Clean burn
 	MoveParticles->bSuppressSpawning = true;
 
-	if (!bMultipleAttacks && ActiveAttack != nullptr)
+	// Singleton shooters, clean up first
+	if (!bMultipleAttacks && (ActiveAttack != nullptr))
 	{
 		ActiveAttack->Nullify(0);
 	}
 
-	bool bFireAllowed = (bMultipleAttacks || (!bMultipleAttacks && ActiveAttack == nullptr)) && GetActiveFlash() == nullptr;
-	if (bFireAllowed && (Charge > 0.0f) && (FlashClass != nullptr)
-		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
+	// Conditions for shooting
+	bool bFireAllowed = (bMultipleAttacks || (!bMultipleAttacks && ActiveAttack == nullptr)) 
+			&& (GetActiveFlash() == nullptr)
+			&& (!GetActiveFlash()->IsValidLowLevel() || GetActiveFlash()->IsPendingKillOrUnreachable())
+			&& (Charge > 0.0f) && (FlashClass != nullptr);
+	
+	if (bFireAllowed && (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
 	{
-		//// Clean up previous attack
-		//if (ActiveAttack && !bMultipleAttacks)
-		//{
-		//	ActiveAttack->Destroy();
-		//	ActiveAttack = nullptr;
-		//}
-
+		
 		// Direction & setting up
 		float AimClampedInputZ = FMath::Clamp((InputZ * 10.0f), -1.0f, 1.0f);
 		FVector FirePosition = AttackScene->GetComponentLocation();
