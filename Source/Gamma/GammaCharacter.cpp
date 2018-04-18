@@ -829,7 +829,7 @@ void AGammaCharacter::DisengageKick()
 		ActiveBoost = nullptr;
 		///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("KICK DISENGAGED.."));
 	}
-	if (ActiveChargeParticles != nullptr)
+	if ((ActiveChargeParticles != nullptr) && (!ActiveChargeParticles->IsPendingKillOrUnreachable()))
 	{
 		ActiveChargeParticles->Destroy();
 		ActiveChargeParticles = nullptr;
@@ -861,7 +861,7 @@ void AGammaCharacter::KickPropulsion()
 
 		// Conditions met - (Charge FX are active) and (We're within acceptable speed)
 		if (((ActiveChargeParticles != nullptr) && (!ActiveChargeParticles->IsPendingKillOrUnreachable()))
-			&& (GetCharacterMovement()->Velocity.Size() < (MaxMoveSpeed * 5.0f)))
+			&& (GetCharacterMovement()->Velocity.Size() < (MaxMoveSpeed * 5.0f))) // CRASH HERE
 		{
 			// Algo scaling for timescale & max velocity
 			FVector MoveInputVector = FVector(InputX + x, 0.0f, InputZ + z);
@@ -996,7 +996,10 @@ void AGammaCharacter::RaiseCharge()
 		{
 			FActorSpawnParameters SpawnParams;
 			ActiveChargeParticles = Cast<AActor>(GetWorld()->SpawnActor<AActor>(ChargeParticles, GetActorLocation(), GetActorRotation(), SpawnParams));
-			ActiveChargeParticles->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+			if (ActiveChargeParticles != nullptr)
+			{
+				ActiveChargeParticles->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+			}
 		}
 
 		//GEngine->AddOnScreenDebugMessage(-1, 0.68f, FColor::White, FString::Printf(TEXT("%f % CHARGE"), Charge), true, FVector2D::UnitVector * 2);
