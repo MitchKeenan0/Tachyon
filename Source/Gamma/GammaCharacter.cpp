@@ -342,7 +342,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
-			float CameraMinimumDistance = 1500.0f;
+			float CameraMinimumDistance = 2100.0f;
 			float CameraMaxDistance = 150000.0f;
 
 			// Position two by another actor
@@ -500,7 +500,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float TiltDistanceScalar = FMath::Clamp((1.0f / DistBetweenActors) * 100.0f, 0.1f, 0.5f);
 				float DistScalar = TargetLengthClamped * 0.0001f;
 				float ClampedTargetTiltX = FMath::Clamp((InputZ*CameraTiltValue*DistScalar), -CameraTiltClamp, CameraTiltClamp);
-				float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DistScalar), -CameraTiltClamp, CameraTiltClamp);
+				float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DistScalar) * 2.0f, -CameraTiltClamp, CameraTiltClamp);
 				CameraTiltX = FMath::FInterpTo(CameraTiltX, ClampedTargetTiltX, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
 				CameraTiltZ = FMath::FInterpTo(CameraTiltZ, ClampedTargetTiltZ, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // yaw
 				FRotator FTarget = FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue;

@@ -78,7 +78,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 				TravelTimer = 0.0f;
 			}
 			else if ((LocationTarget != FVector::ZeroVector) && !bShootingSoon
-				&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f)
+				&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 			{
 				NavigateTo(LocationTarget);
 				MoveTimer += DeltaSeconds;
