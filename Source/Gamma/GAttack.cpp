@@ -373,28 +373,31 @@ void AGAttack::ReportHit(AActor* HitActor)
 
 void AGAttack::Nullify(int AttackType)
 {
-	AGammaCharacter* PossibleCharacter = Cast<AGammaCharacter>(OwningShooter);
-	if (PossibleCharacter != nullptr)
+	if (OwningShooter != nullptr)
 	{
-		// All
-		if (AttackType == -1)
+		AGammaCharacter* PossibleCharacter = Cast<AGammaCharacter>(OwningShooter);
+		if (PossibleCharacter != nullptr)
 		{
-			PossibleCharacter->NullifyAttack();
-			PossibleCharacter->NullifySecondary();
-		}
+			// All
+			if (AttackType == -1)
+			{
+				PossibleCharacter->NullifyAttack();
+				PossibleCharacter->NullifySecondary();
+			}
 
-		// Attack
-		if (AttackType == 0)
-		{
-			PossibleCharacter->NullifyAttack();
+			// Attack
+			if (AttackType == 0)
+			{
+				PossibleCharacter->NullifyAttack();
+			}
+			// Secondary
+			else if (AttackType == 1)
+			{
+				PossibleCharacter->NullifySecondary();
+			}
+
+			this->Destroy();
 		}
-		// Secondary
-		else if (AttackType == 1)
-		{
-			PossibleCharacter->NullifySecondary();
-		}
-		
-		this->Destroy();
 	}
 }
 

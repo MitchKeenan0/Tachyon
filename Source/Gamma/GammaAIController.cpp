@@ -50,7 +50,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 		}
 
 		// Got a player - stunt on'em
-		if (Player != nullptr && Player->IsValidLowLevel())
+		if (Player != nullptr && IsValid(Player))
 		{
 			
 			// Finial line draw to Player
@@ -197,21 +197,24 @@ void AGammaAIController::Tactical(FVector Target)
 	if (RandomDc <= ChargeVal)
 	{
 		// Call-off existing charge boost if there is one
-		if ((MyCharacter->GetActiveBoost() != nullptr) && (MyCharacter->GetActiveBoost()->IsValidLowLevel()) && (!MyCharacter->GetActiveBoost()->IsPendingKillOrUnreachable()))
+		if ((MyCharacter != nullptr) && IsValid(MyCharacter))
 		{
-			MyCharacter->DisengageKick();
-		}
-		else
-		{
-			// Charge
-			if (MyCharacter->GetCharge() <= 3.0f) /// dirty hardcode! ChargeMax unreachable until Epic fix
+			if (MyCharacter->GetActiveBoost() != nullptr) // && IsValid(MyCharacter->GetActiveBoost()) && !MyCharacter->GetActiveBoost()->IsPendingKillPending())
 			{
-				MyCharacter->CheckPowerSlideOff();
-				MyCharacter->RaiseCharge();
+				MyCharacter->DisengageKick();
 			}
 			else
 			{
-				MyCharacter->CheckPowerSlideOn();
+				// Charge
+				if (MyCharacter->GetCharge() <= 3.0f) /// dirty hardcode! ChargeMax unreachable until Epic fix
+				{
+					MyCharacter->CheckPowerSlideOff();
+					MyCharacter->RaiseCharge();
+				}
+				else
+				{
+					MyCharacter->CheckPowerSlideOn();
+				}
 			}
 		}
 	}

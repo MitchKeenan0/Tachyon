@@ -328,7 +328,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		}
 
 		// Let's go
-		if (Actor1 != nullptr && Actor1->IsValidLowLevelFast() && !Actor1->IsUnreachable())
+		if (Actor1 != nullptr && IsValid(Actor1) && !Actor1->IsUnreachable())
 		{
 			float UnDilatedDeltaTime = (DeltaTime / CustomTimeDilation) * CameraMoveSpeed; /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
 			float TimeDilationScalar = (1.0f / CustomTimeDilation) + 0.01f; /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
@@ -616,7 +616,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	}
 
 	// Update prefire
-	if ((GetActiveFlash() != nullptr) && GetActiveFlash()->IsValidLowLevel())
+	if ((GetActiveFlash() != nullptr) && IsValid(GetActiveFlash()))
 	{
 		PrefireTiming();
 	}
@@ -629,7 +629,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 
 	// Update charge to catch lost input
 	if (bCharging &&
-		((ActiveAttack == nullptr) || (!ActiveAttack->IsValidLowLevel()) || (ActiveAttack->IsPendingKillOrUnreachable())))
+		((ActiveAttack == nullptr) || (!IsValid(ActiveAttack)) || (ActiveAttack->IsPendingKillOrUnreachable())))
 	{
 		RaiseCharge();
 		bCharging = false;
@@ -838,9 +838,9 @@ void AGammaCharacter::DisengageKick()
 	}
 
 	// Clear existing charge object
-	if ((ActiveChargeParticles != nullptr) 
-		&& (ActiveChargeParticles->IsValidLowLevel()) 
-		&& (!ActiveChargeParticles->IsPendingKillOrUnreachable()))
+	if ((ActiveChargeParticles != nullptr))
+		/* && (IsValid(ActiveChargeParticles)) 
+		&& (!ActiveChargeParticles->IsPendingKillOrUnreachable()) */
 	{
 		ActiveChargeParticles->Destroy();
 		ActiveChargeParticles = nullptr;
@@ -869,10 +869,9 @@ void AGammaCharacter::KickPropulsion()
 	{
 
 		// Conditions for propulsion
-		if (((ActiveChargeParticles != nullptr) 
-			&& (ActiveChargeParticles->IsValidLowLevel()) 
-			&& (!ActiveChargeParticles->IsPendingKillOrUnreachable()))
-			&& (GetCharacterMovement()->Velocity.Size() < (MaxMoveSpeed * 5.0f)))
+		if ((ActiveChargeParticles != nullptr) 
+			//&& IsValid(ActiveChargeParticles)
+			&& ((GetCharacterMovement() != nullptr) && (GetCharacterMovement()->Velocity.Size() < (MaxMoveSpeed * 5.0f))))
 		{
 			// Algo scaling for timescale & max velocity
 			FVector MoveInputVector = FVector(InputX + x, 0.0f, InputZ + z);
@@ -900,7 +899,7 @@ void AGammaCharacter::KickPropulsion()
 			if ((BoostClass != nullptr) && (ActiveBoost == nullptr))
 			{
 				// Initial kick
-				GetCharacterMovement()->AddImpulse(KickVector * 9.0f);
+				GetCharacterMovement()->AddImpulse(KickVector * 6.3f);
 
 				FActorSpawnParameters SpawnParams;
 				FVector PlayerVelocity = GetCharacterMovement()->Velocity;
@@ -971,8 +970,7 @@ void AGammaCharacter::RaiseCharge()
 {
 	if ((UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 		&& (Charge <= (ChargeMax - ChargeGain))
-		&& (ActiveAttack == nullptr)
-		&& (!ActiveAttack->IsValidLowLevel() || ActiveAttack->IsPendingKillOrUnreachable()))
+		&& ((ActiveAttack == nullptr) || !IsValid(ActiveAttack) || ActiveAttack->IsPendingKillOrUnreachable()))
 	{
 		// Noobish recovery from empty-case -1 charge
 		if (Charge < 0.0f) {
@@ -1017,7 +1015,7 @@ void AGammaCharacter::RaiseCharge()
 	}
 
 	// Catch misfire - if we were shooting, etc
-	if (ActiveChargeParticles == nullptr)
+	if ((ActiveChargeParticles == nullptr) || (!IsValid(ActiveChargeParticles)))
 	{
 		///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("Charging = TRUE"));
 		bCharging = true;
@@ -1046,16 +1044,19 @@ void AGammaCharacter::InitAttack()
 	MoveParticles->bSuppressSpawning = true;
 
 	// Singleton shooters, clean up first
-	if (!bMultipleAttacks && (ActiveAttack != nullptr))
+	if (!bMultipleAttacks &&
+		((ActiveAttack != nullptr) && (IsValid(ActiveAttack))))
 	{
 		ActiveAttack->Nullify(0);
 	}
 
 	// Conditions for shooting
-	bool bFireAllowed = (bMultipleAttacks || (!bMultipleAttacks && ActiveAttack == nullptr)) 
-			&& (GetActiveFlash() == nullptr)
-			&& (!GetActiveFlash()->IsValidLowLevel() || GetActiveFlash()->IsPendingKillOrUnreachable())
+	bool bFireAllowed = (GetActiveFlash() == nullptr)
+			&& (!IsValid(GetActiveFlash())) // || GetActiveFlash()->IsPendingKillOrUnreachable())
 			&& (Charge > 0.0f) && (FlashClass != nullptr);
+
+	/*  bFireAllowed = (bMultipleAttacks || (!bMultipleAttacks && ((ActiveAttack == nullptr) || (!ActiveAttack->IsValidLowLevel()))))
+			&&   */
 	
 	if (bFireAllowed && (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
 	{
