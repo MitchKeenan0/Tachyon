@@ -868,12 +868,6 @@ void AGammaCharacter::KickPropulsion()
 		return;
 	}
 
-	if (GetCharacterMovement()->Velocity.Size() >= (MaxMoveSpeed * 2.125f))
-	{
-		DisengageKick();
-		return;
-	}
-
 	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
 	{
 
@@ -893,7 +887,7 @@ void AGammaCharacter::KickPropulsion()
 			FVector KickVector = MoveInputVector
 				* MoveFreshMultiplier
 				* 1000.0f ///previously RelativityToMaxSpeed
-				* (1.0f + FMath::Abs(x))
+				* (1.0f + FMath::Abs(x) + FMath::Abs(z))
 				* TimeDelta;
 			
 			// Trimming
@@ -934,6 +928,12 @@ void AGammaCharacter::KickPropulsion()
 		{
 			DisengageKick();
 		}
+	}
+
+	if (GetCharacterMovement()->Velocity.Size() >= (MaxMoveSpeed * 5.0f))
+	{
+		DisengageKick();
+		return;
 	}
 }
 void AGammaCharacter::ServerKickPropulsion_Implementation()
