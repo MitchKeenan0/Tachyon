@@ -212,7 +212,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 				GetActiveFlash()->CustomTimeDilation = MyTimeDilation;
 				GetActiveFlash()->SetLifeSpan(GetActiveFlash()->GetLifeSpan() / MyTimeDilation);
 			}
-			if (ActiveAttack != nullptr)
+			if (ActiveAttack != nullptr && IsValid(ActiveAttack))
 			{
 				ActiveAttack->CustomTimeDilation = MyTimeDilation;
 				ActiveAttack->SetLifeSpan(ActiveAttack->GetLifeSpan() / CustomTimeDilation);
@@ -500,7 +500,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float TiltDistanceScalar = FMath::Clamp((1.0f / DistBetweenActors) * 100.0f, 0.1f, 0.5f);
 				float DistScalar = TargetLengthClamped * 0.0001f;
 				float ClampedTargetTiltX = FMath::Clamp((InputZ*CameraTiltValue*DistScalar), -CameraTiltClamp, CameraTiltClamp);
-				float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DistScalar) * 2.0f, -CameraTiltClamp, CameraTiltClamp);
+				float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DistScalar), -CameraTiltClamp, CameraTiltClamp);
 				CameraTiltX = FMath::FInterpTo(CameraTiltX, ClampedTargetTiltX, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
 				CameraTiltZ = FMath::FInterpTo(CameraTiltZ, ClampedTargetTiltZ, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // yaw
 				FRotator FTarget = FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue;
@@ -830,6 +830,9 @@ void AGammaCharacter::DisengageKick()
 		return;
 	}
 
+	bBoosting = false;
+	bCharging = false;
+
 	// Clear existing boost object
 	if (ActiveBoost != nullptr)
 	{
@@ -865,13 +868,19 @@ void AGammaCharacter::KickPropulsion()
 		return;
 	}
 
+	if (GetCharacterMovement()->Velocity.Size() >= (MaxMoveSpeed * 2.125f))
+	{
+		DisengageKick();
+		return;
+	}
+
 	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
 	{
 
 		// Conditions for propulsion
 		if ((ActiveChargeParticles != nullptr) 
 			//&& IsValid(ActiveChargeParticles)
-			&& ((GetCharacterMovement() != nullptr) && (GetCharacterMovement()->Velocity.Size() < (MaxMoveSpeed * 5.0f))))
+			&& (GetCharacterMovement() != nullptr))
 		{
 			// Algo scaling for timescale & max velocity
 			FVector MoveInputVector = FVector(InputX + x, 0.0f, InputZ + z);
@@ -925,7 +934,6 @@ void AGammaCharacter::KickPropulsion()
 		{
 			DisengageKick();
 		}
-		
 	}
 }
 void AGammaCharacter::ServerKickPropulsion_Implementation()
@@ -970,7 +978,7 @@ void AGammaCharacter::RaiseCharge()
 {
 	if ((UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 		&& (Charge <= (ChargeMax - ChargeGain))
-		&& ((ActiveAttack == nullptr) || !IsValid(ActiveAttack) || ActiveAttack->IsPendingKillOrUnreachable()))
+		&& ((ActiveAttack == nullptr) && !IsValid(ActiveAttack) || ActiveAttack->IsPendingKillOrUnreachable()))
 	{
 		// Noobish recovery from empty-case -1 charge
 		if (Charge < 0.0f) {
