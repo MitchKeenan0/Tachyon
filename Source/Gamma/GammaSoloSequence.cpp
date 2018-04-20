@@ -137,7 +137,6 @@ void AGammaSoloSequence::SpawnDenizen()
 		{
 
 			// Position and Rotation
-			SpawnLoc *= (MaxLiveUnits * 6.0f);
 			float RandF = FMath::FRandRange(-1.0f, 1.0f);
 			float RandG = FMath::FRandRange(-1.0f, 1.0f);
 			float RandH = FMath::FRandRange(-1.0f, 1.0f);

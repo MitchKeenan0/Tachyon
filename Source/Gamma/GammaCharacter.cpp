@@ -342,7 +342,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			VelocityCameraSpeed *= (1 + (Actor1Velocity.Size() / 30000.0f));
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
-			float CameraMinimumDistance = 2100.0f;
+			float CameraMinimumDistance = 2500.0f;
 			float CameraMaxDistance = 150000.0f;
 
 			// Position by another actor
@@ -375,7 +375,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 
 			// If Actor2 isn't too far away, make 'Pair Framing'
-			float PairDistanceThreshold = 5000.0f * CameraDistanceScalar;
+			float PairDistanceThreshold = 4000.0f * CameraDistanceScalar;
 			if ((Actor2 != nullptr) && !Actor2->IsUnreachable()
 				&& (FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= PairDistanceThreshold))
 			{
@@ -449,7 +449,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Modifier for hit/gg
 				float Timescale = (Actor1->CustomTimeDilation + Actor2->CustomTimeDilation) / 2.0f;
-				if (Timescale < 1.0f)
+				if ((Timescale < 1.0f) && (Actor2 != nullptr))
 				{
 					float HitTimeScalar = FMath::Clamp(FMath::Square(Timescale), 0.55f, 1.0f);
 					TargetLength *= HitTimeScalar;
@@ -483,21 +483,13 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					SideViewCameraComponent->SetRelativeRotation(FTarget);
 
 					// Adjust position to work angle
-					Midpoint.X -= ((CameraTiltZ * (DesiredCameraDistance / 15.0f))) * DeltaTime;
-					Midpoint.Z -= ((CameraTiltX * (DesiredCameraDistance / 15.0f))) * DeltaTime;
+					Midpoint.X -= (CameraTiltZ * DesiredCameraDistance) * DeltaTime;
+					Midpoint.Z -= (CameraTiltX * DesiredCameraDistance) * DeltaTime;
 				}
 
 				// Make it so
 				CameraBoom->SetWorldLocation(Midpoint);
 				CameraBoom->TargetArmLength = DesiredCameraDistance;
-
-				///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("DesiredCameraDistance: %f"), DesiredCameraDistance));
-
-				/*
-				Out_Parallel = VectorToSplit.ProjectOnTo(ReferenceVector);
-				//vectorApar + vectorAper = vectorA
-				Out_Perpendicular = VectorToSplit - Out_Parallel;
-				*/
 			}
 		}
 	}
@@ -848,12 +840,12 @@ void AGammaCharacter::KickPropulsion()
 	{
 
 		// Conditions for propulsion
-		if ((ActiveChargeParticles != nullptr) 
-			//&& IsValid(ActiveChargeParticles)
+		if ((ActiveChargeParticles != nullptr)
+			&& (ActiveChargeParticles->WasRecentlyRendered(0.1f))
 			&& (GetCharacterMovement() != nullptr))
 		{
 			// Algo scaling for timescale & max velocity
-			FVector MoveInputVector = FVector(InputX + x, 0.0f, InputZ + z);
+			FVector MoveInputVector = FVector(InputX, 0.0f, InputZ);
 			FVector CurrentVelocity = GetCharacterMovement()->Velocity;
 			float TimeDelta = (GetWorld()->DeltaTimeSeconds / CustomTimeDilation);
 			//float RelativityToMaxSpeed = (MaxMoveSpeed) - CurrentVelocity.Size();
@@ -863,7 +855,6 @@ void AGammaCharacter::KickPropulsion()
 			FVector KickVector = MoveInputVector
 				* MoveFreshMultiplier
 				* 1000.0f ///previously RelativityToMaxSpeed
-				* (1.0f + FMath::Abs(x) + FMath::Abs(z))
 				* TimeDelta;
 			
 			// Trimming

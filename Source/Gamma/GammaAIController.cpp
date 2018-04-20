@@ -25,6 +25,8 @@ void AGammaAIController::BeginPlay()
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 12.f, FColor::Blue, TEXT("NO RAND STREAM"));
 	}
+
+	Player = nullptr;
 }
 
 
@@ -50,7 +52,8 @@ void AGammaAIController::Tick(float DeltaSeconds)
 		}
 
 		// Got a player - stunt on'em
-		if (Player != nullptr && IsValid(Player))
+		if (Player != nullptr && IsValid(Player)
+			&& TravelTimer < 2.0f)
 		{
 			
 			// Finial line draw to Player
@@ -71,13 +74,14 @@ void AGammaAIController::Tick(float DeltaSeconds)
 			}
 
 			// Get some moves
-			if (TravelTimer >= (10.0f * ReactionTime)
+			if ((TravelTimer >= 1.0f)
 				|| (LocationTarget == FVector::ZeroVector))
 			{
 				GetNewLocationTarget();
 				TravelTimer = 0.0f;
 			}
-			else if ((LocationTarget != FVector::ZeroVector) && !bShootingSoon
+			
+			if ((LocationTarget != FVector::ZeroVector) && !bShootingSoon
 				&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 			{
 				NavigateTo(LocationTarget);
@@ -103,12 +107,13 @@ void AGammaAIController::Tick(float DeltaSeconds)
 						&& !TempActor->ActorHasTag("Bot"))
 					{
 						AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(TempActor);
-						if (PotentialPlayer != nullptr)
+						if (PotentialPlayer != nullptr
+							&& PotentialPlayer->ActorHasTag("Player"))
 						{
 							Player = PotentialPlayer;
 							bPlayerFound = true;
-							/*GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::White,
-							FString::Printf(TEXT("p %s   targeting %s"), *MyCharacter->GetName(), *Player->GetName()));*/
+							GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::White,
+							FString::Printf(TEXT("p %s   targeting %s"), *MyCharacter->GetName(), *Player->GetName()));
 							break;
 						}
 					}
@@ -291,7 +296,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 	if (Player != nullptr)
 	{
 		FVector PlayerLocation = Player->GetActorLocation();
-		//FVector AILocation = GetPawn()->GetActorLocation(); // not used
+		//FVector AILocation = GetPawn()->GetActorLocation();
 
 		// Getting spicy
 		float MyVelocity = MyCharacter->GetCharacterMovement()->Velocity.Size();
@@ -301,21 +306,13 @@ FVector AGammaAIController::GetNewLocationTarget()
 		// Randomness in movement
 		FVector RandomOffset = (FMath::VRand() * DynamicMoveRange) * (1 / Aggression);
 		RandomOffset.Y = 0.0f;
-		FVector NextRand = FMath::VRandCone(MyCharacter->GetActorForwardVector(), ShootingAngle) * DynamicMoveRange * -1.0f;
-		NextRand.Y = 0.0f;
-		FVector CombinedRand = RandomOffset + NextRand;
-		CombinedRand = CombinedRand.GetClampedToMaxSize(MoveRange);
-		CombinedRand.Z *= 0.25f;
+		RandomOffset.Z *= 0.25f;
 
 		// And serve
-		Result = (PlayerAtSpeed + CombinedRand).GetClampedToMaxSize(MoveRange);
+		Result = (PlayerAtSpeed + RandomOffset);
 		
 		bCourseLayedIn = true;
 		LocationTarget = Result;
-
-		/// Debug distance to location target
-		///float DistToLocationTarget = (LocationTarget - MyPawn->GetActorLocation()).Size();
-		///GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::White, FString::Printf(TEXT("DistToLocationTarget: %f"), DistToLocationTarget));
 	}
 	return Result;
 }
@@ -334,7 +331,7 @@ void AGammaAIController::NavigateTo(FVector Target)
 
 	// Have we reached target?
 	/// Or are we too far out vertically?
-	if (ToTarget.Size() < 550.0f) /// || (ToTarget.Z > (ToTarget.X * 1.5f))
+	if (ToTarget.Size() < 500.0f) /// || (ToTarget.Z > (ToTarget.X * 1.5f))
 	{
 		LocationTarget = FVector::ZeroVector;
 		bCourseLayedIn = false;
