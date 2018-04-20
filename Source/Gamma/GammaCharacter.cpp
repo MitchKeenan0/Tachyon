@@ -401,7 +401,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}
 
 				// If Actor2 isn't too far away, make 'Pair Framing'
-				float PairDistanceThreshold = 3300.0f * CameraDistanceScalar;
+				float PairDistanceThreshold = 5000.0f * CameraDistanceScalar;
 				if (Actor2 != nullptr && !Actor2->IsUnreachable()
 					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= PairDistanceThreshold)
 				{
