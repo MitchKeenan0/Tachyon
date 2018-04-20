@@ -297,6 +297,10 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 	AActor* Actor2 = nullptr;
 
 	float VelocityCameraSpeed = CameraMoveSpeed;
+
+	// Poll for framing actors
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
+	/// TODO - add defense on running get?
 	
 	if (!this->ActorHasTag("Spectator"))
 	{
@@ -304,9 +308,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 	}
 
 
-	// Poll for framing actors
-	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
-	/// TODO - add defense on running get?
+	
 	if (FramingActors.Num() > 1)
 	{
 		// Edge case: player is spectator, find a sub
@@ -319,7 +321,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				if (Actore != nullptr
 					&& Actore != this
 					&& !Actore->ActorHasTag("Spectator")
-					&& !Actore->ActorHasTag("Land"))
+					&& !Actore->ActorHasTag("Land")
+					&& Actore->ActorHasTag("Player"))
 				{
 					Actor1 = Actore;
 					break;
@@ -328,97 +331,67 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		}
 
 		// Let's go
-		if (Actor1 != nullptr && IsValid(Actor1) && !Actor1->IsUnreachable())
+		if ((Actor1 != nullptr) && IsValid(Actor1) && !Actor1->IsUnreachable())
 		{
 			float UnDilatedDeltaTime = (DeltaTime / CustomTimeDilation) * CameraMoveSpeed; /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
 			float TimeDilationScalar = (1.0f / CustomTimeDilation) + 0.01f; /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
 			float TimeDilationScalarClamped = FMath::Clamp(TimeDilationScalar, 0.5f, 1.5f);
 
-			// Framing up first actor
+			// Framing up first actor with their own velocity
 			FVector Actor1Velocity = Actor1->GetVelocity();
-
-			// Set Velocity Camera Move Speed
 			VelocityCameraSpeed *= (1 + (Actor1Velocity.Size() / 30000.0f));
-			
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 			float CameraMinimumDistance = 2100.0f;
 			float CameraMaxDistance = 150000.0f;
 
-			// Position two by another actor
+			// Position by another actor
 			bool bAlone = false;
-			if (FramingActors.Num() > 1)
+			// Find closest best candidate for Actor 2
+			if ((Actor2 == nullptr)
+				|| (FVector::Dist(Actor2->GetActorLocation(), GetActorLocation()) > 5000.0f))
 			{
-				// Find closest best candidate for Actor 2
-				if (Actor2 == nullptr
-					|| FVector::Dist(Actor2->GetActorLocation(), GetActorLocation()) > 5000.0f)
-				{
-
-					// Try player targets first
-					UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), FramingActors);
-					if (FramingActors.Num() > 1)
-					{
-						int LoopCount = FramingActors.Num();
-						for (int i = 0; i < LoopCount; ++i)
-						{
-							AActor* Actoir = FramingActors[i];
-							if (Actoir != nullptr
-								&& Actoir != this
-								&& Actoir != Actor1
-								&& !Actoir->ActorHasTag("Spectator"))
-							{
-								Actor2 = Actoir;
-							}
-						}
-					}
-					else
-					{
-						UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
-					}
-				}
 
 				// Update target Actor by nominating closest
-				if (FramingActors.Num() > 1)
+				float DistToActor2 = 99999.0f;
+				int LoopCount = FramingActors.Num();
+				for (int i = 0; i < LoopCount; ++i)
 				{
-					float DistToActor2 = 99999.0f;
-					int LoopCount = FramingActors.Num();
-					for (int i = 0; i < LoopCount; ++i)
+					AActor* Actorr = FramingActors[i];
+					if (Actorr != nullptr
+						&& Actorr != this
+						&& Actorr != Actor1
+						&& !Actorr->ActorHasTag("Spectator"))
 					{
-						AActor* Actorr = FramingActors[i];
-						if (Actorr != nullptr
-							&& Actorr != this
-							&& Actorr != Actor1
-							&& !Actorr->ActorHasTag("Spectator"))
+						float DistToTemp = FVector::Dist(Actorr->GetActorLocation(), GetActorLocation());
+						if (DistToTemp < DistToActor2)
 						{
-							float DistToTemp = FVector::Dist(Actorr->GetActorLocation(), GetActorLocation());
-							if (DistToTemp < DistToActor2)
-							{
-								Actor2 = Actorr;
-								DistToActor2 = DistToTemp;
-							}
+							Actor2 = Actorr;
+							DistToActor2 = DistToTemp;
 						}
 					}
 				}
+			}
 
-				// If Actor2 isn't too far away, make 'Pair Framing'
-				float PairDistanceThreshold = 5000.0f * CameraDistanceScalar;
-				if (Actor2 != nullptr && !Actor2->IsUnreachable()
-					&& FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= PairDistanceThreshold)
-				{
 
-					// Framing up with second actor
-					FVector Actor2Velocity = Actor2->GetVelocity();
-					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(5000.0f * (CustomTimeDilation + 0.5f));
-					Actor2Velocity.Z *= 0.15f;
+			// If Actor2 isn't too far away, make 'Pair Framing'
+			float PairDistanceThreshold = 5000.0f * CameraDistanceScalar;
+			if ((Actor2 != nullptr) && !Actor2->IsUnreachable()
+				&& (FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= PairDistanceThreshold))
+			{
 
-					// Declare Position Two
-					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
-					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, UnDilatedDeltaTime, VelocityCameraSpeed);
-				}
-				else
-				{
-					bAlone = true;
-				}
+				// Framing up with second actor
+				FVector Actor2Velocity = Actor2->GetVelocity();
+				Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(5000.0f * (CustomTimeDilation + 0.5f));
+				Actor2Velocity.Z *= 0.15f;
+
+				// Declare Position Two
+				FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
+				PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, UnDilatedDeltaTime, VelocityCameraSpeed);
+			}
+			else
+			{
+				bAlone = true;
 			}
 			
 			// Lone player gets 'Velocity Framing'
@@ -497,19 +470,22 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					TargetLengthClamped, DeltaTime, (VelocityCameraSpeed * 1.15f));
 					
 				// Camera tilt
-				float TiltDistanceScalar = FMath::Clamp((1.0f / DistBetweenActors) * 100.0f, 0.1f, 0.5f);
-				float DistScalar = TargetLengthClamped * 0.0001f;
-				float ClampedTargetTiltX = FMath::Clamp((InputZ*CameraTiltValue*DistScalar), -CameraTiltClamp, CameraTiltClamp);
-				float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DistScalar), -CameraTiltClamp, CameraTiltClamp);
-				CameraTiltX = FMath::FInterpTo(CameraTiltX, ClampedTargetTiltX, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
-				CameraTiltZ = FMath::FInterpTo(CameraTiltZ, ClampedTargetTiltZ, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // yaw
-				FRotator FTarget = FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue;
-				FTarget.Roll = 0.0f;
-				SideViewCameraComponent->SetRelativeRotation(FTarget);
+				if (!this->ActorHasTag("Spectator"))
+				{
+					float TiltDistanceScalar = FMath::Clamp((1.0f / DistBetweenActors) * 100.0f, 0.1f, 0.5f);
+					float DistScalar = TargetLengthClamped * 0.0001f;
+					float ClampedTargetTiltX = FMath::Clamp((InputZ*CameraTiltValue*DistScalar), -CameraTiltClamp, CameraTiltClamp);
+					float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DistScalar), -CameraTiltClamp, CameraTiltClamp);
+					CameraTiltX = FMath::FInterpTo(CameraTiltX, ClampedTargetTiltX, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
+					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, ClampedTargetTiltZ, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // yaw
+					FRotator FTarget = FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue;
+					FTarget.Roll = 0.0f;
+					SideViewCameraComponent->SetRelativeRotation(FTarget);
 
-				// Adjust position to work angle
-				Midpoint.X -= ((CameraTiltZ * (DesiredCameraDistance / 15.0f))) * DeltaTime;
-				Midpoint.Z -= ((CameraTiltX * (DesiredCameraDistance / 15.0f))) * DeltaTime;
+					// Adjust position to work angle
+					Midpoint.X -= ((CameraTiltZ * (DesiredCameraDistance / 15.0f))) * DeltaTime;
+					Midpoint.Z -= ((CameraTiltX * (DesiredCameraDistance / 15.0f))) * DeltaTime;
+				}
 
 				// Make it so
 				CameraBoom->SetWorldLocation(Midpoint);

@@ -26,6 +26,13 @@ void AGammaSoloSequence::BeginPlay()
 	}
 
 	RunTimer = FirstEncounterTime / 5.0f;
+
+
+	// Initial burst
+	for (int i = 0; i < 50; ++i)
+	{
+		SpawnDenizen();
+	}
 }
 
 
@@ -100,8 +107,9 @@ void AGammaSoloSequence::SpawnDenizen()
 	else
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No Player, Extrapolating..."));
-		float Rando = FMath::FRandRange(0.0f, 1000.0f);
-		PlayerWiseLocation += FVector(Rando, 0.0f, Rando);
+		float RandoX = FMath::FRandRange(0.0f, 1000.0f);
+		float RandoZ = FMath::FRandRange(0.0f, 1000.0f);
+		PlayerWiseLocation += FVector(RandoX, 0.0f, RandoZ);
 	}
 
 	FVector RandomOffset = (FMath::VRand() * 1000);
@@ -110,7 +118,7 @@ void AGammaSoloSequence::SpawnDenizen()
 
 
 	// OBSTACLE SPAWNING ////////////////////////////////////////////////
-	if (bSpawnObstacles && ObstacleArray.Num() < 10)
+	if (bSpawnObstacles && ObstacleArray.Num() < MaxLiveUnits)
 	{
 
 		// Random spawning object
@@ -129,12 +137,11 @@ void AGammaSoloSequence::SpawnDenizen()
 		{
 
 			// Position and Rotation
-			SpawnLoc.X += FMath::FRandRange(-10000.0f, 10000.0f);
-			SpawnLoc.Y = 0.0f; //+= FMath::FRandRange(-500.0f, 500.0f);
-			SpawnLoc.Z += FMath::FRandRange(-7000.0f, 7000.0f);
-
-			float RandF = FMath::FRandRange(-0.8f, 1.2f);
-			FRotator SpawnRotation = FRotator(RandF * 90.0f, RandF * 3.0f, RandF * 9.0f);
+			SpawnLoc *= (MaxLiveUnits * 6.0f);
+			float RandF = FMath::FRandRange(-1.0f, 1.0f);
+			float RandG = FMath::FRandRange(-1.0f, 1.0f);
+			float RandH = FMath::FRandRange(-1.0f, 1.0f);
+			FRotator SpawnRotation = FRotator(RandF * 45.0f, RandG * 45.0f, RandH * 45.0f);
 
 			AActor* NewObstacle = GetWorld()->SpawnActor<AActor>(ObstacleSpawning, SpawnLoc, SpawnRotation, SpawnParams);
 			
@@ -147,7 +154,7 @@ void AGammaSoloSequence::SpawnDenizen()
 
 
 	// CHARACTER SPAWNING ///////////////////////////////////////////////
-	if (bSpawnCharacters)
+	if (bSpawnCharacters && (NumDenizens() < MaxLiveUnits))
 	{
 		// Random character each spawn
 		TSubclassOf<AGammaCharacter> PlayerSpawning = nullptr;
