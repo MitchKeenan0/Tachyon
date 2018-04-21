@@ -174,7 +174,7 @@ void AGAttack::Tick(float DeltaTime)
 	if (GlobalTimeScale > 0.3f)
 	{
 		float CloseEnough = DurationTime * 0.97f;
-		if (LifeTimer >= CloseEnough || (this != nullptr && this->IsPendingKillOrUnreachable()))
+		if (LifeTimer >= CloseEnough)
 		{
 			AttackParticles->bSuppressSpawning = true;
 
@@ -396,7 +396,7 @@ void AGAttack::Nullify(int AttackType)
 				PossibleCharacter->NullifySecondary();
 			}
 
-			this->Destroy();
+			Destroy();
 		}
 	}
 }

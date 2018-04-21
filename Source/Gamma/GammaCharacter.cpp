@@ -207,17 +207,17 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		// Attacks and Secondary Recovery
 		if (MyTimeDilation < 1.0f)
 		{
-			if (GetActiveFlash() != nullptr)
+			if (GetActiveFlash() != nullptr && IsValid(GetActiveFlash()))
 			{
 				GetActiveFlash()->CustomTimeDilation = MyTimeDilation;
 				GetActiveFlash()->SetLifeSpan(GetActiveFlash()->GetLifeSpan() / MyTimeDilation);
 			}
-			if (ActiveAttack != nullptr && IsValid(ActiveAttack))
+			if ((ActiveAttack != nullptr) && IsValid(ActiveAttack))
 			{
 				ActiveAttack->CustomTimeDilation = MyTimeDilation;
 				ActiveAttack->SetLifeSpan(ActiveAttack->GetLifeSpan() / CustomTimeDilation);
 			}
-			if (ActiveSecondary != nullptr)
+			if ((ActiveSecondary != nullptr) && IsValid(ActiveSecondary))
 			{
 				ActiveSecondary->CustomTimeDilation = MyTimeDilation;
 				ActiveSecondary->SetLifeSpan(ActiveSecondary->GetLifeSpan() / CustomTimeDilation);
@@ -375,7 +375,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// If Actor2 isn't too far away, make 'Pair Framing'
 			float PairDistanceThreshold = 4000.0f * CameraDistanceScalar;
-			if ((Actor2 != nullptr) && !Actor2->IsUnreachable()
+			if ((Actor2 != nullptr) && IsValid(Actor2)
 				&& (FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= PairDistanceThreshold))
 			{
 
