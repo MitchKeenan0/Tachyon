@@ -66,10 +66,10 @@ public:
 	void RaiseScore(int Val) { Score += Val; }
 
 	UFUNCTION(BlueprintCallable)
-	void NullifySecondary() { ActiveSecondary = nullptr; MoveParticles->bSuppressSpawning = false; }
+	void NullifySecondary() { ActiveSecondary = nullptr; }
 	
 	UFUNCTION(BlueprintCallable)
-	void NullifyAttack() { ActiveAttack = nullptr; MoveParticles->bSuppressSpawning = false; }
+	void NullifyAttack() { ActiveAttack = nullptr; }
 
 	UFUNCTION(BlueprintCallable)
 	void EraseCharge() { Charge = 0.0f; }
@@ -153,10 +153,12 @@ protected:
 	// Attack objects
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AGFlash> FlashClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	class AGFlash* ActiveFlash = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AGAttack> AttackClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	class AGAttack* ActiveAttack = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -165,21 +167,25 @@ protected:
 	// Secondary object
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AGAttack> SecondaryClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	class AGAttack* ActiveSecondary = nullptr;
 
 	// Charge object
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AActor> ChargeParticles;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	class AActor* ActiveChargeParticles = nullptr;
 
 	// Killed FX object
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AActor> KilledFX;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	class AActor* ActiveKilledFX = nullptr;
 
 	// Boost object
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AActor> BoostClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	class AActor* ActiveBoost = nullptr;
 
 	// Replicated functions

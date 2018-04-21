@@ -205,7 +205,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		float MyTimeDilation = CustomTimeDilation;
 		
 		// Attacks and Secondary Recovery
-		if (MyTimeDilation < 1.0f)
+		if (GetWorld() && (MyTimeDilation < 1.0f))
 		{
 			if (GetActiveFlash() != nullptr && IsValid(GetActiveFlash()))
 			{
@@ -217,10 +217,13 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 				ActiveAttack->CustomTimeDilation = MyTimeDilation;
 				ActiveAttack->SetLifeSpan(ActiveAttack->GetLifeSpan() / CustomTimeDilation);
 			}
-			if ((ActiveSecondary != nullptr) && IsValid(ActiveSecondary))
+			if (IsValid(ActiveSecondary) && (ActiveSecondary != nullptr))
 			{
 				ActiveSecondary->CustomTimeDilation = MyTimeDilation;
-				ActiveSecondary->SetLifeSpan(ActiveSecondary->GetLifeSpan() / CustomTimeDilation);
+				if (ActiveSecondary != nullptr)
+				{
+					ActiveSecondary->SetLifeSpan(ActiveSecondary->GetLifeSpan() / CustomTimeDilation);
+				}
 			}
 		}
 
@@ -382,11 +385,11 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// Framing up with second actor
 				FVector Actor2Velocity = Actor2->GetVelocity();
 				Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(15000.0f * (CustomTimeDilation + 0.5f));
-				Actor2Velocity.Z *= 0.15f;
+				Actor2Velocity.Z *= 0.75f;
 
 				// Declare Position Two
 				FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
-				PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, UnDilatedDeltaTime, VelocityCameraSpeed);
+				PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, VelocityCameraSpeed);
 			}
 			else
 			{
@@ -842,7 +845,7 @@ void AGammaCharacter::KickPropulsion()
 	{
 
 		// Conditions for propulsion
-		if ((ActiveChargeParticles != nullptr)
+		if (GetWorld() && (ActiveChargeParticles != nullptr)
 			&& (ActiveChargeParticles->WasRecentlyRendered(0.1f))
 			&& (GetCharacterMovement() != nullptr))
 		{
@@ -1086,7 +1089,7 @@ void AGammaCharacter::ReleaseAttack()
 
 	if (!bMultipleAttacks && ActiveAttack != nullptr)
 	{
-		NullifyAttack();
+		ActiveAttack->Nullify(0);
 		return;
 	}
 
@@ -1455,5 +1458,5 @@ void AGammaCharacter::GetLifetimeReplicatedProps(TArray <FLifetimeProperty> & Ou
 
 
 // Print to screen
-// GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("sizing"));
-// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Charge: %f"), Charge));
+// GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, TEXT("sizing"));
+// GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("Charge: %f"), Charge));

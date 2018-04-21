@@ -308,7 +308,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 		// Getting spicy
 		float MyVelocity = MyCharacter->GetCharacterMovement()->Velocity.Size();
 		float VelocityScalar = FMath::Clamp((1 / (1 / MyVelocity)), 1.0f, MoveRange);
-		float DynamicMoveRange = MoveRange + VelocityScalar; /// woah
+		float DynamicMoveRange = MoveRange + VelocityScalar; /// usually 100 :P
 		FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
 		
 		// Randomness in movement
@@ -321,6 +321,10 @@ FVector AGammaAIController::GetNewLocationTarget()
 		
 		bCourseLayedIn = true;
 		LocationTarget = Result;
+
+		//float DistToNewTarget = (LocationTarget - MyPawn->GetActorLocation()).Size();
+		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("DynamicMoveRange: %f"), DynamicMoveRange));
+		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("DistToNewTarget: %f"), DistToNewTarget));
 	}
 	return Result;
 }
