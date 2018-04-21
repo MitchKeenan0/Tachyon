@@ -404,6 +404,12 @@ void AGAttack::Nullify(int AttackType)
 
 void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 {
+	float DamageVisualTimer = (1.0f / HitsPerSecond) * 0.5f;
+	if (HitTimer > DamageVisualTimer)
+	{
+		SpawnDamage(HitActor, HitPoint);
+	}
+
 	HitTimer = 0.0f;
 	bool bSpawnDamage = false;
 
@@ -411,8 +417,6 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	AGAttack* OtherAttack = Cast<AGAttack>(HitActor);
 	if (OtherAttack != nullptr)
 	{
-		SpawnDamage(HitActor, HitPoint);
-
 		if (OtherAttack->OwningShooter != nullptr
 			&& this->OwningShooter != nullptr
 			&& OtherAttack->OwningShooter != this->OwningShooter)
@@ -446,7 +450,6 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	if (bLethal && !HitActor->ActorHasTag("Attack")
 		&& !HitActor->ActorHasTag("Doomed")) /// && (HitTimer >= (1.0f / HitsPerSecond)))
 	{
-		SpawnDamage(HitActor, HitPoint);
 		ApplyKnockback(HitActor);
 
 		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)

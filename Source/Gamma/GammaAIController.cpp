@@ -201,12 +201,19 @@ void AGammaAIController::Tactical(FVector Target)
 	// CHARGE
 	if (RandomDc <= ChargeVal)
 	{
-		// Call-off existing charge boost if there is one
 		if ((MyCharacter != nullptr) && IsValid(MyCharacter))
 		{
 			if (MyCharacter->GetActiveBoost() != nullptr) // && IsValid(MyCharacter->GetActiveBoost()) && !MyCharacter->GetActiveBoost()->IsPendingKillPending())
 			{
-				MyCharacter->DisengageKick();
+				// Decide whether to keep or lose the boost
+				FVector MyVelNorm = MyCharacter->GetCharacterMovement()->Velocity.GetSafeNormal();
+				FVector ToLocNorm = (LocationTarget - MyPawn->GetActorLocation()).GetSafeNormal();
+				float DotToTarget = FVector::DotProduct(MyVelNorm, ToLocNorm);
+				if (DotToTarget < 0.5f)
+				{
+					// Call-off existing charge boost if there is one
+					MyCharacter->DisengageKick();
+				}
 			}
 			else
 			{
@@ -300,7 +307,8 @@ FVector AGammaAIController::GetNewLocationTarget()
 
 		// Getting spicy
 		float MyVelocity = MyCharacter->GetCharacterMovement()->Velocity.Size();
-		float DynamicMoveRange = MoveRange + (1 / (1 / MyVelocity)); /// woah
+		float VelocityScalar = FMath::Clamp((1 / (1 / MyVelocity)), 1.0f, MoveRange);
+		float DynamicMoveRange = MoveRange + VelocityScalar; /// woah
 		FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
 		
 		// Randomness in movement

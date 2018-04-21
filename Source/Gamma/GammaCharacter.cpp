@@ -321,7 +321,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				if (Actore != nullptr
 					&& Actore != this
 					&& !Actore->ActorHasTag("Spectator")
-					&& !Actore->ActorHasTag("Land")
 					&& Actore->ActorHasTag("Player"))
 				{
 					Actor1 = Actore;
@@ -382,7 +381,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Framing up with second actor
 				FVector Actor2Velocity = Actor2->GetVelocity();
-				Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(5000.0f * (CustomTimeDilation + 0.5f));
+				Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(15000.0f * (CustomTimeDilation + 0.5f));
 				Actor2Velocity.Z *= 0.15f;
 
 				// Declare Position Two
@@ -399,7 +398,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				
 				// Framing lone player by their velocity
-				FVector Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 3.0f;
+				Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 3.0f;
 
 				// Clamp to max size
 				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(2200.0f * (CustomTimeDilation + 0.25f));
@@ -448,11 +447,14 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}
 
 				// Modifier for hit/gg
-				float Timescale = (Actor1->CustomTimeDilation + Actor2->CustomTimeDilation) / 2.0f;
-				if ((Timescale < 1.0f) && (Actor2 != nullptr))
+				if (Actor2 != nullptr)
 				{
-					float HitTimeScalar = FMath::Clamp(FMath::Square(Timescale), 0.55f, 1.0f);
-					TargetLength *= HitTimeScalar;
+					float Timescale = (Actor1->CustomTimeDilation + Actor2->CustomTimeDilation) / 2.0f;
+					if ((Timescale < 1.0f))
+					{
+						float HitTimeScalar = FMath::Clamp(FMath::Square(Timescale), 0.55f, 1.0f);
+						TargetLength *= HitTimeScalar;
+					}
 				}
 
 				// Last modifier for global time dilation
