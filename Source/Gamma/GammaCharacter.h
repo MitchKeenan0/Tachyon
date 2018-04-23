@@ -103,6 +103,7 @@ public:
 	float GetPrefireTime() { return PrefireTime; }
 	USceneComponent* GetAttackScene() { return AttackScene; }
 	FString GetCharacterName() { return CharacterName; }
+	void SetCharacterName(FString NewName) { CharacterName = NewName; }
 
 
 protected:

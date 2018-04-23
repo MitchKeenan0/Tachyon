@@ -178,6 +178,20 @@ void AGammaSoloSequence::SpawnDenizen()
 				break;
 		}
 
+		// Naming the character to avoid duplicate bois
+		bool bSpicyName = false;
+		TArray<AActor*> Players;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), PlayerSpawning, Players);
+		if (Players.Num() > 0)
+		{
+			bSpicyName = true;
+			/*int NumPlayers = Players.Num();
+			for (int i = 0; i < NumPlayers; ++i)
+			{
+
+			}*/
+		}
+
 		// Spawn is go!
 		if (PlayerSpawning != nullptr)
 		{
@@ -198,6 +212,13 @@ void AGammaSoloSequence::SpawnDenizen()
 
 				// "Alert the media"
 				NewDenizen->Tags.Add("Bot");
+
+				if (bSpicyName)
+				{
+					FString NewName = "ELTIGAL";
+					NewDenizen->SetCharacterName(NewName);
+					
+				}
 
 				++Spawns;
 				PreviousSpawn = Rando;

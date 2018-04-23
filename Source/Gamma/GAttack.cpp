@@ -316,6 +316,10 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 		for (int i = 0; i < LoopSize; ++i)
 		{
 			HitMeshComponent = Components[i];
+			if (HitMeshComponent != nullptr)
+			{
+				break;
+			}
 		}
 
 		// Apply force to it
@@ -330,7 +334,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 
 void AGAttack::ReportHit(AActor* HitActor)
 {
-	// Track hits curvature
+	// Track hitscale curvature
 	numHits = FMath::Clamp((numHits += (numHits - 1)), 2, 50);
 
 	// Damage

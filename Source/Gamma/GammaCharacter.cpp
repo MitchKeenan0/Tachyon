@@ -194,6 +194,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	if (ActorHasTag("Bot") && GetCameraBoom()->IsActive())
 	{
 		GetCameraBoom()->Deactivate();
+		ResetLocator();
 	}
 	
 	
@@ -504,7 +505,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 void AGammaCharacter::ResetLocator()
 {
 	Locator->SetRelativeScale3D(FVector(25.0f, 25.0f, 25.0f));
-
+	TextComponent->SetText(FText::FromString(CharacterName));
 	ClearFlash();
 }
 
@@ -850,7 +851,7 @@ void AGammaCharacter::KickPropulsion()
 			&& (GetCharacterMovement() != nullptr))
 		{
 			// Algo scaling for timescale & max velocity
-			FVector MoveInputVector = FVector(InputX, 0.0f, InputZ);
+			FVector MoveInputVector = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 			FVector CurrentVelocity = GetCharacterMovement()->Velocity;
 			float TimeDelta = (GetWorld()->DeltaTimeSeconds / CustomTimeDilation);
 			//float RelativityToMaxSpeed = (MaxMoveSpeed) - CurrentVelocity.Size();
@@ -863,7 +864,7 @@ void AGammaCharacter::KickPropulsion()
 				* TimeDelta;
 			
 			// Trimming
-			KickVector.Z *= 0.7f;
+			KickVector.Z *= 0.9f;
 			KickVector.Y = 0.0f;
 			GetCharacterMovement()->AddImpulse(KickVector);
 
@@ -874,7 +875,7 @@ void AGammaCharacter::KickPropulsion()
 			if ((BoostClass != nullptr) && (ActiveBoost == nullptr))
 			{
 				// Initial kick
-				GetCharacterMovement()->AddImpulse(KickVector * 6.3f);
+				GetCharacterMovement()->AddImpulse(KickVector * 11.15f);
 
 				FActorSpawnParameters SpawnParams;
 				FVector PlayerVelocity = GetCharacterMovement()->Velocity;
@@ -882,7 +883,7 @@ void AGammaCharacter::KickPropulsion()
 				FRotator InputRotator = MoveInputVector.Rotation();
 
 				PlayerVelocity.Z *= 0.01f;
-				FVector SpawnLocation = GetActorLocation(); /// + (PlayerVelocity / 3);
+				FVector SpawnLocation = GetActorLocation() + (FVector::UpVector * 10.0f); /// + (PlayerVelocity / 3);
 
 				ActiveBoost = GetWorld()->SpawnActor<AActor>
 					(BoostClass, SpawnLocation, InputRotator, SpawnParams); /// PlayerVelRotator

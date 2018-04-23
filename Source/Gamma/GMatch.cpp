@@ -93,6 +93,14 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 
 				bReturn = false;
 
+				// Award winner with a star ;P
+				AGammaCharacter* WinnerPlayer = Cast<AGammaCharacter>(Winner);
+				if (WinnerPlayer != nullptr)
+				{
+					FString DecoratedName = FString(WinnerPlayer->GetCharacterName().Append(" *"));
+					WinnerPlayer->SetCharacterName(DecoratedName);
+				}
+
 				
 				// Clear shot-out NPCs
 				/*if (HitActor->ActorHasTag("Bot"))

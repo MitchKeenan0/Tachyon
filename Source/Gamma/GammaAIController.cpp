@@ -153,10 +153,11 @@ bool AGammaAIController::ReactionTiming(float DeltaTime)
 	bool Result = false;
 	float TimeDilat = MyCharacter->CustomTimeDilation;
 	ReactionTimer += (DeltaTime * TimeDilat);
+	
 	if (ReactionTimer >= ReactionTime)
 	{
 		Result = true;
-		float RandomOffset = FMath::FRandRange(-ReactionTime, ReactionTime * 0.5f);
+		float RandomOffset = FMath::FRandRange(ReactionTime * -0.5f, ReactionTime * 0.25f);
 		ReactionTimer = RandomOffset;
 	}
 
@@ -169,7 +170,7 @@ void AGammaAIController::Tactical(FVector Target)
 {
 	// Random number to evoke choice
 	float RandomDc = FMath::FRandRange(0.0f, 100.0f);
-	float HandBrakeVal = 5.5f;
+	float HandBrakeVal = 2.5f;
 	float ChargeVal = 69.0f;
 	float SecoVal = 81.0f;
 
@@ -191,10 +192,6 @@ void AGammaAIController::Tactical(FVector Target)
 			{
 				MyCharacter->CheckPowerSlideOff();
 			}
-		}
-		else
-		{
-			// Moving on to charge...
 		}
 	}
 	
@@ -309,7 +306,8 @@ FVector AGammaAIController::GetNewLocationTarget()
 		float MyVelocity = MyCharacter->GetCharacterMovement()->Velocity.Size();
 		float VelocityScalar = FMath::Clamp((1 / (1 / MyVelocity)), 1.0f, MoveRange);
 		float DynamicMoveRange = MoveRange + VelocityScalar; /// usually 100 :P
-		FVector PlayerAtSpeed = PlayerLocation + (Player->GetCharacterMovement()->Velocity * Aggression);
+		FVector PlayerVelocity = Player->GetCharacterMovement()->Velocity;
+		FVector PlayerAtSpeed = PlayerLocation + (PlayerVelocity * 0.5f * Aggression);
 		
 		// Randomness in movement
 		FVector RandomOffset = (FMath::VRand() * DynamicMoveRange) * (1 / Aggression);
