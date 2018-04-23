@@ -291,7 +291,7 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 }
 
 
-void AGAttack::ApplyKnockback(AActor* HitActor)
+void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 {
 	// The knock itself
 	FVector AwayFromShooter = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
@@ -322,7 +322,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor)
 		if ((HitMeshComponent != nullptr)
 			&& HitMeshComponent->IsSimulatingPhysics())
 		{
-			HitMeshComponent->AddImpulse(AwayFromShooter * KnockScalar);
+			HitMeshComponent->AddImpulseAtLocation(AwayFromShooter * KnockScalar, HitPoint);
 		}
 	}
 }
@@ -425,13 +425,13 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 			if (HitActor->ActorHasTag("Shield")
 				&& !HitActor->ActorHasTag("Obstacle"))
 			{
-				ApplyKnockback(HitActor);
+				ApplyKnockback(HitActor, HitPoint);
 
 				bLethal = false;
 				bHit = true;
 				//return;
 			}
-
+			
 			// Locked weapons' wielders are pushed away
 			if (OtherAttack->LockedEmitPoint
 				&& !OtherAttack->ActorHasTag("Obstacle"))
@@ -439,8 +439,8 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 				AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(OtherAttack->OwningShooter);
 				if (PotentialPlayer != nullptr)
 				{
-					ApplyKnockback(PotentialPlayer);
-					ApplyKnockback(PotentialPlayer); // Pending Refactor - add scalar argument to ApKnk!
+					ApplyKnockback(PotentialPlayer, HitPoint);
+					ApplyKnockback(PotentialPlayer, HitPoint); // Pending Refactor - add scalar argument to ApKnk!
 				}
 			}
 		}
@@ -450,7 +450,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	if (bLethal && !HitActor->ActorHasTag("Attack")
 		&& !HitActor->ActorHasTag("Doomed")) /// && (HitTimer >= (1.0f / HitsPerSecond)))
 	{
-		ApplyKnockback(HitActor);
+		ApplyKnockback(HitActor, HitPoint);
 
 		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 		{

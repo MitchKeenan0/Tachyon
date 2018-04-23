@@ -76,7 +76,7 @@ protected:
 	void SpawnDamage(AActor* HitActor, FVector HitPoint);
 
 	UFUNCTION(BlueprintCallable)
-	void ApplyKnockback(AActor* HitActor);
+	void ApplyKnockback(AActor* HitActor, FVector HitPoint);
 
 
 	// Collision hit detec
