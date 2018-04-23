@@ -322,7 +322,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 		if ((HitMeshComponent != nullptr)
 			&& HitMeshComponent->IsSimulatingPhysics())
 		{
-			HitMeshComponent->AddImpulseAtLocation(AwayFromShooter * KnockScalar, HitPoint);
+			HitMeshComponent->AddImpulseAtLocation(AwayFromShooter * KnockScalar * 1000.0f, HitPoint);
 		}
 	}
 }
