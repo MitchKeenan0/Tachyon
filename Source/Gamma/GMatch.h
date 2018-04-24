@@ -39,6 +39,9 @@ public:
 	FText GetOpponentCharacterName();
 
 	UFUNCTION(BlueprintCallable)
+	AGammaCharacter* GetLocalPlayer() { return LocalPlayer; }
+
+	UFUNCTION(BlueprintCallable)
 	AGammaCharacter* GetOpponentPlayer() { return OpponentPlayer; }
 
 	UFUNCTION(BlueprintCallable)

@@ -157,9 +157,8 @@ void AGammaCharacter::BeginPlay()
 	ResetLocator();
 	TextComponent->SetText(FText::FromString(CharacterName));
 
-	// Init charge
+	// Init charge & health
 	Charge = FMath::FloorToFloat(ChargeMax / 2.0f);
-	// Init health
 	Health = MaxHealth;
 
 	// Init camera

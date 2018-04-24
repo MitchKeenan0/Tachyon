@@ -222,6 +222,7 @@ public:
 	AActor* GetActiveFlash() { return ActiveFlash; }
 	AActor* GetActiveSecondary() { return ActiveSecondary; }
 	AActor* GetActiveBoost() { return ActiveBoost; }
+	FColor GetCharacterColor() { return CharacterColor; }
 
 
 	// REPLICATED COMBAT FUNCTIONS ////////////////////////////////
@@ -330,6 +331,9 @@ protected:
 	// ATTRIBUTES //////////////////////////////////////////	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FString CharacterName = "Name";
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	FColor CharacterColor = FColor::White;
 
 	// Player movement
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
