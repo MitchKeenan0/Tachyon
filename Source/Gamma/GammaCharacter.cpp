@@ -350,7 +350,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			// Position by another actor
 			bool bAlone = false;
 			// Find closest best candidate for Actor 2
-			if (Actor2 == nullptr) /// || (FVector::Dist(Actor2->GetActorLocation(), GetActorLocation()) > 5000.0f)
+			if (Actor2 == nullptr)
 			{
 
 				// Update target Actor by nominating closest
@@ -376,7 +376,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 
 			// If Actor2 isn't too far away, make 'Pair Framing'
-			float PairDistanceThreshold = 4000.0f * CameraDistanceScalar;
+			float PairDistanceThreshold = 5000.0f * CameraDistanceScalar;
 			if ((Actor2 != nullptr) && IsValid(Actor2)
 				&& (FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= PairDistanceThreshold))
 			{
@@ -436,7 +436,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}
 
 				// Handle horizontal bias
-				float DistancePreClamp = (DistBetweenActors + (FMath::Sqrt(VerticalDist) * 155.0f)) * 1.15f;
+				float DistancePreClamp = (DistBetweenActors + (FMath::Sqrt(VerticalDist) * 210.0f)) * 1.15f;
 				///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("DistancePreClamp: %f"), DistancePreClamp));
 				float TargetLength = FMath::Clamp(DistancePreClamp, CameraMinimumDistance, CameraMaxDistance);
 
@@ -479,7 +479,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					float TiltDistanceScalar = FMath::Clamp((1.0f / DistBetweenActors) * 100.0f, 0.1f, 0.5f);
 					float DistScalar = TargetLengthClamped * 0.0001f;
 					float ClampedTargetTiltX = FMath::Clamp((InputZ*CameraTiltValue*DistScalar), -CameraTiltClamp, CameraTiltClamp);
-					float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DistScalar), -CameraTiltClamp, CameraTiltClamp);
+					float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DistScalar) * 2.0f, -CameraTiltClamp, CameraTiltClamp * 2.0f);
 					CameraTiltX = FMath::FInterpTo(CameraTiltX, ClampedTargetTiltX, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
 					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, ClampedTargetTiltZ, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // yaw
 					FRotator FTarget = FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue;

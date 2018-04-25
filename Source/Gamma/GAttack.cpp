@@ -423,7 +423,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	{
 		if (OtherAttack->OwningShooter != nullptr
 			&& this->OwningShooter != nullptr
-			&& OtherAttack->OwningShooter != this->OwningShooter)
+			&& OwningShooter != OtherAttack->OwningShooter)
 		{
 			// Collide off shield
 			if (HitActor->ActorHasTag("Shield")

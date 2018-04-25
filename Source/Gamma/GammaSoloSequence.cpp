@@ -165,40 +165,71 @@ void AGammaSoloSequence::SpawnDenizen()
 			Rando = FMath::FloorToInt(FMath::FRand() * 3); /// filthy hard-coded value!
 		}
 
+		// Ez track for naming the character later
+		int CharacterID = 0;
+
 		// Delineate a random Character to spawn
 		switch (Rando)
 		{
 			case 0: PlayerSpawning = KaraokeClass;
+				CharacterID = 0;
 				break;
 			case 1: PlayerSpawning = PeaceGiantClass;
+				CharacterID = 1;
 				break;
 			case 2: PlayerSpawning = BaetylusClass;
+				CharacterID = 2;
 				break;
 			default:
 				break;
 		}
 
-		// Naming the character to avoid duplicate bois
-		bool bSpicyName = false;
-		TArray<AActor*> Players;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), PlayerSpawning, Players);
-		if (Players.Num() > 0)
-		{
-			bSpicyName = true;
-			/*int NumPlayers = Players.Num();
-			for (int i = 0; i < NumPlayers; ++i)
-			{
-
-			}*/
-		}
-
 		// Spawn is go!
 		if (PlayerSpawning != nullptr)
 		{
+
+			// Spawn Character body
 			AGammaCharacter* NewDenizen = Cast<AGammaCharacter>(
 				GetWorld()->SpawnActor<AActor>(
 					PlayerSpawning, SpawnLoc, GetActorRotation(), SpawnParams));
+
+			// Rename the character to avoid duplicate bois
+			FString FreshName = NewDenizen->GetCharacterName();
+			TArray<AActor*> Players;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), PlayerSpawning, Players);
+			if (Players.Num() > 0)
+			{
+				int NumPlayers = Players.Num();
+				for (int i = 0; i < NumPlayers; ++i)
+				{
+					AActor* CurrentActor = Players[i];
+					if ((CurrentActor != nullptr) && (CurrentActor != NewDenizen))
+					{
+						AGammaCharacter* CurrentCharacter = Cast<AGammaCharacter>(CurrentActor);
+						if (CurrentCharacter != nullptr)
+						{
+							FString CurrentName = CurrentCharacter->GetCharacterName();
+							FString DenizenName = NewDenizen->GetCharacterName();
+							if (CurrentName.Equals(DenizenName))
+							{
+								switch (CharacterID)
+								{
+									case 0: FreshName = "AJIEL";
+										break;
+									case 1: FreshName = "ELTIGAL";
+										break;
+									case 2: FreshName = "CASSIS";
+										break;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			NewDenizen->SetCharacterName(FreshName);
 			
+			// Spawn AI Controller for body
 			AGammaAIController* DenizenController = Cast<AGammaAIController>(
 				GetWorld()->SpawnActor<AActor>(
 					AIControllerClass, FVector::ZeroVector, GetActorRotation(), SpawnParams));
@@ -212,13 +243,6 @@ void AGammaSoloSequence::SpawnDenizen()
 
 				// "Alert the media"
 				NewDenizen->Tags.Add("Bot");
-
-				if (bSpicyName)
-				{
-					FString NewName = "ELTIGAL";
-					NewDenizen->SetCharacterName(NewName);
-					
-				}
 
 				++Spawns;
 				PreviousSpawn = Rando;

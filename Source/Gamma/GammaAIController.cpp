@@ -308,6 +308,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 		float VelocityScalar = FMath::Clamp((1 / (1 / MyVelocity)), 1.0f, MoveRange);
 		float DynamicMoveRange = MoveRange + VelocityScalar; /// usually 100 :P
 		FVector PlayerVelocity = Player->GetCharacterMovement()->Velocity;
+		PlayerVelocity.Z *= 0.55f;
 		FVector PlayerAtSpeed = PlayerLocation + (PlayerVelocity * 0.5f * Aggression);
 		
 		// Randomness in movement
@@ -315,7 +316,15 @@ FVector AGammaAIController::GetNewLocationTarget()
 		RandomOffset.Y = 0.0f;
 		RandomOffset.Z *= 0.25f;
 
-		// And serve
+		// Take care to avoid crossing Player's line of fire
+		float VerticalDistToPlayer = FMath::Abs((Result - MyPawn->GetActorLocation()).Z);
+		if ((VerticalDistToPlayer >= 500.0f)
+			&& (FMath::Abs(RandomOffset.Z) > FMath::Abs(PlayerVelocity.Z)))
+		{
+			RandomOffset.Z *= (-0.15f);
+		}
+
+		// Initial pass
 		Result = (PlayerAtSpeed + RandomOffset);
 		
 		bCourseLayedIn = true;
