@@ -350,8 +350,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			// Position by another actor
 			bool bAlone = false;
 			// Find closest best candidate for Actor 2
-			if ((Actor2 == nullptr)
-				|| (FVector::Dist(Actor2->GetActorLocation(), GetActorLocation()) > 5000.0f))
+			if (Actor2 == nullptr) /// || (FVector::Dist(Actor2->GetActorLocation(), GetActorLocation()) > 5000.0f)
 			{
 
 				// Update target Actor by nominating closest

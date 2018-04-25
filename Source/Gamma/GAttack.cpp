@@ -429,11 +429,18 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 			if (HitActor->ActorHasTag("Shield")
 				&& !HitActor->ActorHasTag("Obstacle"))
 			{
+				// Spawn blocked fx
+				if (BlockedClass != nullptr)
+				{
+					FActorSpawnParameters SpawnParams;
+					AActor* BlockedFX = GetWorld()->SpawnActor<AActor>(
+						BlockedClass, GetActorLocation(), GetActorRotation(), SpawnParams);
+				}
+
 				ApplyKnockback(HitActor, HitPoint);
 
 				bLethal = false;
 				bHit = true;
-				//return;
 			}
 			
 			// Locked weapons' wielders are pushed away

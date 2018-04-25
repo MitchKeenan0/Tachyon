@@ -170,9 +170,9 @@ void AGammaAIController::Tactical(FVector Target)
 {
 	// Random number to evoke choice
 	float RandomDc = FMath::FRandRange(0.0f, 100.0f);
-	float HandBrakeVal = 2.5f;
-	float ChargeVal = 69.0f;
-	float SecoVal = 81.0f;
+	float HandBrakeVal = 2.0f;
+	float ChargeVal = 50.0f;
+	float SecoVal = 70.0f;
 
 
 	// HANDBRAKE
@@ -206,9 +206,10 @@ void AGammaAIController::Tactical(FVector Target)
 				FVector MyVelNorm = MyCharacter->GetCharacterMovement()->Velocity.GetSafeNormal();
 				FVector ToLocNorm = (LocationTarget - MyPawn->GetActorLocation()).GetSafeNormal();
 				float DotToTarget = FVector::DotProduct(MyVelNorm, ToLocNorm);
-				if (DotToTarget < 0.5f)
+				
+				// Call off existing boost if we're going off-course
+				if (DotToTarget < 0.777f) /// roughly 39 degrees
 				{
-					// Call-off existing charge boost if there is one
 					MyCharacter->DisengageKick();
 				}
 			}
