@@ -319,9 +319,9 @@ FVector AGammaAIController::GetNewLocationTarget()
 		// Take care to avoid crossing Player's line of fire
 		float VerticalDistToPlayer = FMath::Abs((Result - MyPawn->GetActorLocation()).Z);
 		if ((VerticalDistToPlayer >= 500.0f)
-			&& (FMath::Abs(RandomOffset.Z) > FMath::Abs(PlayerVelocity.Z)))
+			&& ( FMath::Abs(RandomOffset.Z) > FMath::Abs(PlayerVelocity.Z) ))
 		{
-			RandomOffset.Z *= (-0.15f);
+			RandomOffset.Z *= (-0.21f);
 		}
 
 		// Initial pass
