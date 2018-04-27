@@ -318,22 +318,25 @@ FVector AGammaAIController::GetNewLocationTarget()
 
 		// Take care to avoid crossing Player's line of fire
 		float VerticalDistToPlayer = FMath::Abs((Result - MyPawn->GetActorLocation()).Z);
+		/// Currently this is really just shaving AI's intended location vertically
+		/// Depending on whether we're closer to world centre. Roookie!
 		if ((VerticalDistToPlayer >= 500.0f)
 			&& ( FMath::Abs(RandomOffset.Z) > FMath::Abs(PlayerVelocity.Z) ))
 		{
 			RandomOffset.Z *= (-0.15f);
 		}
 
-		// Initial pass
+		// And serve
 		Result = (PlayerAtSpeed + RandomOffset);
-		
 		bCourseLayedIn = true;
 		LocationTarget = Result;
 
+		// Debug basin
 		//float DistToNewTarget = (LocationTarget - MyPawn->GetActorLocation()).Size();
 		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("DynamicMoveRange: %f"), DynamicMoveRange));
 		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("DistToNewTarget: %f"), DistToNewTarget));
-	}
+	}///else player is nullptr
+
 	return Result;
 }
 

@@ -949,7 +949,9 @@ void AGammaCharacter::RaiseCharge()
 {
 	if ((UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 		&& (Charge <= (ChargeMax - ChargeGain))
-		&& ((ActiveAttack == nullptr) && !IsValid(ActiveAttack) || ActiveAttack->IsPendingKillOrUnreachable()))
+		&& (((ActiveAttack == nullptr) && !IsValid(ActiveAttack) || ActiveAttack->IsPendingKillOrUnreachable())
+			|| bMultipleAttacks)
+		)
 	{
 		// Noobish recovery from empty-case -1 charge
 		if (Charge < 0.0f) {
@@ -1086,11 +1088,12 @@ void AGammaCharacter::ReleaseAttack()
 	/// Less-clean burn
 	///MoveParticles->bSuppressSpawning = false;
 
-	if (!bMultipleAttacks && ActiveAttack != nullptr)
+	// Attack cancel
+	/*if (!bMultipleAttacks && ActiveAttack != nullptr)
 	{
 		ActiveAttack->Nullify(0);
 		return;
-	}
+	}*/
 
 	if (	AttackClass != nullptr
 		&& (ActiveAttack == nullptr || bMultipleAttacks) 
