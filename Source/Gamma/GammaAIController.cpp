@@ -321,7 +321,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 		if ((VerticalDistToPlayer >= 500.0f)
 			&& ( FMath::Abs(RandomOffset.Z) > FMath::Abs(PlayerVelocity.Z) ))
 		{
-			RandomOffset.Z *= (-0.21f);
+			RandomOffset.Z *= (-0.15f);
 		}
 
 		// Initial pass

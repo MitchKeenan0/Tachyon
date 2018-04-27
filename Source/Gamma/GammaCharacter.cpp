@@ -384,7 +384,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// Framing up with second actor
 				FVector Actor2Velocity = Actor2->GetVelocity();
 				Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(15000.0f * (CustomTimeDilation + 0.5f));
-				Actor2Velocity.Z *= 0.75f;
+				Actor2Velocity.Z *= 0.85f;
 
 				// Declare Position Two
 				FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
@@ -404,7 +404,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Clamp to max size
 				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(2200.0f * (CustomTimeDilation + 0.25f));
-				Actor1Velocity.Z *= 0.75f;
+				Actor1Velocity.Z *= 0.85f;
 
 				// Declare Position Two
 				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity);
