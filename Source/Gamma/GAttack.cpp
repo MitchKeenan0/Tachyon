@@ -258,7 +258,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 
 void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 {
-	if (DamageClass!= nullptr)
+	if ((DamageClass != nullptr) && (HitActor != nullptr))
 	{
 		// Spawning damage fx
 		FActorSpawnParameters SpawnParams;
@@ -281,13 +281,9 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 		// Spawn!
 		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, OutFVector, Forward, SpawnParams)); /// HitPoint
 		DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No Dmg class to spawn"));
-	}
 
-	ForceNetUpdate();
+		ForceNetUpdate();
+	}
 }
 
 
@@ -409,11 +405,12 @@ void AGAttack::Nullify(int AttackType)
 void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 {
 	// Spawn the basic damage smoke
-	float DamageVisualTimer = (1.0f / HitsPerSecond) * 0.5f;
+	float DamageVisualTimer = (1.0f / HitsPerSecond);// *0.5f;
 	if (HitTimer > DamageVisualTimer)
 	{
 		// Distributed among the hitactor and the weapon itself
-		if (FMath::FRand() > 0.5f)
+		float Rando = FMath::FRand();
+		if (Rando > 0.5f)
 		{
 			SpawnDamage(HitActor, HitPoint);
 		}
@@ -453,7 +450,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 			}
 			
 			// Locked weapons' wielders are pushed away
-			if (OtherAttack->LockedEmitPoint
+			if ((OtherAttack->LockedEmitPoint == true)
 				&& !OtherAttack->ActorHasTag("Obstacle"))
 			{
 				AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(OtherAttack->OwningShooter);

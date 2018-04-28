@@ -279,6 +279,10 @@ void AGammaAIController::Tactical(FVector Target)
 						&& ToPlayer.Size() <= PrimaryRange)
 					{
 						MyCharacter->InitAttack();
+						if (RangeToPlayer <= 1000.0f)
+						{
+							MyCharacter->ReleaseAttack();
+						}
 					}
 					else
 					{

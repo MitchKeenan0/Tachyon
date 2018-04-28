@@ -333,7 +333,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		}
 
 		// Let's go
-		if ((Actor1 != nullptr) && IsValid(Actor1) && !Actor1->IsUnreachable())
+		if ((Actor1 != nullptr)) ///  && IsValid(Actor1) && !Actor1->IsUnreachable()
 		{
 			float UnDilatedDeltaTime = (DeltaTime / CustomTimeDilation) * CameraMoveSpeed; /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
 			float TimeDilationScalar = (1.0f / CustomTimeDilation) + 0.01f; /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
@@ -345,7 +345,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 			float CameraMinimumDistance = 2500.0f;
-			float CameraMaxDistance = 150000.0f;
+			float CameraMaxDistance = 215000.0f;
 
 			// Position by another actor
 			bool bAlone = false;
@@ -411,7 +411,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, UnDilatedDeltaTime, VelocityCameraSpeed); // UnDilatedDeltaTime
 				
 				// Distance controls
-				CameraMaxDistance = 11000.0f;
+				CameraMaxDistance = 22000.0f;
 
 				/// debug Velocity size
 				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,
@@ -637,7 +637,7 @@ void AGammaCharacter::MoveRight(float Value)
 
 	if ((MoveTimer >= (1 / MovesPerSecond))
 		&& !bSliding
-		&& CustomTimeDilation > 0.1f) /// UGameplayStatics::GetGlobalTimeDilation(GetWorld()
+		&& CustomTimeDilation > 0.3f) /// UGameplayStatics::GetGlobalTimeDilation(GetWorld()
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
@@ -675,7 +675,7 @@ void AGammaCharacter::MoveUp(float Value)
 	// Abide moves per second
 	if ((MoveTimer >= (1 / MovesPerSecond))
 		&& !bSliding
-		&& CustomTimeDilation > 0.1f) /// UGameplayStatics::GetGlobalTimeDilation(GetWorld()) 
+		&& CustomTimeDilation > 0.3f) /// UGameplayStatics::GetGlobalTimeDilation(GetWorld()) 
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = (GetMovementComponent()->Velocity).GetSafeNormal();
