@@ -408,10 +408,19 @@ void AGAttack::Nullify(int AttackType)
 
 void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 {
+	// Spawn the basic damage smoke
 	float DamageVisualTimer = (1.0f / HitsPerSecond) * 0.5f;
 	if (HitTimer > DamageVisualTimer)
 	{
-		SpawnDamage(HitActor, HitPoint);
+		// Distributed among the hitactor and the weapon itself
+		if (FMath::FRand() > 0.5f)
+		{
+			SpawnDamage(HitActor, HitPoint);
+		}
+		else
+		{
+			SpawnDamage(this, HitPoint);
+		}
 	}
 
 	HitTimer = 0.0f;
