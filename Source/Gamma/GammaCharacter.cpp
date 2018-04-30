@@ -141,7 +141,7 @@ void AGammaCharacter::BeginPlay()
 	DecelerationSpeed = GetCharacterMovement()->BrakingFrictionFactor;
 
 	// To reduce jitter
-	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), TEXT("p.NetEnableMoveCombining 0")); /// is this needed?
+	//UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), TEXT("p.NetEnableMoveCombining 0")); /// is this needed?
 
 	// Camera needs some movement to wake up
 	if (Controller && Controller->IsLocalController())
