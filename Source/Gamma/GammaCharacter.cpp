@@ -155,7 +155,7 @@ void AGammaCharacter::BeginPlay()
 	}
 
 	ResetLocator();
-	TextComponent->SetText(FText::FromString(CharacterName));
+	//TextComponent->SetText(FText::FromString(CharacterName));
 
 	// Init charge & health
 	Charge = FMath::FloorToFloat(ChargeMax / 2.0f);
@@ -303,6 +303,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 	// Poll for framing actors
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
+	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("FramingActors Num:  %i"), FramingActors.Num()));
 	/// TODO - add defense on running get?
 	
 	if (!this->ActorHasTag("Spectator"))
@@ -322,7 +323,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				AActor* Actore = FramingActors[i];
 				if (Actore != nullptr
-					&& Actore != this
 					&& !Actore->ActorHasTag("Spectator")
 					&& Actore->ActorHasTag("Player"))
 				{
@@ -345,10 +345,10 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 			float CameraMinimumDistance = 2500.0f;
-			float CameraMaxDistance = 215000.0f;
+			float CameraMaxDistance = 551000.0f;
 
 			// Position by another actor
-			bool bAlone = false;
+			bool bAlone = true;
 			// Find closest best candidate for Actor 2
 			if (Actor2 == nullptr)
 			{
@@ -360,9 +360,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				{
 					AActor* Actorr = FramingActors[i];
 					if (Actorr != nullptr
-						&& Actorr != this
 						&& Actorr != Actor1
-						&& !Actorr->ActorHasTag("Spectator"))
+						&& !Actorr->ActorHasTag("Spectator")
+						&& !Actorr->ActorHasTag("Obstacle"))
 					{
 						float DistToTemp = FVector::Dist(Actorr->GetActorLocation(), GetActorLocation());
 						if (DistToTemp < DistToActor2)
@@ -376,29 +376,29 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 
 			// If Actor2 isn't too far away, make 'Pair Framing'
-			float PairDistanceThreshold = 5000.0f * CameraDistanceScalar;
-			float Vertical = FMath::Abs((Actor2->GetActorLocation() - Actor1->GetActorLocation()).Z);
-			bool bInRange = (FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= PairDistanceThreshold)
-				&& (Vertical <= (PairDistanceThreshold * 0.515f));
-			if ((Actor2 != nullptr) && IsValid(Actor2) && bInRange)
+			if (Actor2 != nullptr)
 			{
+				float PairDistanceThreshold = 5000.0f * CameraDistanceScalar;
+				float Vertical = FMath::Abs((Actor2->GetActorLocation() - Actor1->GetActorLocation()).Z);
+				bool bInRange = (FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= PairDistanceThreshold)
+					&& (Vertical <= (PairDistanceThreshold * 0.55f));
+				if (bInRange)
+				{
+					bAlone = false;
 
-				// Framing up with second actor
-				FVector Actor2Velocity = Actor2->GetVelocity();
-				Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(15000.0f * (CustomTimeDilation + 0.5f));
-				Actor2Velocity.Z *= 0.85f;
+					// Framing up with second actor
+					FVector Actor2Velocity = Actor2->GetVelocity();
+					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(15000.0f * (CustomTimeDilation + 0.5f));
+					Actor2Velocity.Z *= 0.85f;
 
-				// Declare Position Two
-				FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
-				PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, VelocityCameraSpeed);
-			}
-			else
-			{
-				bAlone = true;
+					// Declare Position Two
+					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
+					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, VelocityCameraSpeed);
+				}
 			}
 			
 			// Lone player gets 'Velocity Framing'
-			if (bAlone || FramingActors.Num() == 1)
+			if (bAlone || (FramingActors.Num() == 1))
 			{
 				
 				// Framing lone player by their velocity
