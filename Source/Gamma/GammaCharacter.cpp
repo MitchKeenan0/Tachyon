@@ -430,6 +430,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Distance
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo);
+				float ProcessedDist = DistBetweenActors + FMath::Sqrt(DistBetweenActors);
 				float VerticalDist = FMath::Abs((PositionTwo - PositionOne).Z);
 				// If paired, widescreen edges are vulnerable to overshoot
 				if (!bAlone)
@@ -438,7 +439,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}
 
 				// Handle horizontal bias
-				float DistancePreClamp = ((DistBetweenActors * 1.5f) + (FMath::Sqrt(VerticalDist) * 210.0f)) * 1.15f;
+				float DistancePreClamp = ((ProcessedDist * 1.5f) + (FMath::Sqrt(VerticalDist) * 210.0f)) * 1.15f;
 				///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("DistancePreClamp: %f"), DistancePreClamp));
 				float TargetLength = FMath::Clamp(DistancePreClamp, CameraMinimumDistance, CameraMaxDistance);
 
