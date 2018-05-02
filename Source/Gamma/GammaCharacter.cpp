@@ -378,7 +378,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			// If Actor2 isn't too far away, make 'Pair Framing'
 			if (Actor2 != nullptr)
 			{
-				float PairDistanceThreshold = 5000.0f * CameraDistanceScalar;
+				float PairDistanceThreshold = 10000.0f * CameraDistanceScalar;
 				float Vertical = FMath::Abs((Actor2->GetActorLocation() - Actor1->GetActorLocation()).Z);
 				bool bInRange = (FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= PairDistanceThreshold)
 					&& (Vertical <= (PairDistanceThreshold * 0.55f));
@@ -435,11 +435,11 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// If paired, widescreen edges are vulnerable to overshoot
 				if (!bAlone)
 				{
-					VerticalDist *= 10.0f;
+					VerticalDist *= 15.0f;
 				}
 
 				// Handle horizontal bias
-				float DistancePreClamp = ((ProcessedDist * 1.5f) + (FMath::Sqrt(VerticalDist) * 210.0f)) * 1.15f;
+				float DistancePreClamp = ((ProcessedDist * 2.1f) + (FMath::Sqrt(VerticalDist) * 300.0f)) * 1.15f;
 				///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("DistancePreClamp: %f"), DistancePreClamp));
 				float TargetLength = FMath::Clamp(DistancePreClamp, CameraMinimumDistance, CameraMaxDistance);
 
