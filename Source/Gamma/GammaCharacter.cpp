@@ -303,15 +303,14 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 	// Poll for framing actors
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
-	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("FramingActors Num:  %i"), FramingActors.Num()));
+	///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("FramingActors Num:  %i"), FramingActors.Num()));
 	/// TODO - add defense on running get?
 	
+	// Spectator ez life
 	if (!this->ActorHasTag("Spectator"))
 	{
 		Actor1 = this;
 	}
-
-
 	
 	if (FramingActors.Num() > 1)
 	{
@@ -479,8 +478,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// Camera tilt
 				if (!this->ActorHasTag("Spectator"))
 				{
-					float TiltDistanceScalar = FMath::Clamp((1.0f / DistBetweenActors) * 100.0f, 0.1f, 0.5f);
-					float DistScalar = TargetLengthClamped * 0.0001f;
+					//float TimeSensitiveTiltValue = CameraTiltValue * CustomTimeDilation;
+					float TiltDistanceScalar = FMath::Clamp((1.0f / DistBetweenActors) * 100.0f, 0.1f, 0.3f);
+					float DistScalar = (TargetLengthClamped * 0.0001f);
 					float ClampedTargetTiltX = FMath::Clamp((InputZ*CameraTiltValue*DistScalar), -CameraTiltClamp, CameraTiltClamp);
 					float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DistScalar) * 2.0f, -CameraTiltClamp, CameraTiltClamp * 2.0f);
 					CameraTiltX = FMath::FInterpTo(CameraTiltX, ClampedTargetTiltX, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
@@ -1088,15 +1088,9 @@ bool AGammaCharacter::ServerInitAttack_Validate()
 // ATTACK
 void AGammaCharacter::ReleaseAttack()
 {
-	// If we're 'shooting dry', notify the chargebar to flash
-	if (Charge <= 0.0f)
-	{
-		Charge = -1.0f;
-		return;
-	}
-	
-	if (	AttackClass != nullptr
+	if ((AttackClass != nullptr)
 		&& ((ActiveAttack == nullptr) || bMultipleAttacks)
+		&& (Charge > 0.0f)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
 		&& ((PrefireTimer >= 0.001f && ActiveFlash != nullptr)))
 	{
@@ -1162,6 +1156,13 @@ void AGammaCharacter::ReleaseAttack()
 		}
 
 		PrefireTimer = 0.0f;
+	}
+
+	// If we're 'shooting dry', notify the chargebar to flash
+	if (Charge <= 0.0f)
+	{
+		Charge = -1.0f;
+		return;
 	}
 
 	if (Role < ROLE_Authority)
