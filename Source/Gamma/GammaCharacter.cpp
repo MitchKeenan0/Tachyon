@@ -565,7 +565,7 @@ void AGammaCharacter::UpdateAnimation()
 float AGammaCharacter::GetChargePercentage()
 {
 	float Percentage = 0.0f;
-	if (Charge >= 0)
+	if (Charge > 0)
 	{
 		Percentage = Charge / ChargeMax;
 	}
@@ -1088,19 +1088,15 @@ bool AGammaCharacter::ServerInitAttack_Validate()
 // ATTACK
 void AGammaCharacter::ReleaseAttack()
 {
-	/// Less-clean burn
-	///MoveParticles->bSuppressSpawning = false;
-
-	// Attack cancel
-	/*if (!bMultipleAttacks && ActiveAttack != nullptr)
+	// If we're 'shooting dry', notify the chargebar to flash
+	if (Charge <= 0.0f)
 	{
-		ActiveAttack->Nullify(0);
+		Charge = -1.0f;
 		return;
-	}*/
-
+	}
+	
 	if (	AttackClass != nullptr
-		&& (ActiveAttack == nullptr || bMultipleAttacks) 
-		&& (Charge > 0.0f)
+		&& ((ActiveAttack == nullptr) || bMultipleAttacks)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
 		&& ((PrefireTimer >= 0.001f && ActiveFlash != nullptr)))
 	{
@@ -1109,7 +1105,6 @@ void AGammaCharacter::ReleaseAttack()
 		{
 			ActiveFlash->Destroy();
 			ActiveFlash = nullptr;
-			//ClearFlash();
 		}
 
 		// Aim by InputY
@@ -1144,33 +1139,17 @@ void AGammaCharacter::ReleaseAttack()
 					float PrefireCurve = FMath::Square(PrefireClamped) * 2.1f; /// curves out to max ~1
 					PrefireCurve = FMath::Clamp(PrefireCurve, 0.1f, 1.0f);
 
-					///GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("PrefireClamped: %f"), PrefireClamped));
-					///GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("PrefireCurve: %f"), PrefireCurve));
-					
-					// To avoid potential problems if someone destroys us early. TODO Fix
+					// The attack is born
 					if (ActiveAttack != nullptr)
 					{
 						ActiveAttack->InitAttack(this, PrefireCurve, AimClampedInputZ);
 					}
 
-					// Positional lock or naw
+					// Position lock, or naw
 					if ((ActiveAttack != nullptr) && ActiveAttack->LockedEmitPoint)
 					{
 						ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
 					}
-					//else
-					//{
-					//	// Non-locked attacks must align to fighting plane
-					//	FRotator AttackRotation = ActiveAttack->GetActorRotation();
-					//	if (AttackRotation.Yaw > 90.0f)
-					//	{
-					//		ActiveAttack->SetActorRotation(FRotator(AttackRotation.Pitch, 180.0f, AttackRotation.Roll));
-					//	}
-					//	else
-					//	{
-					//		ActiveAttack->SetActorRotation(FRotator(AttackRotation.Pitch, 0.0f, AttackRotation.Roll));
-					//	}
-					//}
 				}
 			}
 			else
@@ -1178,7 +1157,7 @@ void AGammaCharacter::ReleaseAttack()
 				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No attack class to spawn"));
 			}
 
-			// Exit claus'
+			// Spend it!
 			Charge -= ChargeGain;
 		}
 
