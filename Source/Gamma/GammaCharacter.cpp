@@ -438,7 +438,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}
 
 				// Handle horizontal bias
-				float DistancePreClamp = ((ProcessedDist * 2.1f) + (FMath::Sqrt(VerticalDist) * 300.0f)) * 1.15f;
+				float DistancePreClamp = ((ProcessedDist * 2.1f) + (FMath::Sqrt(VerticalDist) * 105.0f)) * 1.15f;
 				///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("DistancePreClamp: %f"), DistancePreClamp));
 				float TargetLength = FMath::Clamp(DistancePreClamp, CameraMinimumDistance, CameraMaxDistance);
 
