@@ -391,7 +391,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 					// Framing up with second actor
 					FVector Actor2Velocity = Actor2->GetVelocity();
-					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(15000.0f * (CustomTimeDilation + 0.5f));
+					///Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(15000.0f * (CustomTimeDilation + 0.5f));
 					Actor2Velocity.Z *= 0.85f;
 
 					// Declare Position Two
