@@ -377,14 +377,19 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			// If Actor2 isn't too far away, make 'Pair Framing'
 			if (Actor2 != nullptr)
 			{
+				
+				// Use a distance check to determine if Actor2 is too far away
 				float PairDistanceThreshold = 3333.3f * CameraDistanceScalar;
 				if (this->ActorHasTag("Spectator"))
 				{
 					PairDistanceThreshold *= 3.3f;
 				}
+				
+				// Special care taken for vertical as per widescreen
 				float Vertical = FMath::Abs((Actor2->GetActorLocation() - Actor1->GetActorLocation()).Z);
 				bool bInRange = (FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= PairDistanceThreshold)
 					&& (Vertical <= (PairDistanceThreshold * 0.55f));
+				
 				if (bInRange)
 				{
 					bAlone = false;
