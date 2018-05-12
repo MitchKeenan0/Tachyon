@@ -893,14 +893,15 @@ void AGammaCharacter::KickPropulsion()
 				// Initial kick
 				GetCharacterMovement()->AddImpulse(KickVector * 11.15f);
 
+				// Set up Kick Visuals direction
 				FActorSpawnParameters SpawnParams;
 				FVector PlayerVelocity = GetCharacterMovement()->Velocity;
 				FRotator PlayerVelRotator = PlayerVelocity.Rotation();
 				FRotator InputRotator = MoveInputVector.Rotation();
-
 				PlayerVelocity.Z *= 0.01f;
 				FVector SpawnLocation = GetActorLocation() + (FVector::UpVector * 10.0f); /// + (PlayerVelocity / 3);
 
+				// Spawn the visuals
 				ActiveBoost = GetWorld()->SpawnActor<AActor>
 					(BoostClass, SpawnLocation, InputRotator, SpawnParams); /// PlayerVelRotator
 			}

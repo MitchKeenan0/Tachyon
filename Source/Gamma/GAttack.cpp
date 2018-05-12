@@ -482,6 +482,18 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	if (HitActor->ActorHasTag("Wall")
 		&& this->ActorHasTag("Solid"))
 	{
+		// Spawn blocked fx
+		if (BlockedClass != nullptr)
+		{
+			FActorSpawnParameters SpawnParams;
+			AActor* BlockedFX = GetWorld()->SpawnActor<AActor>(
+				BlockedClass, GetActorLocation(), GetActorRotation(), SpawnParams);
+			if (BlockedFX != nullptr)
+			{
+				BlockedFX->SetLifeSpan(0.221f);
+			}
+		}
+
 		bool Input = bSecondary;
 		Nullify(Input);
 	}
