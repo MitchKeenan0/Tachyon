@@ -491,27 +491,37 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					TargetLengthClamped, DeltaTime, (VelocityCameraSpeed * 1.15f));
 					
 				// Camera tilt
+				FRotator FTarget = FRotator::ZeroRotator;
 				if (!this->ActorHasTag("Spectator"))
 				{
 					//float TimeSensitiveTiltValue = CameraTiltValue * CustomTimeDilation;
 					float TiltDistanceScalar = FMath::Clamp((1.0f / DistBetweenActors) * 99.9f, 0.1f, 0.3f);
 					float DistScalar = (TargetLengthClamped * 0.0001f);
 					float ClampedTargetTiltX = FMath::Clamp((InputZ*CameraTiltValue*DistScalar), -CameraTiltClamp, CameraTiltClamp);
-					float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DistScalar) * 2.0f, -CameraTiltClamp, CameraTiltClamp * 2.0f);
+					float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DistScalar) * (PrefireTimer + 0.1f), -CameraTiltClamp, CameraTiltClamp * 2.0f);
 					CameraTiltX = FMath::FInterpTo(CameraTiltX, ClampedTargetTiltX, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
 					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, ClampedTargetTiltZ, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // yaw
-					FRotator FTarget = FRotator(CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue;
-					FTarget.Roll = 0.0f;
-					SideViewCameraComponent->SetRelativeRotation(FTarget);
-
-					// Adjust position to work angle
-					Midpoint.X -= (CameraTiltZ * DesiredCameraDistance * 2.1f) * DeltaTime;
-					Midpoint.Z -= (CameraTiltX * DesiredCameraDistance * 2.1f) * DeltaTime;
+					
 				}
+				else
+				{
+					FVector ToMidpoint = Midpoint - GetCameraBoom()->GetComponentLocation();
+					float CameraLateralSpeed = ToMidpoint.X * 0.01f;
+					///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("CameraLateralSpeed: %f"), CameraLateralSpeed));
+					float ClampedTargetTiltZ = FMath::Clamp(CameraLateralSpeed, -CameraTiltClamp, CameraTiltClamp);
+					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, ClampedTargetTiltZ, DeltaTime, CameraTiltSpeed);
+				}
+				FTarget = FRotator((CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue);
+				FTarget.Roll = 0.0f;
+				
+				// Adjust position to work angle
+				Midpoint.X -= (CameraTiltZ * DesiredCameraDistance * 2.1f) * DeltaTime;
+				Midpoint.Z -= (CameraTiltX * DesiredCameraDistance * 2.1f) * DeltaTime;
 
 				// Make it so
 				CameraBoom->SetWorldLocation(Midpoint);
 				CameraBoom->TargetArmLength = DesiredCameraDistance;
+				SideViewCameraComponent->SetRelativeRotation(FTarget);
 			}
 		}
 	}
