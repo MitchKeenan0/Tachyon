@@ -494,8 +494,8 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 			}
 		}
 
-		bool Input = bSecondary;
-		Nullify(Input);
+		bool AttackType = bSecondary; // Nullify takes 0 or 1 for attack or seco
+		Nullify(AttackType);
 	}
 }
 

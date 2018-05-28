@@ -379,7 +379,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				
 				// Use a distance check to determine if Actor2 is too far away
-				float PairDistanceThreshold = 3333.3f * CameraDistanceScalar;
+				float PairDistanceThreshold = 6666.0f * CameraDistanceScalar;
 				if (this->ActorHasTag("Spectator"))
 				{
 					PairDistanceThreshold *= 3.3f;
@@ -427,7 +427,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, UnDilatedDeltaTime, (VelocityCameraSpeed * 0.5f)); // UnDilatedDeltaTime
 				
 				// Distance controls
-				CameraMaxDistance = 22000.0f;
+				CameraMaxDistance = 36000.0f;
 
 				/// debug Velocity size
 				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,
@@ -901,7 +901,7 @@ void AGammaCharacter::KickPropulsion()
 			if ((BoostClass != nullptr) && (ActiveBoost == nullptr))
 			{
 				// Initial kick
-				GetCharacterMovement()->AddImpulse(KickVector * 11.15f);
+				GetCharacterMovement()->AddImpulse(KickVector * 6.6666f);
 
 				// Set up Kick Visuals direction
 				FActorSpawnParameters SpawnParams;
