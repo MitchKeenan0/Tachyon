@@ -330,14 +330,14 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 
 void AGAttack::ReportHit(AActor* HitActor)
 {
-	// Track hitscale curvature
+	// Track hitscale curvature for increasing knockback factor
 	numHits = FMath::Clamp((numHits += (numHits - 1)), 2, 50);
 
 	// Damage
 	AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
 	if (PotentialPlayer != nullptr)
 	{
-		PotentialPlayer->ModifyHealth(-5.0f);
+		PotentialPlayer->ModifyHealth((-AttackDamage) * numHits);
 		
 		// Marked killed AI for the reset sweep
 		if (PotentialPlayer->GetHealth() <= 0.0f

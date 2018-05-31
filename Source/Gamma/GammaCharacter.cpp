@@ -335,13 +335,14 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		if ((Actor1 != nullptr)) ///  && IsValid(Actor1) && !Actor1->IsUnreachable()
 		{
 			float UnDilatedDeltaTime = (DeltaTime / CustomTimeDilation) * CameraMoveSpeed; /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
-			float TimeDilationScalar = (1.0f / CustomTimeDilation) + 0.01f; /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
+			float TimeDilationScalar = (1.0f / CustomTimeDilation) + 0.01f;
 			float TimeDilationScalarClamped = FMath::Clamp(TimeDilationScalar, 0.5f, 1.5f);
+			float GTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 
 			// Framing up first actor with their own velocity
 			FVector Actor1Velocity = Actor1->GetVelocity();
 			VelocityCameraSpeed *= (1 + (Actor1Velocity.Size() * FMath::Square(DeltaTime))); // / 30000.0f));
-			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
+			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase * GTimeScale); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 			float CameraMinimumDistance = 2500.0f;
 			float CameraMaxDistance = 551000.0f;
@@ -400,7 +401,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					Actor2Velocity.Z *= 0.85f;
 
 					// Declare Position Two
-					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase); // * TimeDilationScalarClamped
+					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase * GTimeScale); // * TimeDilationScalarClamped
 					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, VelocityCameraSpeed);
 				}
 			}
@@ -427,7 +428,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, UnDilatedDeltaTime, (VelocityCameraSpeed * 0.5f)); // UnDilatedDeltaTime
 				
 				// Distance controls
-				CameraMaxDistance = 36000.0f;
+				CameraMaxDistance = 150000.0f;
 
 				/// debug Velocity size
 				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,
@@ -502,14 +503,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					CameraTiltX = FMath::FInterpTo(CameraTiltX, ClampedTargetTiltX, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
 					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, ClampedTargetTiltZ, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // yaw
 					
-				}
-				else
-				{
-					FVector ToMidpoint = Midpoint - GetCameraBoom()->GetComponentLocation();
-					float CameraLateralSpeed = ToMidpoint.X * 0.01f;
-					///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("CameraLateralSpeed: %f"), CameraLateralSpeed));
-					float ClampedTargetTiltZ = FMath::Clamp(CameraLateralSpeed, -CameraTiltClamp, CameraTiltClamp);
-					CameraTiltZ = FMath::FInterpTo(CameraTiltZ, ClampedTargetTiltZ, DeltaTime, CameraTiltSpeed);
 				}
 				FTarget = FRotator((CameraTiltX, CameraTiltZ, 0.0f) * CameraTiltValue);
 				FTarget.Roll = 0.0f;
