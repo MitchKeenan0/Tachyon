@@ -330,7 +330,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 
 void AGAttack::ReportHit(AActor* HitActor)
 {
-	// Track hitscale curvature for increasing knockback factor
+	// Track hitscale curvature for increasing knockback and damage
 	numHits = FMath::Clamp((numHits += (numHits - 1)), 2, 50);
 
 	// Damage
