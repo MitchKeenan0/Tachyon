@@ -344,7 +344,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			VelocityCameraSpeed *= (1 + (Actor1Velocity.Size() * FMath::Square(DeltaTime))); // / 30000.0f));
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase * GTimeScale); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
-			float CameraMinimumDistance = 2500.0f;
+			float CameraMinimumDistance = 500.0f;
 			float CameraMaxDistance = 551000.0f;
 
 			// Position by another actor
@@ -380,7 +380,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				
 				// Use a distance check to determine if Actor2 is too far away
-				float PairDistanceThreshold = 6666.0f * CameraDistanceScalar;
+				float PairDistanceThreshold = 5555.0f; // 6666.0f * CameraDistanceScalar;
 				if (this->ActorHasTag("Spectator"))
 				{
 					PairDistanceThreshold *= 3.3f;
@@ -445,37 +445,38 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Distance
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo);
-				float ProcessedDist = DistBetweenActors + FMath::Sqrt(DistBetweenActors);
+				float ProcessedDist = DistBetweenActors + (FMath::Sqrt(DistBetweenActors) * 100.0f);
 				float VerticalDist = FMath::Abs((PositionTwo - PositionOne).Z);
 				// If paired, widescreen edges are vulnerable to overshoot
 				if (!bAlone)
 				{
-					VerticalDist *= 15.0f;
+					VerticalDist *= 5.1f;
 				}
 
 				// Handle horizontal bias
-				float DistancePreClamp = ((ProcessedDist * 2.1f) + (FMath::Sqrt(VerticalDist) * 105.0f)) * 1.15f;
+				float DistancePreClamp = ProcessedDist + FMath::Sqrt(VerticalDist);
 				///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("DistancePreClamp: %f"), DistancePreClamp));
 				float TargetLength = FMath::Clamp(DistancePreClamp, CameraMinimumDistance, CameraMaxDistance);
 
 				// Modifier for prefire timing
 				if (PrefireTimer > 0.0f)
 				{
-					float PrefireScalarRaw = FMath::Sqrt(PrefireTimer * 0.618f) / (PrefireTime * 2.0f);
-					float PrefireScalarClamped = FMath::Clamp(PrefireScalarRaw, 0.01f, 0.99f);
-					TargetLength *= (1 - PrefireScalarClamped);
+					float PrefireScalarRaw = PrefireTimer; //  FMath::Sqrt(PrefireTimer * 0.618f);
+					float PrefireScalarClamped = FMath::Clamp(PrefireScalarRaw, 0.1f, 0.99f);
+					float PrefireProduct = (-PrefireScalarClamped);
+					TargetLength += PrefireProduct;
 				}
 
 				// Modifier for hit/gg
-				if (Actor2 != nullptr)
+				/*if (Actor2 != nullptr)
 				{
 					float Timescale = (Actor1->CustomTimeDilation + Actor2->CustomTimeDilation) / 2.0f;
-					if ((Timescale < 1.0f))
+					if ((Timescale < 0.5f))
 					{
-						float HitTimeScalar = FMath::Clamp(FMath::Square(Timescale), 0.55f, 1.0f);
+						float HitTimeScalar = FMath::Clamp(FMath::Square(Timescale), 0.75f, 1.0f);
 						TargetLength *= HitTimeScalar;
 					}
-				}
+				}*/
 
 				// Last modifier for global time dilation
 				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld()) * 2.1f;

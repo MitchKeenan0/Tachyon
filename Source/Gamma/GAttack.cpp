@@ -292,9 +292,9 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 	// The knock itself
 	FVector AwayFromShooter = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
-	TimeDilat = FMath::Clamp(TimeDilat, 0.75f, 1.0f);
-	float HitsScalar = numHits * 0.1f;
-	float KnockScalar = FMath::Abs(KineticForce) * (1.0f + AttackMagnitude) * TimeDilat * HitsScalar;
+	TimeDilat = FMath::Clamp(TimeDilat, 0.01f, 0.15f);
+	//float HitsScalar = numHits * 0.1f;
+	float KnockScalar = FMath::Abs(KineticForce) * (1.0f + AttackMagnitude) * TimeDilat; // *HitsScalar;
 
 	// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
@@ -360,6 +360,8 @@ void AGAttack::ReportHit(AActor* HitActor)
 	{
 		FVector HitActorScale = HitActor->GetActorScale3D();
 		HitActor->SetActorScale3D(HitActorScale * 1.01f);
+		
+		// Affect object's mass
 		/*TSubclassOf<UStaticMeshComponent> MeshCompTest;
 		UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(HitActor->GetComponentByClass(MeshCompTest));
 		if (MeshComp != nullptr)
