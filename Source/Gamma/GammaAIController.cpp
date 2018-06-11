@@ -200,7 +200,7 @@ void AGammaAIController::Tactical(FVector Target)
 	{
 		if ((MyCharacter != nullptr) && IsValid(MyCharacter))
 		{
-			if (MyCharacter->GetActiveBoost() != nullptr) // && IsValid(MyCharacter->GetActiveBoost()) && !MyCharacter->GetActiveBoost()->IsPendingKillPending())
+			if (MyCharacter->GetActiveBoost() != nullptr)
 			{
 				// Decide whether to keep or lose the boost
 				FVector MyVelNorm = MyCharacter->GetCharacterMovement()->Velocity.GetSafeNormal();
@@ -215,16 +215,27 @@ void AGammaAIController::Tactical(FVector Target)
 			}
 			else
 			{
-				// Charge
-				if (MyCharacter->GetCharge() <= 3.0f) /// dirty hardcode! ChargeMax unreachable until Epic fix
-				{
-					MyCharacter->CheckPowerSlideOff();
-					MyCharacter->RaiseCharge();
-				}
-				else
-				{
-					MyCharacter->CheckPowerSlideOn();
-				}
+				//// Charge
+				//if (MyCharacter->GetCharge() <= 3.0f) /// dirty hardcode!
+				//{
+				//	MyCharacter->CheckPowerSlideOff();
+				//	MyCharacter->RaiseCharge();
+				//}
+				//else
+				//{
+				//	MyCharacter->CheckPowerSlideOn();
+				//}
+			}
+
+			// Charge
+			if (MyCharacter->GetCharge() <= 3.0f) /// dirty hardcode!
+			{
+				MyCharacter->CheckPowerSlideOff();
+				MyCharacter->RaiseCharge();
+			}
+			else
+			{
+				MyCharacter->CheckPowerSlideOn();
 			}
 		}
 	}
