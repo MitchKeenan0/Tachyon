@@ -213,19 +213,19 @@ void AGammaAIController::Tactical(FVector Target)
 					MyCharacter->DisengageKick();
 				}
 			}
-			else
-			{
-				//// Charge
-				//if (MyCharacter->GetCharge() <= 3.0f) /// dirty hardcode!
-				//{
-				//	MyCharacter->CheckPowerSlideOff();
-				//	MyCharacter->RaiseCharge();
-				//}
-				//else
-				//{
-				//	MyCharacter->CheckPowerSlideOn();
-				//}
-			}
+			//else
+			//{
+			//	// Charge
+			//	if (MyCharacter->GetCharge() <= 3.0f) /// dirty hardcode!
+			//	{
+			//		MyCharacter->CheckPowerSlideOff();
+			//		MyCharacter->RaiseCharge();
+			//	}
+			//	else
+			//	{
+			//		MyCharacter->CheckPowerSlideOn();
+			//	}
+			//}
 
 			// Charge
 			if (MyCharacter->GetCharge() <= 3.0f) /// dirty hardcode!

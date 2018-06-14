@@ -668,9 +668,10 @@ void AGammaCharacter::MoveRight(float Value)
 		if (InputX != 0.0f)
 		{
 			float MoveByDot = 0.0f;
+			//float ChargeScalar = FMath::Square(FMath::Clamp(Charge, 1.0f, ChargeMax)) * 10.0f;
 			float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
 			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -90.0f, 90.0f));
-			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
+			MoveByDot = (MoveSpeed + (AngleToInput * MoveSpeed)); // * ChargeScalar;
 			//GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			//GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * MoveByDot); // ValClamped
@@ -706,9 +707,10 @@ void AGammaCharacter::MoveUp(float Value)
 		if (MoveInput != FVector::ZeroVector)
 		{
 			float MoveByDot = 0.0f;
+			//float ChargeScalar = FMath::Square(FMath::Clamp(Charge, 1.0f, ChargeMax)) * 10.0f;
 			float DotToInput = FVector::DotProduct(CurrentV, MoveInput);
 			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -90.0f, 90.0f));
-			MoveByDot = MoveSpeed + (AngleToInput * MoveSpeed);
+			MoveByDot = (MoveSpeed + (AngleToInput * MoveSpeed)); // * ChargeScalar;
 			//GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			//GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot);
@@ -731,16 +733,17 @@ void AGammaCharacter::ServerSetX_Implementation(float Value)
 {
 	// Get delta move value
 	float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(x));
-	float ValClamped = FMath::Clamp(DeltaVal * 0.68f, 0.1f, 1.0f);
+	float ValClamped = FMath::Clamp(DeltaVal, 0.1f, 1.0f); // DeltaVal * 0.68f
 	float TimeScaleInfluence = 1 + FMath::Abs(1 - CustomTimeDilation); /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
 	InputX = Value + (Value * ValClamped) * TimeScaleInfluence;
 
 	// Speed and Acceleration
+	//float ChargeScalar = FMath::Square(FMath::Clamp(Charge, 1.0f, ChargeMax));
 	float Scalar = FMath::Abs(InputX);
 	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * FMath::Square(Scalar);
 	GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar) + TurnSpeed;
 
-	///GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Scalar: %f"), Scalar));
+	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("X:  %f"), Scalar));
 
 	// Update delta
 	x = Value;
@@ -767,16 +770,17 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 {
 	// Get move input Delta
 	float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(z));
-	float ValClamped = FMath::Clamp(DeltaVal * 0.68f, 0.1f, 1.0f);
+	float ValClamped = FMath::Clamp(DeltaVal, 0.1f, 1.0f); // DeltaVal * 0.68f
 	float TimeScaleInfluence = 1 + FMath::Abs(1 - CustomTimeDilation); /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
 	InputZ = Value + (Value * ValClamped) * TimeScaleInfluence;
 
 	// Speed and Acceleration
+	//float ChargeScalar = FMath::Square(FMath::Clamp(Charge, 1.0f, ChargeMax));
 	float Scalar = FMath::Abs(InputZ);
 	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * FMath::Square(Scalar);
 	GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar) + TurnSpeed;
 
-	///GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Scalar: %f"), Scalar));
+	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Z:  %f"), Scalar));
 
 	// Update delta
 	z = Value;
@@ -878,10 +882,12 @@ void AGammaCharacter::KickPropulsion()
 			float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
 
 			// Force, clamp, & effect chara movement
+			float ChargeScalar = FMath::Sqrt(FMath::Clamp(Charge, 0.1f, 1.0f));
 			FVector KickVector = MoveInputVector
 				* MoveFreshMultiplier
 				* 1000.0f ///previously RelativityToMaxSpeed
 				* TimeDelta;
+				//* ChargeScalar;
 			
 			// Trimming
 			KickVector.Z *= 0.9f;
