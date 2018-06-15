@@ -169,6 +169,12 @@ void AGammaCharacter::BeginPlay()
 	PositionTwo = PlayerLocation;
 	CameraBoom->TargetArmLength = 30000.0f;
 
+	// Sprite Scaling
+	float ClampedCharge = FMath::Clamp(Charge * 0.7f, 1.0f, ChargeMax);
+	float SCharge = 0.5f * (FMath::Square(ClampedCharge));
+	FVector ChargeSize = FVector(SCharge, SCharge, SCharge);
+	GetCapsuleComponent()->SetWorldScale3D(ChargeSize);
+
 	// Init location (obstacles can currently deset players)
 	FVector ActorLoc = GetActorLocation();
 	ActorLoc.Y = 0.0f;
@@ -397,6 +403,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 					// Framing up with second actor
 					FVector Actor2Velocity = Actor2->GetVelocity();
+					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(1500 * CustomTimeDilation);
 					///Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(15000.0f * (CustomTimeDilation + 0.5f));
 					Actor2Velocity.Z *= 0.85f;
 
@@ -997,6 +1004,12 @@ void AGammaCharacter::RaiseCharge()
 			Charge += ChargeGain;
 		}
 
+		// Sprite Scaling
+		float ClampedCharge = FMath::Clamp(Charge * 0.7f, 1.0f, ChargeMax);
+		float SCharge = FMath::Sqrt(ClampedCharge);
+		FVector ChargeSize = FVector(SCharge, SCharge, SCharge);
+		GetCapsuleComponent()->SetWorldScale3D(ChargeSize);
+
 		if (Role < ROLE_Authority)
 		{
 			ServerRaiseCharge();
@@ -1183,6 +1196,12 @@ void AGammaCharacter::ReleaseAttack()
 
 			// Spend it!
 			Charge -= ChargeGain;
+
+			// Sprite Scaling
+			float ClampedCharge = FMath::Clamp(Charge * 0.7f, 1.0f, ChargeMax);
+			float SCharge = FMath::Sqrt(ClampedCharge);
+			FVector ChargeSize = FVector(SCharge, SCharge, SCharge);
+			GetCapsuleComponent()->SetWorldScale3D(ChargeSize);
 		}
 
 		PrefireTimer = 0.0f;
@@ -1340,6 +1359,12 @@ void AGammaCharacter::PowerSlideEngage()
 			ClearFlash();
 			PrefireTimer = 0.0f;
 		}
+
+		// Sprite Scaling
+		float ClampedCharge = FMath::Clamp(Charge * 0.7f, 1.0f, ChargeMax);
+		float SCharge = FMath::Sqrt(ClampedCharge);
+		FVector ChargeSize = FVector(SCharge, SCharge, SCharge);
+		GetCapsuleComponent()->SetWorldScale3D(ChargeSize);
 
 		// Netcode emissary
 		if (Role < ROLE_Authority)

@@ -42,7 +42,10 @@ void AGFlash::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	UpdateFlash(DeltaTime);
+	if (CustomTimeDilation >= 0.9f)
+	{
+		UpdateFlash(DeltaTime);
+	}
 }
 
 
@@ -55,6 +58,7 @@ void AGFlash::UpdateFlash(float DeltaTime)
 	if (FlashParticles != nullptr)
 	{
 		FVector FScale = FMath::VInterpConstantTo(FlashParticles->GetComponentScale(), MaxV, DeltaTime, FlashGrowthIntensity);
+		FScale = FScale.GetClampedToMaxSize(5.0f);
 		FlashParticles->SetRelativeScale3D(FScale);
 	}
 	
