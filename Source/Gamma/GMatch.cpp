@@ -113,8 +113,8 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 
 				// Just a hit
 				bMinorGG = true;
-				HitActor->CustomTimeDilation = (1 + GGTimescale) * 0.2f;
-				Winner->CustomTimeDilation = (1 + GGTimescale) * 0.2f;
+				HitActor->CustomTimeDilation = (1 + GGTimescale) * 0.1f;
+				Winner->CustomTimeDilation = (1 + GGTimescale) * 0.1f;
 				bReturn = true;
 			}
 		}

@@ -341,7 +341,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Framing up first actor with their own velocity
 			FVector Actor1Velocity = Actor1->GetVelocity();
-			VelocityCameraSpeed *= (1 + (Actor1Velocity.Size() * FMath::Square(DeltaTime))); // / 30000.0f));
+			VelocityCameraSpeed *= (1 + (FMath::Sqrt(Actor1Velocity.Size()))) * DeltaTime; // / 30000.0f));
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase * GTimeScale); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 			float CameraMinimumDistance = 500.0f;
@@ -414,7 +414,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase) * 3.0f;
 
 				// Clamp to max size
-				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(1500.0f * (CustomTimeDilation + 0.25f));
+				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(1500.0f * CustomTimeDilation);
 				Actor1Velocity.Z *= 0.85f;
 
 				// Smooth-over low velocities with a standard framing
@@ -651,8 +651,8 @@ void AGammaCharacter::MoveRight(float Value)
 
 	// Adjust aim to reflect move
 	/// Ignoring no inputs and bots
-	if (InputX != ValClamped && !ActorHasTag("Bot")
-		&& !(InputX == 0.0f && ValClamped == 0.0f))
+	if (!ActorHasTag("Bot")
+		&& !(InputX == 0.0f && ValClamped == 0.0f)) // InputX != ValClamped && 
 	{
 		SetX(ValClamped);
 	}
@@ -669,16 +669,18 @@ void AGammaCharacter::MoveRight(float Value)
 		{
 			float MoveByDot = 0.0f;
 			//float ChargeScalar = FMath::Square(FMath::Clamp(Charge, 1.0f, ChargeMax)) * 10.0f;
-			float DotToInput = FVector::DotProduct(MoveInput, CurrentV);
-			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -90.0f, 90.0f));
+			float DotToInput = (FVector::DotProduct(CurrentV, MoveInput));
+			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), 1.0f, 180.0f)); // -90.0f, 90.0f
 			MoveByDot = (MoveSpeed + (AngleToInput * MoveSpeed)); // * ChargeScalar;
 			//GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			//GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * MoveByDot); // ValClamped
+
+			GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("x: %f"), AngleToInput));
 		}
 	}
 
-	//GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("Input x: %f"), InputX));
+	
 	ForceNetUpdate();
 }
 
@@ -689,8 +691,8 @@ void AGammaCharacter::MoveUp(float Value)
 
 	// Adjust aim to reflect move
 	/// Ignoring no inputs and bots
-	if (InputZ != ValClamped && !ActorHasTag("Bot")
-		&& !(InputZ == 0.0f && ValClamped == 0.0f))
+	if (!ActorHasTag("Bot")
+		&& !(InputZ == 0.0f && ValClamped == 0.0f)) // InputZ != ValClamped && 
 	{
 		SetZ(ValClamped);
 	}
@@ -708,16 +710,18 @@ void AGammaCharacter::MoveUp(float Value)
 		{
 			float MoveByDot = 0.0f;
 			//float ChargeScalar = FMath::Square(FMath::Clamp(Charge, 1.0f, ChargeMax)) * 10.0f;
-			float DotToInput = FVector::DotProduct(CurrentV, MoveInput);
-			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), -90.0f, 90.0f));
+			float DotToInput = (FVector::DotProduct(MoveInput, CurrentV));
+			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), 1.0f, 180.0f)); // -90.0f, 90.0f
 			MoveByDot = (MoveSpeed + (AngleToInput * MoveSpeed)); // * ChargeScalar;
 			//GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			//GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot);
+
+			GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("z: %f"), AngleToInput));
 		}
 	}
 
-	//GEngine->AddOnScreenDebugMessage(-1, 0.018f, FColor::White, FString::Printf(TEXT("Input z: %f"), InputZ));
+	
 	ForceNetUpdate();
 }
 
@@ -734,16 +738,16 @@ void AGammaCharacter::ServerSetX_Implementation(float Value)
 	// Get delta move value
 	float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(x));
 	float ValClamped = FMath::Clamp(DeltaVal, 0.1f, 1.0f); // DeltaVal * 0.68f
-	float TimeScaleInfluence = 1 + FMath::Abs(1 - CustomTimeDilation); /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
-	InputX = Value + (Value * ValClamped) * TimeScaleInfluence;
+	//float TimeScaleInfluence = 1 + FMath::Abs(1 - CustomTimeDilation); /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
+	InputX = (Value + (Value * ValClamped));
 
 	// Speed and Acceleration
 	//float ChargeScalar = FMath::Square(FMath::Clamp(Charge, 1.0f, ChargeMax));
-	float Scalar = FMath::Abs(InputX);
+	/*float Scalar = FMath::Abs(InputX);
 	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * FMath::Square(Scalar);
-	GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar) + TurnSpeed;
+	GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar) + TurnSpeed;*/
 
-	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("X:  %f"), Scalar));
+	///GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("X:  %f"), Scalar));
 
 	// Update delta
 	x = Value;
@@ -771,16 +775,16 @@ void AGammaCharacter::ServerSetZ_Implementation(float Value)
 	// Get move input Delta
 	float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(z));
 	float ValClamped = FMath::Clamp(DeltaVal, 0.1f, 1.0f); // DeltaVal * 0.68f
-	float TimeScaleInfluence = 1 + FMath::Abs(1 - CustomTimeDilation); /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
-	InputZ = Value + (Value * ValClamped) * TimeScaleInfluence;
+	//float TimeScaleInfluence = 1 + FMath::Abs(1 - CustomTimeDilation); /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
+	InputZ = (Value + (Value * ValClamped));
 
 	// Speed and Acceleration
 	//float ChargeScalar = FMath::Square(FMath::Clamp(Charge, 1.0f, ChargeMax));
-	float Scalar = FMath::Abs(InputZ);
-	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * FMath::Square(Scalar);
-	GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar) + TurnSpeed;
+	//float Scalar = FMath::Abs(InputZ);
+	//GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * FMath::Square(Scalar);
+	//GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar) + TurnSpeed;
 
-	GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Z:  %f"), Scalar));
+	///GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Z:  %f"), Scalar));
 
 	// Update delta
 	z = Value;
@@ -877,9 +881,9 @@ void AGammaCharacter::KickPropulsion()
 			// Algo scaling for timescale & max velocity
 			FVector MoveInputVector = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 			FVector CurrentVelocity = GetCharacterMovement()->Velocity;
-			float TimeDelta = (GetWorld()->DeltaTimeSeconds / CustomTimeDilation);
+			float TimeDelta = CustomTimeDilation; // (GetWorld()->DeltaTimeSeconds / CustomTimeDilation)
 			//float RelativityToMaxSpeed = (MaxMoveSpeed) - CurrentVelocity.Size();
-			float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
+			//float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
 
 			// Force, clamp, & effect chara movement
 			float ChargeScalar = FMath::Sqrt(FMath::Clamp(Charge, 0.1f, 1.0f));
@@ -892,7 +896,7 @@ void AGammaCharacter::KickPropulsion()
 			// Trimming
 			KickVector.Z *= 0.9f;
 			KickVector.Y = 0.0f;
-			GetCharacterMovement()->AddImpulse(KickVector);
+			GetCharacterMovement()->AddImpulse(KickVector, false);
 
 			bMoved = false;
 			MoveTimer = 0.0f;
