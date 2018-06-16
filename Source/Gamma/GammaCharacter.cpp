@@ -306,6 +306,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 	AActor* Actor2 = nullptr;
 
 	float VelocityCameraSpeed = CameraMoveSpeed;
+	float CameraMaxSpeed = 10000.0f;
 
 	// Poll for framing actors
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
@@ -346,13 +347,15 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			float GTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 
 			// Framing up first actor with their own velocity
-			FVector Actor1Velocity = Actor1->GetVelocity();
+			FVector Actor1Velocity = Actor1->GetVelocity() + 1.0f;
 			VelocityCameraSpeed *= (5.0f + (FMath::Sqrt(Actor1Velocity.Size()))) * DeltaTime; // 1.0f + ...
+			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 1.0f, CameraMaxSpeed);
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase * GTimeScale); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
-			float ChargeScalar = FMath::Clamp(Charge, 1.0f, ChargeMax);
+			
+			float ChargeScalar = FMath::Clamp((Charge - 1.0f), 1.0f, ChargeMax);
 			float SizeScalar = GetCapsuleComponent()->GetComponentScale().Size();
-			float CameraMinimumDistance = (360.0f * SizeScalar * ChargeScalar) * CameraDistanceScalar;
+			float CameraMinimumDistance = (500.0f * SizeScalar * ChargeScalar) * CameraDistanceScalar;
 			float CameraMaxDistance = 551000.0f;
 
 			// Position by another actor
