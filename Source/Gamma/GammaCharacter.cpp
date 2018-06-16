@@ -350,7 +350,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			VelocityCameraSpeed *= (1 + (FMath::Sqrt(Actor1Velocity.Size()))) * DeltaTime; // / 30000.0f));
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase * GTimeScale); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
-			float CameraMinimumDistance = 500.0f;
+			float ChargeScalar = FMath::Clamp(Charge, 1.0f, ChargeMax);
+			float SizeScalar = GetCapsuleComponent()->GetComponentScale().Size();
+			float CameraMinimumDistance = 315.0f * SizeScalar * ChargeScalar;
 			float CameraMaxDistance = 551000.0f;
 
 			// Position by another actor
@@ -475,7 +477,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}
 
 				// Modifier for hit/gg
-				/*if (Actor2 != nullptr)
+				if (Actor2 != nullptr)
 				{
 					float Timescale = (Actor1->CustomTimeDilation + Actor2->CustomTimeDilation) / 2.0f;
 					if ((Timescale < 0.5f))
@@ -483,7 +485,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 						float HitTimeScalar = FMath::Clamp(FMath::Square(Timescale), 0.75f, 1.0f);
 						TargetLength *= HitTimeScalar;
 					}
-				}*/
+				}
 
 				// Last modifier for global time dilation
 				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld()) * 2.1f;
