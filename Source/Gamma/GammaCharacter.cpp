@@ -347,12 +347,12 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Framing up first actor with their own velocity
 			FVector Actor1Velocity = Actor1->GetVelocity();
-			VelocityCameraSpeed *= (1 + (FMath::Sqrt(Actor1Velocity.Size()))) * DeltaTime; // / 30000.0f));
+			VelocityCameraSpeed *= (5.0f + (FMath::Sqrt(Actor1Velocity.Size()))) * DeltaTime; // 1.0f + ...
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase * GTimeScale); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 			float ChargeScalar = FMath::Clamp(Charge, 1.0f, ChargeMax);
 			float SizeScalar = GetCapsuleComponent()->GetComponentScale().Size();
-			float CameraMinimumDistance = 315.0f * SizeScalar * ChargeScalar;
+			float CameraMinimumDistance = (360.0f * SizeScalar * ChargeScalar) * CameraDistanceScalar;
 			float CameraMaxDistance = 551000.0f;
 
 			// Position by another actor
@@ -388,7 +388,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				
 				// Use a distance check to determine if Actor2 is too far away
-				float PairDistanceThreshold = 5555.0f; // 6666.0f * CameraDistanceScalar;
+				float PairDistanceThreshold = 3600.0f; // 6666.0f * CameraDistanceScalar;
 				if (this->ActorHasTag("Spectator"))
 				{
 					PairDistanceThreshold *= 3.3f;
@@ -685,7 +685,7 @@ void AGammaCharacter::MoveRight(float Value)
 			//GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * MoveByDot); // ValClamped
 
-			GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("x: %f"), AngleToInput));
+			///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("x: %f"), AngleToInput));
 		}
 	}
 
@@ -726,7 +726,7 @@ void AGammaCharacter::MoveUp(float Value)
 			//GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot);
 
-			GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("z: %f"), AngleToInput));
+			///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("z: %f"), AngleToInput));
 		}
 	}
 
@@ -1039,6 +1039,7 @@ void AGammaCharacter::RaiseCharge()
 			if (ActiveChargeParticles != nullptr)
 			{
 				ActiveChargeParticles->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+				ActiveChargeParticles->SetActorScale3D(ChargeSize);
 			}
 		}
 	}
