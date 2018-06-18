@@ -58,7 +58,7 @@ void AGFlash::UpdateFlash(float DeltaTime)
 	if (FlashParticles != nullptr)
 	{
 		FVector FScale = FMath::VInterpConstantTo(FlashParticles->GetComponentScale(), MaxV, DeltaTime, FlashGrowthIntensity);
-		FScale = FScale.GetClampedToMaxSize(5.0f);
+		FScale = FScale.GetClampedToMaxSize(3.0f);
 		FlashParticles->SetRelativeScale3D(FScale);
 	}
 	

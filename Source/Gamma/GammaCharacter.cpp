@@ -234,14 +234,18 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		}
 
 		// Personal Recovery
-		float GlobalTimeDil = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
-		if (GlobalTimeDil > 0.3f)
-		{
-			float t = (FMath::Square(MyTimeDilation) * 100.0f) * DeltaTime;
-			float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, DeltaTime, 2.6f); // t or DeltaTime
-			CustomTimeDilation = FMath::Clamp(ReturnTime, 0.01f, 1.0f);
-			///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("t: %f"), t));
-		}
+		float t = (FMath::Square(MyTimeDilation) * 100.0f) * DeltaTime;
+		float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, DeltaTime, 2.6f); // t or DeltaTime
+		CustomTimeDilation = FMath::Clamp(ReturnTime, 0.01f, 1.0f);
+		
+		//float GlobalTimeDil = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+		//if (GlobalTimeDil > 0.3f)
+		//{
+		//	float t = (FMath::Square(MyTimeDilation) * 100.0f) * DeltaTime;
+		//	float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, DeltaTime, 2.6f); // t or DeltaTime
+		//	CustomTimeDilation = FMath::Clamp(ReturnTime, 0.01f, 1.0f);
+		//	///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("t: %f"), t));
+		//}
 
 
 		// Set rotation so character faces direction of travel
@@ -344,18 +348,19 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			float UnDilatedDeltaTime = (DeltaTime / CustomTimeDilation) * CameraMoveSpeed; /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
 			float TimeDilationScalar = (1.0f / CustomTimeDilation) + 0.01f;
 			float TimeDilationScalarClamped = FMath::Clamp(TimeDilationScalar, 0.5f, 1.5f);
-			float GTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+			float GTimeScale = CustomTimeDilation; // UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 
 			// Framing up first actor with their own velocity
 			FVector Actor1Velocity = Actor1->GetVelocity() + 1.0f;
-			VelocityCameraSpeed *= (5.0f + (FMath::Sqrt(Actor1Velocity.Size()))) * DeltaTime; // 1.0f + ...
+			float SafeVelocitySize = FMath::Clamp(Actor1->GetVelocity().Size(), 350.0f, MaxMoveSpeed);
+			VelocityCameraSpeed *= (5.0f + (FMath::Sqrt(SafeVelocitySize))) * DeltaTime; // 1.0f + ...
 			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 1.0f, CameraMaxSpeed);
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase * GTimeScale); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 			
 			float ChargeScalar = FMath::Clamp((Charge - 1.0f), 1.0f, ChargeMax);
 			float SizeScalar = GetCapsuleComponent()->GetComponentScale().Size();
-			float CameraMinimumDistance = (500.0f * SizeScalar * ChargeScalar) * CameraDistanceScalar;
+			float CameraMinimumDistance = 2200 + (420.0f * SizeScalar * ChargeScalar) * CameraDistanceScalar;
 			float CameraMaxDistance = 551000.0f;
 
 			// Position by another actor
@@ -391,7 +396,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				
 				// Use a distance check to determine if Actor2 is too far away
-				float PairDistanceThreshold = 3600.0f; // 6666.0f * CameraDistanceScalar;
+				float PairDistanceThreshold = 3501.0f; // 6666.0f * CameraDistanceScalar;
 				if (this->ActorHasTag("Spectator"))
 				{
 					PairDistanceThreshold *= 3.3f;
@@ -457,12 +462,12 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Distance
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo);
-				float ProcessedDist = DistBetweenActors + (FMath::Sqrt(DistBetweenActors) * 100.0f);
+				float ProcessedDist = DistBetweenActors + (FMath::Sqrt(DistBetweenActors) * 111.1f);
 				float VerticalDist = FMath::Abs((PositionTwo - PositionOne).Z);
 				// If paired, widescreen edges are vulnerable to overshoot
 				if (!bAlone)
 				{
-					VerticalDist *= 5.1f;
+					VerticalDist *= 2.2f;
 				}
 
 				// Handle horizontal bias
@@ -917,7 +922,7 @@ void AGammaCharacter::KickPropulsion()
 			if ((BoostClass != nullptr) && (ActiveBoost == nullptr))
 			{
 				// Initial kick
-				GetCharacterMovement()->AddImpulse(KickVector * 6.6666f);
+				GetCharacterMovement()->AddImpulse(KickVector * 3.33f);
 
 				// Set up Kick Visuals direction
 				FActorSpawnParameters SpawnParams;
@@ -1035,7 +1040,7 @@ void AGammaCharacter::RaiseCharge()
 		}
 
 		// visual charge vfx
-		if (ChargeParticles != nullptr)
+		if ((ChargeParticles != nullptr) && (ActiveChargeParticles == nullptr))
 		{
 			FActorSpawnParameters SpawnParams;
 			ActiveChargeParticles = Cast<AActor>(GetWorld()->SpawnActor<AActor>(ChargeParticles, GetActorLocation(), GetActorRotation(), SpawnParams));

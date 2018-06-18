@@ -178,25 +178,22 @@ void AGammaAIController::Tactical(FVector Target)
 	// HANDBRAKE
 	if (RandomDc <= HandBrakeVal)
 	{
-		if (MyCharacter->GetCharge() > 0.0f)
+		// Hand brake
+		FVector CurrentHeading = MyCharacter->GetCharacterMovement()->Velocity.GetSafeNormal();
+		FVector TargetHeading = (LocationTarget - MyPawn->GetActorLocation()).GetSafeNormal();
+		float DotToTarget = FVector::DotProduct(CurrentHeading, TargetHeading);
+		if (DotToTarget < -0.15f)
 		{
-			// Hand brake
-			FVector CurrentHeading = MyCharacter->GetCharacterMovement()->Velocity.GetSafeNormal();
-			FVector TargetHeading = (LocationTarget - MyPawn->GetActorLocation()).GetSafeNormal();
-			float DotToTarget = FVector::DotProduct(CurrentHeading, TargetHeading);
-			if (DotToTarget < -0.15f)
-			{
-				MyCharacter->CheckPowerSlideOn();
-			}
-			else
-			{
-				MyCharacter->CheckPowerSlideOff();
-			}
+			MyCharacter->CheckPowerSlideOn();
+		}
+		else
+		{
+			MyCharacter->CheckPowerSlideOff();
 		}
 	}
 	
 	// CHARGE
-	if (RandomDc <= ChargeVal)
+	else if (RandomDc <= ChargeVal)
 	{
 		if ((MyCharacter != nullptr) && IsValid(MyCharacter))
 		{
@@ -213,29 +210,14 @@ void AGammaAIController::Tactical(FVector Target)
 					MyCharacter->DisengageKick();
 				}
 			}
-			//else
-			//{
-			//	// Charge
-			//	if (MyCharacter->GetCharge() <= 3.0f) /// dirty hardcode!
-			//	{
-			//		MyCharacter->CheckPowerSlideOff();
-			//		MyCharacter->RaiseCharge();
-			//	}
-			//	else
-			//	{
-			//		MyCharacter->CheckPowerSlideOn();
-			//	}
-			//}
-
-			// Charge
-			if (MyCharacter->GetCharge() <= 3.0f) /// dirty hardcode!
-			{
-				MyCharacter->CheckPowerSlideOff();
-				MyCharacter->RaiseCharge();
-			}
 			else
 			{
-				MyCharacter->CheckPowerSlideOn();
+				// Charge
+				if (MyCharacter->GetCharge() <= 3.0f) /// dirty hardcode!
+				{
+					MyCharacter->CheckPowerSlideOff();
+					MyCharacter->RaiseCharge();
+				}
 			}
 		}
 	}
