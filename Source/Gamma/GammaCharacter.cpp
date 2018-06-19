@@ -1065,7 +1065,7 @@ bool AGammaCharacter::ServerRaiseCharge_Validate()
 void AGammaCharacter::InitAttack()
 {
 	// If we're shooting dry, trigger ChargeBar warning by going sub-zero
-	if (Charge < ChargeGain)
+	if ((Charge < ChargeGain) || (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 0.3f))
 	{
 		Charge = (-1.0f);
 		return;
@@ -1089,7 +1089,7 @@ void AGammaCharacter::InitAttack()
 	/*  bFireAllowed = (bMultipleAttacks || (!bMultipleAttacks && ((ActiveAttack == nullptr) || (!ActiveAttack->IsValidLowLevel()))))
 			&&   */
 	
-	if (bFireAllowed && (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
+	if (bFireAllowed)
 	{
 		
 		// Direction & setting up

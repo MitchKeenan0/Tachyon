@@ -331,7 +331,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 void AGAttack::ReportHit(AActor* HitActor)
 {
 	// Track hitscale curvature for increasing knockback and damage
-	numHits = FMath::Clamp((numHits += (numHits - 1)), 2, 10);
+	numHits = FMath::Clamp((numHits += (numHits - 1)), 2, 9);
 
 	// Damage
 	AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
