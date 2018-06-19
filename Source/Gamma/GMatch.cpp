@@ -108,15 +108,18 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 					HitActor->Tags.Add("Doomed");
 				}*/
 			}
-			else if (!bGG && (LocalPlayer != nullptr) && (OpponentPlayer != nullptr))
-			{
+			
+		}
+		if (!bGG &&
+			((Winner != nullptr) && (HitActor != nullptr)
+				|| HitActor->ActorHasTag("Hittable")))
+		{
 
-				// Just a hit
-				bMinorGG = true;
-				HitActor->CustomTimeDilation = (1 + GGTimescale) * 0.1f;
-				Winner->CustomTimeDilation = (1 + GGTimescale) * 0.1f;
-				bReturn = true;
-			}
+			// Just a hit
+			bMinorGG = true;
+			HitActor->CustomTimeDilation = (1 + GGTimescale) * 0.1f;
+			Winner->CustomTimeDilation = (1 + GGTimescale) * 0.1f;
+			bReturn = true;
 		}
 	}
 

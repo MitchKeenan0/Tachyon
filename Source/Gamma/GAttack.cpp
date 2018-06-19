@@ -331,7 +331,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 void AGAttack::ReportHit(AActor* HitActor)
 {
 	// Track hitscale curvature for increasing knockback and damage
-	numHits = FMath::Clamp((numHits += (numHits - 1)), 2, 50);
+	numHits = FMath::Clamp((numHits += (numHits - 1)), 2, 10);
 
 	// Damage
 	AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
@@ -345,14 +345,12 @@ void AGAttack::ReportHit(AActor* HitActor)
 		{
 			PotentialPlayer->Tags.Add("Doomed");
 		}
-		
-		//bLethal = false;
+	}
 
-		// Call for slowtime
-		if (CurrentMatch != nullptr)
-		{
-			CurrentMatch->ClaimHit(HitActor, OwningShooter);
-		}
+	// Call for slowtime
+	if (CurrentMatch != nullptr)
+	{
+		CurrentMatch->ClaimHit(HitActor, OwningShooter);
 	}
 
 	// Grow maze cubes
