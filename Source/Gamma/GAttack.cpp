@@ -101,7 +101,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	float DirRecalc = ShotDirection * ShootingAngle;
 	if (AngleSweep != 0.0f)
 	{
-		DirRecalc *= -1.68f;
+		DirRecalc *= (-1.75f * AttackMagnitude);
 		FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
 		LocalForward.Y = 0.0f;
 		FRotator FireRotation = LocalForward.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);

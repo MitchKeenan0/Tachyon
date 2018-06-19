@@ -234,8 +234,8 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		}
 
 		// Personal Recovery
-		float t = (FMath::Square(MyTimeDilation) * 100.0f) * DeltaTime;
-		float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, DeltaTime, 2.6f); // t or DeltaTime
+		float t = (FMath::Square(MyTimeDilation) * 1000.0f) * DeltaTime;
+		float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, DeltaTime, 5.0f); // t or DeltaTime
 		CustomTimeDilation = FMath::Clamp(ReturnTime, 0.01f, 1.0f);
 		
 		//float GlobalTimeDil = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
@@ -252,12 +252,12 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		float TravelDirection = FMath::Clamp(InputX, -1.0f, 1.0f);
 		if (TravelDirection < 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 20.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 15.0f);
 			Controller->SetControlRotation(Fint);
 		}
 		else if (TravelDirection > 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 20.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 15.0f);
 			Controller->SetControlRotation(Fint);
 		}
 		else
@@ -265,12 +265,12 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			// No Input - finish rotation
 			if (Controller->GetControlRotation().Yaw > 90.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 20.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 15.0f);
 				Controller->SetControlRotation(Fint);
 			}
 			else
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 20.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 15.0f);
 				Controller->SetControlRotation(Fint);
 			}
 		}
@@ -360,8 +360,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			
 			float ChargeScalar = FMath::Clamp((Charge - 1.0f), 1.0f, ChargeMax);
 			float SizeScalar = GetCapsuleComponent()->GetComponentScale().Size();
-			float CameraMinimumDistance = 2200 + (420.0f * SizeScalar * ChargeScalar) * CameraDistanceScalar;
-			float CameraMaxDistance = 551000.0f;
+			float CameraMinimumDistance = 1500 + (150.0f * SizeScalar * ChargeScalar) * CameraDistanceScalar;
+			float CameraMaxDistance = 1551000.0f;
 
 			// Position by another actor
 			bool bAlone = true;
@@ -732,7 +732,7 @@ void AGammaCharacter::MoveUp(float Value)
 			MoveByDot = (MoveSpeed + (AngleToInput * MoveSpeed)); // * ChargeScalar;
 			//GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
 			//GetCharacterMovement()->MaxAcceleration = MoveByDot;
-			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot);
+			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot * 0.5f);
 
 			///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("z: %f"), AngleToInput));
 		}
