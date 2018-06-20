@@ -30,6 +30,10 @@
 		{
 			"Name": "OculusVR",
 			"Enabled": false
+		},
+		{
+			"Name": "ApexDestruction",
+			"Enabled": true
 		}
 	]
 }
