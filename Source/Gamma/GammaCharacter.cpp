@@ -322,7 +322,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		Actor1 = this;
 	}
 	
-	if (FramingActors.Num() > 1)
+	if (FramingActors.Num() >= 1)
 	{
 		// Edge case: player is spectator, find a sub
 		if (Actor1 == nullptr)
@@ -424,7 +424,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				
 				// Framing lone player by their velocity
-				Actor1Velocity = (Actor1->GetVelocity() * CameraSoloVelocityChase);
+				Actor1Velocity = (Actor1->GetVelocity() + 1.0f);
 
 				// Clamp to max size
 				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(1500.0f); // *CustomTimeDilation);
@@ -437,7 +437,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}*/
 
 				// Declare Position Two
-				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity);
+				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity * CameraSoloVelocityChase);
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, (VelocityCameraSpeed * 0.5f)); // UnDilatedDeltaTime
 				
 				// Distance controls

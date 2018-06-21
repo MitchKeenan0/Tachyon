@@ -18,21 +18,21 @@ void AGammaSoloSequence::BeginPlay()
 	
 	AquirePlayer();
 
-	// Init Rand
-	RandStream = new FRandomStream;
-	if (RandStream != nullptr)
-	{
-		RandStream->GenerateNewSeed();
-	}
+	//// Init Rand
+	//RandStream = new FRandomStream;
+	//if (RandStream != nullptr)
+	//{
+	//	RandStream->GenerateNewSeed();
+	//}
 
-	RunTimer = FirstEncounterTime / 5.0f;
+	//RunTimer = FirstEncounterTime / 5.0f;
 
 
-	// Initial burst
-	for (int i = 0; i < 50; ++i)
-	{
-		SpawnDenizen();
-	}
+	//// Initial burst
+	//for (int i = 0; i < 50; ++i)
+	//{
+	//	SpawnDenizen();
+	//}
 }
 
 

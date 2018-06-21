@@ -260,25 +260,25 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 {
 	if ((DamageClass != nullptr) && (HitActor != nullptr))
 	{
-		// Spawning damage fx
+		/// Spawning damage fx
 		FActorSpawnParameters SpawnParams;
 		FRotator Forward = GetActorForwardVector().Rotation(); //HitActor->GetActorRotation();
 
-		// Get closest point on bounds of HitActor
+		/// Get closest point on bounds of HitActor
 		FVector OutFVector = FVector::ZeroVector;
 		UPrimitiveComponent* HitPrimitive = Cast<UPrimitiveComponent>(HitActor->GetRootComponent());
 		if (HitPrimitive != nullptr)
 		{
-			// Root capsules are easy
+			/// Root capsules are easy
 			float ClosestPointDist = HitPrimitive->GetClosestPointOnCollision(HitPoint, OutFVector);
 		}
 		else
 		{
-			// else do it the old fashioned way
+			/// else do it the old fashioned way
 			OutFVector = HitPoint;
 		}
 
-		// Spawn!
+		/// Spawn!
 		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, OutFVector, Forward, SpawnParams)); /// HitPoint
 		DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
 
@@ -289,14 +289,15 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 
 void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 {
-	// The knock itself
-	FVector AwayFromShooter = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+	/// The knock itself
+	FVector AwayFromShooter = (HitPoint - GetActorLocation()).GetSafeNormal();
+	//FVector AwayFromShooter = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	//float TimeDilat = //UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 	//TimeDilat = FMath::Clamp(TimeDilat, 0.01f, 0.15f);
-	//float HitsScalar = numHits * 0.1f;
-	float KnockScalar = FMath::Abs(KineticForce) * (1.0f + AttackMagnitude); // *TimeDilat; // *HitsScalar;
+	float HitsScalar = 1.0f + (2.0f / numHits);
+	float KnockScalar = FMath::Abs(KineticForce) * (1.0f + AttackMagnitude) * HitsScalar;
 
-	// Get character movement to kick on
+	/// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
 	if (Chara != nullptr)
 	{
@@ -304,7 +305,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 	}
 	else
 	{
-		// Or get general static mesh
+		/// Or get general static mesh
 		UStaticMeshComponent* HitMeshComponent = nullptr;
 		TArray<UStaticMeshComponent*> Components;
 		HitActor->GetComponents<UStaticMeshComponent>(Components);
@@ -318,7 +319,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 			}
 		}
 
-		// Apply force to it
+		/// Apply force to it
 		if ((HitMeshComponent != nullptr)
 			&& HitMeshComponent->IsSimulatingPhysics())
 		{
@@ -330,16 +331,16 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 
 void AGAttack::ReportHit(AActor* HitActor)
 {
-	// Track hitscale curvature for increasing knockback and damage
+	/// Track hitscale curvature for increasing knockback and damage
 	numHits = FMath::Clamp((numHits += (numHits - 1)), 2, 9);
 
-	// Damage
+	/// Damage
 	AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
 	if (PotentialPlayer != nullptr)
 	{
 		PotentialPlayer->ModifyHealth((-AttackDamage) * numHits);
 		
-		// Marked killed AI for the reset sweep
+		/// Marked killed AI for the reset sweep
 		if (PotentialPlayer->GetHealth() <= 0.0f
 			&& PotentialPlayer->ActorHasTag("Bot"))
 		{
@@ -347,19 +348,19 @@ void AGAttack::ReportHit(AActor* HitActor)
 		}
 	}
 
-	// Call for slowtime
+	/// Call for slowtime
 	if (CurrentMatch != nullptr)
 	{
 		CurrentMatch->ClaimHit(HitActor, OwningShooter);
 	}
 
-	// Grow maze cubes
+	/// Grow maze cubes
 	if (HitActor->ActorHasTag("Grow"))
 	{
 		FVector HitActorScale = HitActor->GetActorScale3D();
 		HitActor->SetActorScale3D(HitActorScale * 1.01f);
 		
-		// Affect object's mass
+		/// Affect object's mass
 		/*TSubclassOf<UStaticMeshComponent> MeshCompTest;
 		UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(HitActor->GetComponentByClass(MeshCompTest));
 		if (MeshComp != nullptr)
@@ -378,19 +379,19 @@ void AGAttack::Nullify(int AttackType)
 		AGammaCharacter* PossibleCharacter = Cast<AGammaCharacter>(OwningShooter);
 		if (PossibleCharacter != nullptr)
 		{
-			// All
+			/// All
 			if (AttackType == -1)
 			{
 				PossibleCharacter->NullifyAttack();
 				PossibleCharacter->NullifySecondary();
 			}
 
-			// Attack
+			/// Attack
 			if (AttackType == 0)
 			{
 				PossibleCharacter->NullifyAttack();
 			}
-			// Secondary
+			/// Secondary
 			else if (AttackType == 1)
 			{
 				PossibleCharacter->NullifySecondary();
