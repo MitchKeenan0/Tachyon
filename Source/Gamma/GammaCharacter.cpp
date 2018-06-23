@@ -460,7 +460,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// If paired, widescreen edges are vulnerable to overshoot
 				if (!bAlone)
 				{
-					VerticalDist *= 2.2f;
+					VerticalDist *= 10.2f;
 				}
 
 				// Handle horizontal bias
@@ -517,8 +517,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				SideViewCameraComponent->SetRelativeRotation(FTarget);
 
 				/// debug Velocity size
-				GEngine->AddOnScreenDebugMessage(-1, 0.f,
-					FColor::White, FString::Printf(TEXT("GTimeScale: %f"), GTimeScale));
+				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,
+					FColor::White, FString::Printf(TEXT("GTimeScale: %f"), GTimeScale));*/
 			}
 		}
 	}
@@ -665,22 +665,24 @@ void AGammaCharacter::MoveRight(float Value)
 		&& CustomTimeDilation > 0.1f) /// UGameplayStatics::GetGlobalTimeDilation(GetWorld()
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
-		FVector CurrentV = GetMovementComponent()->Velocity.GetSafeNormal();
+		FVector CurrentV = GetMovementComponent()->Velocity;
+		FVector VNorm = CurrentV.GetSafeNormal();
 		
 		// Move by dot product for skating effect
 		if (InputX != 0.0f)
 		{
 			float MoveByDot = 0.0f;
 			float DeltaTime = GetWorld()->DeltaTimeSeconds;
-			//float ChargeScalar = FMath::Square(FMath::Clamp(Charge, 1.0f, ChargeMax)) * 10.0f;
-			float DotToInput = (FVector::DotProduct(CurrentV, MoveInput));
-			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), 1.0f, 180.0f)); // -90.0f, 90.0f
-			MoveByDot = (MoveSpeed + (AngleToInput * MoveSpeed)); // * ChargeScalar;
-			//GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
-			//GetCharacterMovement()->MaxAcceleration = MoveByDot;
+			float DotToInput = (FVector::DotProduct(MoveInput, VNorm));
+			float AngleToInput = FMath::Acos(DotToInput);
+
+			float TurnScalar = MoveSpeed + FMath::Square(TurnSpeed * AngleToInput);
+			MoveByDot = MoveSpeed * TurnScalar;
+			
+			GetCharacterMovement()->MaxAcceleration = MoveByDot;
 			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * MoveByDot); // ValClamped
 
-			///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("x: %f"), AngleToInput));
+			///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("x: %f"), MoveByDot));
 		}
 	}
 
@@ -707,22 +709,24 @@ void AGammaCharacter::MoveUp(float Value)
 		&& CustomTimeDilation > 0.1f) /// UGameplayStatics::GetGlobalTimeDilation(GetWorld()) 
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
-		FVector CurrentV = (GetMovementComponent()->Velocity).GetSafeNormal();
+		FVector CurrentV = GetMovementComponent()->Velocity;
+		FVector VNorm = CurrentV.GetSafeNormal();
 
 		// Move by dot product for skating effect
 		if (MoveInput != FVector::ZeroVector)
 		{
 			float MoveByDot = 0.0f;
 			float DeltaTime = GetWorld()->DeltaTimeSeconds;
-			//float ChargeScalar = FMath::Square(FMath::Clamp(Charge, 1.0f, ChargeMax)) * 10.0f;
-			float DotToInput = (FVector::DotProduct(MoveInput, CurrentV));
-			float AngleToInput = TurnSpeed * FMath::Abs(FMath::Clamp(FMath::Acos(DotToInput), 1.0f, 180.0f)); // -90.0f, 90.0f
-			MoveByDot = (MoveSpeed + (AngleToInput * MoveSpeed)); // * ChargeScalar;
-			//GetCharacterMovement()->MaxFlySpeed = MoveByDot / 3.0f;
-			//GetCharacterMovement()->MaxAcceleration = MoveByDot;
-			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot * 0.9f);
+			float DotToInput = (FVector::DotProduct(MoveInput, VNorm));
+			float AngleToInput = FMath::Acos(DotToInput);
 
-			///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("z: %f"), AngleToInput));
+			float TurnScalar = MoveSpeed + FMath::Square(TurnSpeed * AngleToInput);
+			MoveByDot = MoveSpeed * TurnScalar;
+			
+			GetCharacterMovement()->MaxAcceleration = MoveByDot;
+			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot);
+
+			///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("z: %f"), MoveByDot));
 		}
 	}
 
@@ -1068,26 +1072,21 @@ void AGammaCharacter::InitAttack()
 		return;
 	}
 
-	/// Clean burn
-	///MoveParticles->bSuppressSpawning = true;
-
-	// Singleton shooters, clean up first
-	if (!bMultipleAttacks &&
-		((ActiveAttack != nullptr) && (IsValid(ActiveAttack))))
-	{
-		ActiveAttack->Nullify(0);
-	}
-
 	// Conditions for shooting
-	bool bFireAllowed = (GetActiveFlash() == nullptr)
-			&& (!IsValid(GetActiveFlash())) // || GetActiveFlash()->IsPendingKillOrUnreachable())
-			&& (Charge > 0.0f) && (FlashClass != nullptr);
+	bool bWeaponAllowed = ((GetActiveFlash() == nullptr) && (ActiveAttack == nullptr)) || bMultipleAttacks;
+	bool bFireAllowed = bWeaponAllowed
+						&& (!IsValid(GetActiveFlash()))
+						&& (Charge > 0.0f) && (FlashClass != nullptr);
 
-	/*  bFireAllowed = (bMultipleAttacks || (!bMultipleAttacks && ((ActiveAttack == nullptr) || (!ActiveAttack->IsValidLowLevel()))))
-			&&   */
-	
 	if (bFireAllowed)
 	{
+
+		// Singleton shooters, clean up first
+		/*if (!bMultipleAttacks &&
+			((ActiveAttack != nullptr) && (IsValid(ActiveAttack))))
+		{
+			ActiveAttack->Nullify(0);
+		}*/
 		
 		// Direction & setting up
 		float AimClampedInputZ = FMath::Clamp((InputZ * 10.0f), -1.0f, 1.0f);

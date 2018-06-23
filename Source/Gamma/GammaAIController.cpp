@@ -9,8 +9,10 @@ void AGammaAIController::BeginPlay()
 
 	// Get our Gamma Character
 	MyPawn = GetPawn();
-	MyCharacter = Cast<AGammaCharacter>(MyPawn);
-
+	if (MyPawn != nullptr)
+	{
+		MyCharacter = Cast<AGammaCharacter>(MyPawn);
+	}
 	if (MyCharacter != nullptr)
 	{
 		MyCharacter->Tags.Add("Bot");
@@ -37,9 +39,13 @@ void AGammaAIController::Tick(float DeltaSeconds)
 	if (!MyCharacter)
 	{
 		MyPawn = GetPawn();
-		MyCharacter = Cast<AGammaCharacter>(MyPawn);
+		if (MyPawn != nullptr)
+		{
+			MyCharacter = Cast<AGammaCharacter>(MyPawn);
+		}
 	}
-	else if (MyCharacter != nullptr)
+	else if ((MyCharacter != nullptr)
+		&& (GetGameTimeSinceCreation() > 1.0f))
 	{
 
 		// Set move values by character's flavour
@@ -52,20 +58,14 @@ void AGammaAIController::Tick(float DeltaSeconds)
 		}
 
 		// Got a player - stunt on'em
-		if (Player != nullptr && IsValid(Player)
-			&& TravelTimer < 2.0f)
+		if ((Player != nullptr) && IsValid(Player))
 		{
-			
-			// Finial line draw to Player
-			/*DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(), Player->GetActorLocation(),
-				FColor::White, false, -1.0f, 0, 3.0f);*/
-
 			// Reation time
 			if (ReactionTiming(DeltaSeconds))
 			{
 				Tactical(FVector::ZeroVector);
 			}
-			
+
 			// Update attacks to be
 			if (PrefireTimer >= PrefireTime
 				&& MyCharacter->GetActiveFlash() != nullptr)
@@ -73,20 +73,30 @@ void AGammaAIController::Tick(float DeltaSeconds)
 				MyCharacter->ReleaseAttack();
 			}
 
-			// Get some moves
-			if ((TravelTimer >= 1.0f)
-				|| (LocationTarget == FVector::ZeroVector))
-			{
-				GetNewLocationTarget();
-				TravelTimer = 0.0f;
-			}
+
+			// Finial line draw to Player
+			/*DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(), Player->GetActorLocation(),
+				FColor::White, false, -1.0f, 0, 3.0f);*/
+
 			
-			if ((LocationTarget != FVector::ZeroVector) && !bShootingSoon
-				&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+			// Movement
+			if (TravelTimer < 2.0f)
 			{
-				NavigateTo(LocationTarget);
-				MoveTimer += DeltaSeconds;
-				TravelTimer += DeltaSeconds;
+				// Get some moves
+				if ((TravelTimer >= 1.0f)
+					|| (LocationTarget == FVector::ZeroVector))
+				{
+					GetNewLocationTarget();
+					TravelTimer = 0.0f;
+				}
+
+				if ((LocationTarget != FVector::ZeroVector) && !bShootingSoon
+					&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+				{
+					NavigateTo(LocationTarget);
+					MoveTimer += DeltaSeconds;
+					TravelTimer += DeltaSeconds;
+				}
 			}
 		}
 		else
