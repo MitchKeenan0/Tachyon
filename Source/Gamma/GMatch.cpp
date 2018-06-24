@@ -75,38 +75,46 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			// End of game
 			if (Reciever->GetHealth() <= 0.0f)
 			{
-				bGG = true;
 
-				//Calcify killed HitActor
-				UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
-					(HitActor->FindComponentByClass<UPaperFlipbookComponent>());
-				if (ActorFlipbook != nullptr)
+				if (Reciever->ActorHasTag("Bot"))
 				{
-					float CurrentPosition = FMath::FloorToInt(ActorFlipbook->GetPlaybackPosition());
-					ActorFlipbook->SetPlaybackPositionInFrames(1, true);
+					Reciever->Destroy();
 				}
-
-				// Transfer timescaling to global
-				HitActor->CustomTimeDilation = 1.0f;
-				Winner->CustomTimeDilation = 1.0f;
-				SetTimeScale(GGTimescale);
-
-				bReturn = false;
-
-				// Award winner with a star ;P
-				AGammaCharacter* WinnerPlayer = Cast<AGammaCharacter>(Winner);
-				if (WinnerPlayer != nullptr)
+				if (LocalPlayer->IsPendingKillOrUnreachable())
 				{
-					FString DecoratedName = FString(WinnerPlayer->GetCharacterName().Append(" *"));
-					WinnerPlayer->SetCharacterName(DecoratedName);
-				}
+					bGG = true;
 
-				
-				// Clear shot-out NPCs
-				/*if (HitActor->ActorHasTag("Bot"))
-				{
+					//Calcify killed HitActor
+					UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
+						(HitActor->FindComponentByClass<UPaperFlipbookComponent>());
+					if (ActorFlipbook != nullptr)
+					{
+						float CurrentPosition = FMath::FloorToInt(ActorFlipbook->GetPlaybackPosition());
+						ActorFlipbook->SetPlaybackPositionInFrames(1, true);
+					}
+
+					// Transfer timescaling to global
+					HitActor->CustomTimeDilation = 1.0f;
+					Winner->CustomTimeDilation = 1.0f;
+					SetTimeScale(GGTimescale);
+
+					bReturn = false;
+
+					// Award winner with a star ;P
+					AGammaCharacter* WinnerPlayer = Cast<AGammaCharacter>(Winner);
+					if (WinnerPlayer != nullptr)
+					{
+						FString DecoratedName = FString(WinnerPlayer->GetCharacterName().Append(" *"));
+						WinnerPlayer->SetCharacterName(DecoratedName);
+					}
+
+
+					// Clear shot-out NPCs
+					/*if (HitActor->ActorHasTag("Bot"))
+					{
 					HitActor->Tags.Add("Doomed");
-				}*/
+					}*/
+				}
 			}
 			
 		}

@@ -234,7 +234,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		}
 
 		// Personal Recovery
-		float ReturnTime = FMath::FInterpConstantTo(MyTimeDilation, 1.0f, DeltaTime, 5.0f); // t or DeltaTime
+		float ReturnTime = FMath::FInterpTo(MyTimeDilation, 1.0f, DeltaTime, MyTimeDilation * 100.0f); // t or DeltaTime
 		CustomTimeDilation = FMath::Clamp(ReturnTime, 0.001f, 1.0f);
 		
 		//float GlobalTimeDil = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
@@ -310,6 +310,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 	float VelocityCameraSpeed = CameraMoveSpeed;
 	float CameraMaxSpeed = 10000.0f;
+	float ConsideredDistanceScalar = CameraDistanceScalar;
 
 	// Poll for framing actors
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
@@ -441,6 +442,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, (VelocityCameraSpeed * 0.5f)); // UnDilatedDeltaTime
 				
 				// Distance controls
+				ConsideredDistanceScalar *= 1.5f;
 				CameraMaxDistance = 150000.0f;
 			}
 
@@ -460,7 +462,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// If paired, widescreen edges are vulnerable to overshoot
 				if (!bAlone)
 				{
-					VerticalDist *= 10.2f;
+					VerticalDist *= 1.2f;
 				}
 
 				// Handle horizontal bias
@@ -483,7 +485,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				TargetLength *= RefinedGScalar;
 
 				// Clamp useable distance
-				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 1200.0f) * CameraDistanceScalar,
+				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 1200.0f) * ConsideredDistanceScalar,
 					CameraMinimumDistance * RefinedGScalar,
 					CameraMaxDistance);
 
@@ -1073,7 +1075,8 @@ void AGammaCharacter::InitAttack()
 	}
 
 	// Conditions for shooting
-	bool bWeaponAllowed = ((GetActiveFlash() == nullptr) && (ActiveAttack == nullptr)) || bMultipleAttacks;
+	bool bWeaponAllowed = ((GetActiveFlash() == nullptr) && (ActiveAttack == nullptr)) 
+						|| bMultipleAttacks;
 	bool bFireAllowed = bWeaponAllowed
 						&& (!IsValid(GetActiveFlash()))
 						&& (Charge > 0.0f) && (FlashClass != nullptr);
@@ -1133,6 +1136,7 @@ void AGammaCharacter::ReleaseAttack()
 {
 	if ((AttackClass != nullptr)
 		&& ((ActiveAttack == nullptr) || bMultipleAttacks)
+		&& (GetActiveSecondary() == nullptr)
 		&& (Charge > 0.0f)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
 		&& ((PrefireTimer >= 0.001f && ActiveFlash != nullptr)))
@@ -1232,6 +1236,9 @@ bool AGammaCharacter::ServerReleaseAttack_Validate()
 void AGammaCharacter::FireSecondary()
 {
 	if (SecondaryClass && (ActiveSecondary == nullptr)
+		&& GetActiveFlash() == nullptr
+		&& GetActiveBoost() == nullptr
+		&& (ActiveAttack == nullptr)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
 	{
 		/// Clean burn

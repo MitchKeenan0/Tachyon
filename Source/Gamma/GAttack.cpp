@@ -295,7 +295,8 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 	//float TimeDilat = //UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 	//TimeDilat = FMath::Clamp(TimeDilat, 0.01f, 0.15f);
 	float HitsScalar = 1.0f + (2.0f / numHits);
-	float KnockScalar = FMath::Abs(KineticForce) * (1.0f + AttackMagnitude) * HitsScalar;
+	float MagnitudeScalar = FMath::Square(1.0f + AttackMagnitude);
+	float KnockScalar = FMath::Abs(KineticForce) * HitsScalar * MagnitudeScalar;
 
 	/// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
@@ -409,17 +410,25 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	float DamageVisualTimer = (1.0f / HitsPerSecond);// *0.5f;
 	if (HitTimer > DamageVisualTimer)
 	{
-		// Distributed among the hitactor and the weapon itself
-		float Rando = FMath::FRand();
-		if (Rando > 0.5f)
+		// 'Freefire' attacks always attach to the hitactor
+		if (!LockedEmitPoint)
 		{
 			SpawnDamage(HitActor, HitPoint);
 		}
-		else
+		else // 'Locked' attacks ie. sword
 		{
-			SpawnDamage(this, HitPoint);
+			float Rando = FMath::FRand();
+			if (Rando >= 0.5f)
+			{
+				SpawnDamage(HitActor, HitPoint);
+			}
+			else
+			{
+				SpawnDamage(this, HitPoint);
+			}
 		}
 	}
+		
 
 	HitTimer = 0.0f;
 	bool bSpawnDamage = false;
