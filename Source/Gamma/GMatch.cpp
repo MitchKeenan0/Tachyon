@@ -130,10 +130,9 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			}
 
 			// Just a hit -- Reduce timescale per hit towards bottomTime
-			/*if (!bGG &&
+			if (!bGG &&
 				((Winner != nullptr) && (HitActor != nullptr)
-					|| HitActor->ActorHasTag("Hittable"))
-				&& (!HasAuthority()))
+					|| HitActor->ActorHasTag("Hittable")))
 			{
 				float CurrentTScale = (HitActor->CustomTimeDilation + Winner->CustomTimeDilation) * 0.5f;
 				float NewTScale = CurrentTScale * 0.21f;
@@ -144,8 +143,8 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 				Winner->CustomTimeDilation = NewTScale;
 				bReturn = true;
 
-				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("timeScale:  %f"), NewTScale));
-			}*/
+				ForceNetUpdate();
+			}
 		}
 	}
 

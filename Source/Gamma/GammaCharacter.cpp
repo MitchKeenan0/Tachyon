@@ -247,41 +247,42 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 
 		// Locator scaling
-		if (Controller->IsLocalController()
-			&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 		{
 			LocatorScaling();
 
 
-			//// Personal Timescale
-			//float MyTimeDilation = CustomTimeDilation;
+			// Personal Timescale
+			float MyTimeDilation = CustomTimeDilation;
 
-			//// Attacks and Secondary Recovery
-			//if (MyTimeDilation < 1.0f)
-			//{
-			//	if (GetActiveFlash() != nullptr && IsValid(GetActiveFlash()))
-			//	{
-			//		GetActiveFlash()->CustomTimeDilation = MyTimeDilation;
-			//		GetActiveFlash()->SetLifeSpan(GetActiveFlash()->GetLifeSpan() / MyTimeDilation);
-			//	}
-			//	if ((ActiveAttack != nullptr) && IsValid(ActiveAttack))
-			//	{
-			//		ActiveAttack->CustomTimeDilation = MyTimeDilation;
-			//		ActiveAttack->SetLifeSpan(ActiveAttack->GetLifeSpan() / CustomTimeDilation);
-			//	}
-			//	if (IsValid(ActiveSecondary) && (ActiveSecondary != nullptr))
-			//	{
-			//		ActiveSecondary->CustomTimeDilation = MyTimeDilation;
-			//		if (ActiveSecondary != nullptr)
-			//		{
-			//			ActiveSecondary->SetLifeSpan(ActiveSecondary->GetLifeSpan() / CustomTimeDilation);
-			//		}
-			//	}
-			//}
+			// Attacks and Secondary Recovery
+			if (MyTimeDilation < 1.0f)
+			{
+				if (GetActiveFlash() != nullptr && IsValid(GetActiveFlash()))
+				{
+					GetActiveFlash()->CustomTimeDilation = MyTimeDilation;
+					GetActiveFlash()->SetLifeSpan(GetActiveFlash()->GetLifeSpan() / MyTimeDilation);
+				}
+				if ((ActiveAttack != nullptr) && IsValid(ActiveAttack))
+				{
+					ActiveAttack->CustomTimeDilation = MyTimeDilation;
+					ActiveAttack->SetLifeSpan(ActiveAttack->GetLifeSpan() / CustomTimeDilation);
+				}
+				if (IsValid(ActiveSecondary) && (ActiveSecondary != nullptr))
+				{
+					ActiveSecondary->CustomTimeDilation = MyTimeDilation;
+					if (ActiveSecondary != nullptr)
+					{
+						ActiveSecondary->SetLifeSpan(ActiveSecondary->GetLifeSpan() / CustomTimeDilation);
+					}
+				}
+			}
 
-			//// Personal Recovery
-			//float ReturnTime = FMath::FInterpTo(MyTimeDilation, 1.0f, DeltaTime, MyTimeDilation * 61.8f); // t or DeltaTime
-			//CustomTimeDilation = FMath::Clamp(ReturnTime, 0.001f, 1.0f);
+			// Personal Recovery
+			float ReturnTime = FMath::FInterpTo(MyTimeDilation, 1.0f, DeltaTime, MyTimeDilation * 61.8f); // t or DeltaTime
+			CustomTimeDilation = FMath::Clamp(ReturnTime, 0.001f, 1.0f);
+
+			ForceNetUpdate();
 		}
 
 		// AfterImage rotation
@@ -737,7 +738,7 @@ void AGammaCharacter::SetX(float Value)
 		// Update delta
 		x = Value;
 
-		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("x: %f"), InputX));
+		///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("x: %f"), InputX));
 
 		if (ActorHasTag("Bot"))
 		{
@@ -772,7 +773,7 @@ void AGammaCharacter::SetZ(float Value)
 		// Update delta
 		z = Value;
 
-		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("z: %f"), InputZ));
+		///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("z: %f"), InputZ));
 
 		if (ActorHasTag("Bot"))
 		{
