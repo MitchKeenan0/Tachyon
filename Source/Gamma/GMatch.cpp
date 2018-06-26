@@ -35,26 +35,22 @@ void AGMatch::Tick(float DeltaTime)
 	GetPlayers();
 
 	// Timescaling
-	if (Role == ROLE_Authority)
+	/*if (Role == ROLE_Authority)
 	{
 		HandleTimeScale(DeltaTime);
-	}
+	}*/
 }
 
 
 bool AGMatch::PlayersAccountedFor()
 {
 	bool Result = false;
-	if (LocalPlayer != nullptr && LocalPlayer->IsValidLowLevel())
+	if (LocalPlayer != nullptr)
 	{
-		if (OpponentPlayer != nullptr && OpponentPlayer->IsValidLowLevel())
+		if (OpponentPlayer != nullptr)
 		{
 			Result = true;
 		}
-	}
-	if (!Result)
-	{
-		GetPlayers();
 	}
 
 	return Result;
@@ -75,12 +71,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			// End of game
 			if (Reciever->GetHealth() <= 0.0f)
 			{
-
-				if (Reciever->ActorHasTag("Bot"))
-				{
-					Reciever->Destroy();
-				}
-				if (LocalPlayer->IsPendingKillOrUnreachable())
+				if (!(Reciever->ActorHasTag("Bot")))
 				{
 					bGG = true;
 
@@ -115,6 +106,25 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 					HitActor->Tags.Add("Doomed");
 					}*/
 				}
+
+				// Erase Bots
+				if (Reciever->ActorHasTag("Bot"))
+				{
+					Reciever->NullifyAttack();
+					Reciever->NullifySecondary();
+					Reciever->ClearFlash();
+					
+					Reciever->Destroy();
+					if (Reciever == LocalPlayer)
+					{
+						LocalPlayer = nullptr;
+					}
+					else if (Reciever == OpponentPlayer)
+					{
+						OpponentPlayer = nullptr;
+					}
+					Reciever = nullptr;
+				}
 			}
 			
 		}
@@ -123,10 +133,16 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 				|| HitActor->ActorHasTag("Hittable")))
 		{
 
-			// Just a hit
+			// Just a hit -- Reduce timescale per hit towards bottomTime
 			bMinorGG = true;
-			HitActor->CustomTimeDilation = (1 + GGTimescale) * 0.1f;
-			Winner->CustomTimeDilation = (1 + GGTimescale) * 0.1f;
+
+			float CurrentTScale = (HitActor->CustomTimeDilation + Winner->CustomTimeDilation) * 0.5f;
+			float NewTScale = CurrentTScale * 0.21f;
+			float BottomTScale = (1 + GGTimescale) * 0.1f;
+			NewTScale = FMath::Clamp(NewTScale, BottomTScale, 1.0f);
+
+			HitActor->CustomTimeDilation = NewTScale;
+			Winner->CustomTimeDilation = NewTScale;
 			bReturn = true;
 		}
 	}
@@ -334,8 +350,19 @@ void AGMatch::GetPlayers()
 		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), TempPlayers);
 		if (TempPlayers.Num() == 2)
 		{
-			LocalPlayer = Cast<AGammaCharacter>(TempPlayers[0]);
-			OpponentPlayer = Cast<AGammaCharacter>(TempPlayers[1]);
+			if ((TempPlayers[0] != nullptr))
+			{
+				LocalPlayer = Cast<AGammaCharacter>(TempPlayers[0]);
+			}
+			if ((TempPlayers[1] != nullptr))
+			{
+				OpponentPlayer = Cast<AGammaCharacter>(TempPlayers[1]);
+			}
+		}
+
+		if (PlayersAccountedFor())
+		{
+			return;
 		}
 	}
 	else
@@ -350,29 +377,31 @@ void AGMatch::GetPlayers()
 			int LoopSize = TempPlayers.Num();
 			for (int i = 0; i < LoopSize; ++i)
 			{
-
-				// Qualify valid player object
-				ACharacter* TempChar = Cast<ACharacter>(TempPlayers[i]);
-				if (TempChar != nullptr
-					&& !TempChar->ActorHasTag("Spectator"))
+				if (TempPlayers[i] != nullptr)
 				{
-					
-					// Check if controller is local
-					APlayerController* TempCont = Cast<APlayerController>(TempChar->GetController());
-					if (TempCont != nullptr && (TempCont->IsLocalController() || TempCont->ActorHasTag("Bot")))
+					// Qualify valid player object
+					ACharacter* TempChar = Cast<ACharacter>(TempPlayers[i]);
+					if (TempChar != nullptr
+						&& !TempChar->ActorHasTag("Spectator"))
 					{
-						LocalPlayer = Cast<AGammaCharacter>(TempChar);
-					}
-					
-					// Get closest opponent
-					else if ((TempChar != nullptr) && (TempChar != LocalPlayer) && (!TempChar->ActorHasTag("Spectator"))
-						&& LocalPlayer != nullptr)
-					{
-						float DistToTemp = FVector::Dist(TempChar->GetActorLocation(), LocalPlayer->GetActorLocation());
-						if (DistToTemp < BestDistance)
+
+						// Check if controller is local
+						APlayerController* TempCont = Cast<APlayerController>(TempChar->GetController());
+						if ((TempCont != nullptr) && (TempCont->IsLocalController() || TempCont->ActorHasTag("Bot")))
 						{
-							OpponentPlayer = Cast<AGammaCharacter>(TempChar);
-							BestDistance = DistToTemp;
+							LocalPlayer = Cast<AGammaCharacter>(TempChar);
+						}
+
+						// Get closest opponent
+						else if ((TempChar != nullptr) && (TempChar != LocalPlayer) && (!TempChar->ActorHasTag("Spectator"))
+							&& (LocalPlayer != nullptr))
+						{
+							float DistToTemp = FVector::Dist(TempChar->GetActorLocation(), LocalPlayer->GetActorLocation());
+							if (DistToTemp < BestDistance)
+							{
+								OpponentPlayer = Cast<AGammaCharacter>(TempChar);
+								BestDistance = DistToTemp;
+							}
 						}
 					}
 				}

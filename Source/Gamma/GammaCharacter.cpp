@@ -141,7 +141,7 @@ void AGammaCharacter::BeginPlay()
 	DecelerationSpeed = GetCharacterMovement()->BrakingFrictionFactor;
 
 	// To reduce jitter
-	//UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), TEXT("p.NetEnableMoveCombining 0")); /// is this needed?
+	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), TEXT("p.NetEnableMoveCombining 0")); /// is this needed?
 
 	// Camera needs some movement to wake up
 	if (Controller && Controller->IsLocalController())
@@ -409,6 +409,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					bAlone = false;
 
 					// Framing up with second actor
+					float SafeVelocitySize = FMath::Clamp(Actor2->GetVelocity().Size(), 350.0f, MaxMoveSpeed);
+					VelocityCameraSpeed = CameraMoveSpeed * (FMath::Sqrt(SafeVelocitySize)) * DeltaTime;
+					VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 0.0f, CameraMaxSpeed);
 					FVector Actor2Velocity = (Actor2->GetVelocity() + 1.0f);
 					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(1500); // *CustomTimeDilation);
 					///Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(15000.0f * (CustomTimeDilation + 0.5f));
@@ -815,13 +818,12 @@ void AGammaCharacter::NewMoveKick()
 {
 	if (!bBoosting)
 	{
-		if (Role == ROLE_AutonomousProxy) // < ROLE_Authority
-		{
-			ServerNewMoveKick();
-			return;
-		}
-
 		bBoosting = true;
+	}
+
+	if (Role < ROLE_Authority)
+	{
+		ServerNewMoveKick();
 	}
 }
 void AGammaCharacter::ServerNewMoveKick_Implementation()
@@ -837,12 +839,6 @@ bool AGammaCharacter::ServerNewMoveKick_Validate()
 // DISENGAGE LE KICK
 void AGammaCharacter::DisengageKick()
 {
-	if (Role == ROLE_AutonomousProxy)
-	{
-		ServerDisengageKick();
-		return;
-	}
-
 	bBoosting = false;
 	bCharging = false;
 
@@ -861,6 +857,11 @@ void AGammaCharacter::DisengageKick()
 		ActiveChargeParticles->Destroy();
 		ActiveChargeParticles = nullptr;
 	}
+
+	if (Role < ROLE_Authority)
+	{
+		ServerDisengageKick();
+	}
 }
 void AGammaCharacter::ServerDisengageKick_Implementation()
 {
@@ -875,10 +876,9 @@ bool AGammaCharacter::ServerDisengageKick_Validate()
 // LE KICK PROPULSION
 void AGammaCharacter::KickPropulsion()
 {
-	if (Role == ROLE_AutonomousProxy)
+	if (Role == ROLE_SimulatedProxy)
 	{
 		ServerKickPropulsion();
-		return;
 	}
 
 	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
@@ -939,7 +939,7 @@ void AGammaCharacter::KickPropulsion()
 			//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
 			//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
 			//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("vel  %f"), (GetCharacterMovement()->Velocity.Size())));
-			//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("time scalar   %f"), TimeScalar));
+			//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("kick   %f"), KickVector.Size()));
 		}
 		else
 		{
@@ -950,7 +950,6 @@ void AGammaCharacter::KickPropulsion()
 	if (GetCharacterMovement()->Velocity.Size() >= (MaxMoveSpeed * 5.0f))
 	{
 		DisengageKick();
-		return;
 	}
 }
 void AGammaCharacter::ServerKickPropulsion_Implementation()
@@ -1016,12 +1015,6 @@ void AGammaCharacter::RaiseCharge()
 		FVector ChargeSize = FVector(SCharge, SCharge, SCharge);
 		GetCapsuleComponent()->SetWorldScale3D(ChargeSize);
 
-		if (Role < ROLE_Authority)
-		{
-			ServerRaiseCharge();
-			return;
-		}
-
 		// Move boost o.o
 		if (FVector(InputX, 0.0f, InputZ) != FVector::ZeroVector)
 		{
@@ -1054,6 +1047,11 @@ void AGammaCharacter::RaiseCharge()
 		///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("Charging = TRUE"));
 		bCharging = true;
 	}
+
+	if (Role < ROLE_Authority)
+	{
+		ServerRaiseCharge();
+	}
 }
 void AGammaCharacter::ServerRaiseCharge_Implementation()
 {
@@ -1067,6 +1065,14 @@ bool AGammaCharacter::ServerRaiseCharge_Validate()
 // PRE-ATTACK flash spawning
 void AGammaCharacter::InitAttack()
 {
+	bool bCancellingAttack = false;
+	if (ActiveAttack != nullptr)
+	{
+		ActiveAttack->Destroy();
+		NullifyAttack();
+		bCancellingAttack = true;
+	}
+
 	// If we're shooting dry, trigger ChargeBar warning by going sub-zero
 	if ((Charge < ChargeGain) || (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 0.3f))
 	{
@@ -1075,8 +1081,9 @@ void AGammaCharacter::InitAttack()
 	}
 
 	// Conditions for shooting
-	bool bWeaponAllowed = ((GetActiveFlash() == nullptr) && (ActiveAttack == nullptr)) 
-						|| bMultipleAttacks;
+	bool bWeaponAllowed = !bCancellingAttack && 
+		(((GetActiveFlash() == nullptr) && (ActiveAttack == nullptr))
+			|| bMultipleAttacks);
 	bool bFireAllowed = bWeaponAllowed
 						&& (!IsValid(GetActiveFlash()))
 						&& (Charge > 0.0f) && (FlashClass != nullptr);
@@ -1177,7 +1184,7 @@ void AGammaCharacter::ReleaseAttack()
 
 					// Imbue with magnitude by PrefireTimer
 					float PrefireClamped = FMath::Clamp(PrefireTimer, 0.1f, 1.0f);
-					float PrefireCurve = FMath::Square(PrefireClamped) * 2.1f; /// curves out to max ~1
+					float PrefireCurve = FMath::Square(PrefireClamped) * 2.1f;
 					PrefireCurve = FMath::Clamp(PrefireCurve, 0.1f, 1.0f);
 
 					// The attack is born
@@ -1262,7 +1269,7 @@ void AGammaCharacter::FireSecondary()
 				AGAttack* PotentialAttack = Cast<AGAttack>(ActiveSecondary);
 				if (PotentialAttack != nullptr)
 				{
-					PotentialAttack->InitAttack(this, 1, InputZ);
+					PotentialAttack->InitAttack(this, 1.0f, InputZ);
 
 					if (PotentialAttack != nullptr && PotentialAttack->LockedEmitPoint)
 					{
@@ -1360,12 +1367,12 @@ void AGammaCharacter::PowerSlideEngage()
 			Charge = 0.0f;
 		}
 
-		// Attack cancel
-		if (GetActiveFlash() != nullptr)
-		{
-			ClearFlash();
-			PrefireTimer = 0.0f;
-		}
+		//// Attack cancel
+		//if (GetActiveFlash() != nullptr)
+		//{
+		//	ClearFlash();
+		//	PrefireTimer = 0.0f;
+		//}
 
 		// Sprite Scaling
 		float ClampedCharge = FMath::Clamp(Charge * 0.7f, 1.0f, ChargeMax);

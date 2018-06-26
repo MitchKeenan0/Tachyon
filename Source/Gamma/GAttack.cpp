@@ -97,14 +97,19 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	// Scale HitsPerSecond by Magnitude
 	HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 55.0f, 1000.0f);
 
+	// Adjust lethal time by magnitude
+	float NewLethalTime = LethalTime * AttackMagnitude;
+	LethalTime = NewLethalTime;
+
 	//// Last-second update to direction after fire
 	float DirRecalc = ShotDirection * ShootingAngle;
 	if (AngleSweep != 0.0f)
 	{
-		DirRecalc *= (-1.75f * AttackMagnitude);
-		FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
-		LocalForward.Y = 0.0f;
+		DirRecalc *= (-2.1f * AttackMagnitude);
+		FVector LocalForward = GetActorForwardVector(); // .ProjectOnToNormal(FVector::ForwardVector);
+		//LocalForward.Y = 0.0f;
 		FRotator FireRotation = LocalForward.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
+		//FRotator FireRotation = LocalForward.Rotation() + FRotator(InputZ * 21.0f, 0.0f, 0.0f);
 		SetActorRotation(FireRotation);
 	}
 	
@@ -142,16 +147,20 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	if ((OwningShooter != nullptr) && (CurrentMatch != nullptr))
 	{
 		ACharacter* Chara = Cast<ACharacter>(OwningShooter);
-		if (Chara)
+		if (Chara != nullptr)
 		{
 			float RecoilScalar = KineticForce * FMath::Clamp((10.0f * AttackMagnitude), 0.5f, 2.1f);
 			FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
 			FRotator RecoilRotator = LocalForward.Rotation() + FRotator(ShotDirection * ShootingAngle, 0.0f, 0.0f);
 			Chara->GetCharacterMovement()->AddImpulse(RecoilRotator.Vector() * RecoilScalar);
-		}
 
-		bLethal = true;
-		DetectHit(GetActorForwardVector());
+			// Take the first shot
+			HitTimer = (1.0f / HitsPerSecond);
+			bLethal = true;
+			DetectHit(GetActorForwardVector());
+
+			///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("LethalTime:  %f"), LethalTime));
+		}
 	}
 }
 
@@ -179,7 +188,7 @@ void AGAttack::Tick(float DeltaTime)
 			AttackParticles->bSuppressSpawning = true;
 
 			AGammaCharacter* PotentialGamma = Cast<AGammaCharacter>(OwningShooter);
-			if (PotentialGamma)
+			if (PotentialGamma != nullptr)
 			{
 				bool Input = bSecondary;
 				Nullify(Input);
@@ -197,8 +206,9 @@ void AGAttack::Tick(float DeltaTime)
 
 void AGAttack::UpdateAttack(float DeltaTime)
 {
-	bool bTime = (HitTimer >= (1 / HitsPerSecond));
-	if (bTime && !bHit && (OwningShooter != nullptr))
+	bool bTime = (HitTimer >= (1.0f / HitsPerSecond));
+	float TimeSc = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+	if (bTime && !bHit && (OwningShooter != nullptr) && (TimeSc > 0.5f))
 	{
 		DetectHit(GetActorForwardVector());
 	}
@@ -408,7 +418,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 {
 	// Spawn the basic damage smoke
 	float DamageVisualTimer = (1.0f / HitsPerSecond);// *0.5f;
-	if (HitTimer > DamageVisualTimer)
+	if ((numHits == 1.0f) || (HitTimer > DamageVisualTimer))
 	{
 		// 'Freefire' attacks always attach to the hitactor
 		if (!LockedEmitPoint)
@@ -514,7 +524,8 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	bool bTime = (HitTimer >= (1 / HitsPerSecond));
-	if (bTime && !bHit && bLethal && (OtherActor != OwningShooter))
+	float TimeSc = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+	if (bTime && !bHit && bLethal && (OtherActor != OwningShooter) && (TimeSc > 0.5f))
 	{
 		FVector DamageLocation = GetActorLocation() + (OwningShooter->GetActorForwardVector() * RaycastHitRange);
 

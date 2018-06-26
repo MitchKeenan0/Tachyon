@@ -58,7 +58,8 @@ void AGammaAIController::Tick(float DeltaSeconds)
 		}
 
 		// Got a player - stunt on'em
-		if ((Player != nullptr) && IsValid(Player))
+		if ((Player != nullptr) && IsValid(Player)
+			&& (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f))
 		{
 			// Reation time
 			if (ReactionTiming(DeltaSeconds))
@@ -109,22 +110,24 @@ void AGammaAIController::Tick(float DeltaSeconds)
 				int LoopCount = PlayersArray.Num();
 				for (int i = 0; i < LoopCount; ++i)
 				{
-					AActor* TempActor = PlayersArray[i];
-					if (TempActor != nullptr
-						&& TempActor != MyPawn
-						&& TempActor != MyCharacter
-						&& !TempActor->ActorHasTag("Spectator")
-						&& !TempActor->ActorHasTag("Bot"))
+					if (PlayersArray[i] != nullptr)
 					{
-						AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(TempActor);
-						if (PotentialPlayer != nullptr
-							&& PotentialPlayer->ActorHasTag("Player"))
+						AActor* TempActor = PlayersArray[i];
+						if (TempActor != nullptr
+							&& TempActor != MyPawn
+							&& TempActor != MyCharacter
+							&& !TempActor->ActorHasTag("Spectator")
+							&& !TempActor->ActorHasTag("Bot"))
 						{
-							Player = PotentialPlayer;
-							bPlayerFound = true;
-							GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::White,
-							FString::Printf(TEXT("p %s   targeting %s"), *MyCharacter->GetName(), *Player->GetName()));
-							break;
+							AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(TempActor);
+							if ((PotentialPlayer != nullptr)
+								&& PotentialPlayer->ActorHasTag("Player"))
+							{
+								Player = PotentialPlayer;
+								bPlayerFound = true;
+								///GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::White, FString::Printf(TEXT("p %s   targeting %s"), *MyCharacter->GetName(), *Player->GetName()));
+								break;
+							}
 						}
 					}
 				}
@@ -137,17 +140,20 @@ void AGammaAIController::Tick(float DeltaSeconds)
 				{
 					for (int i = 0; i < PlayersArray.Num(); ++i)
 					{
-						AActor* TempActor = PlayersArray[i];
-						if (TempActor != nullptr
-							&& TempActor != MyPawn
-							&& TempActor != MyCharacter)
+						if (PlayersArray[i] != nullptr)
 						{
-							AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(TempActor);
-							if (PotentialPlayer != nullptr)
+							AActor* TempActor = PlayersArray[i];
+							if (TempActor != nullptr
+								&& TempActor != MyPawn
+								&& TempActor != MyCharacter)
 							{
-								Player = PotentialPlayer;
-								bPlayerFound = true;
-								break;
+								AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(TempActor);
+								if (PotentialPlayer != nullptr)
+								{
+									Player = PotentialPlayer;
+									bPlayerFound = true;
+									break;
+								}
 							}
 						}
 					}
