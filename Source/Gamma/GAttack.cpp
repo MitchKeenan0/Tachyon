@@ -416,44 +416,28 @@ void AGAttack::Nullify(int AttackType)
 
 void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 {
-	// Spawn the basic damage smoke
-	float DamageVisualTimer = (1.0f / HitsPerSecond);// *0.5f;
-	if ((numHits == 1.0f) || (HitTimer > DamageVisualTimer))
-	{
-		// 'Freefire' attacks always attach to the hitactor
-		if (!LockedEmitPoint)
-		{
-			SpawnDamage(HitActor, HitPoint);
-		}
-		else // 'Locked' attacks ie. sword
-		{
-			float Rando = FMath::FRand();
-			if (Rando >= 0.5f)
-			{
-				SpawnDamage(HitActor, HitPoint);
-			}
-			else
-			{
-				SpawnDamage(this, HitPoint);
-			}
-		}
-	}
-		
-
 	HitTimer = 0.0f;
-	bool bSpawnDamage = false;
 
 	// Hit another attack?
 	AGAttack* OtherAttack = Cast<AGAttack>(HitActor);
 	if (OtherAttack != nullptr)
 	{
-		if (OtherAttack->OwningShooter != nullptr
-			&& this->OwningShooter != nullptr
-			&& OwningShooter != OtherAttack->OwningShooter)
+		
+		// Qualify that it's not one of ours
+		if ((OwningShooter != nullptr)
+			&& (OtherAttack->OwningShooter != nullptr))
 		{
+			
+			// Return if we hit another of us
+			if (OwningShooter == OtherAttack->OwningShooter)
+			{
+				///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Green, FString::Printf(TEXT("Hit A Mirror:  %f"), 1.0f));
+				return;
+			}
+
 			// Collide off shield
-			if (HitActor->ActorHasTag("Shield")
-				&& !HitActor->ActorHasTag("Obstacle"))
+			if (OtherAttack->ActorHasTag("Shield")
+				&& !OtherAttack->ActorHasTag("Obstacle"))
 			{
 				// Spawn blocked fx
 				if (BlockedClass != nullptr)
@@ -463,7 +447,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 						BlockedClass, GetActorLocation(), GetActorRotation(), SpawnParams);
 				}
 
-				ApplyKnockback(HitActor, HitPoint);
+				ApplyKnockback(OtherAttack, HitPoint);
 
 				bLethal = false;
 				bHit = true;
@@ -480,6 +464,25 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 					ApplyKnockback(PotentialPlayer, HitPoint); // Pending Refactor - add scalar argument to ApKnk!
 				}
 			}
+		}
+	}
+
+	// Spawn the basic damage smoke
+	// 'Freefire' attacks always attach to the hitactor
+	if (!LockedEmitPoint)
+	{
+		SpawnDamage(HitActor, HitPoint);
+	}
+	else // 'Locked' attacks ie. sword
+	{
+		float Rando = FMath::FRand();
+		if (Rando >= 0.5f)
+		{
+			SpawnDamage(HitActor, HitPoint);
+		}
+		else
+		{
+			SpawnDamage(this, HitPoint);
 		}
 	}
 

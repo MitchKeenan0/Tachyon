@@ -189,7 +189,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	class AActor* ActiveBoost = nullptr;
 
-	// Replicated functions
+	// Replicated functions //////////////////////////////////////////
 	void Rematch();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerRematch();

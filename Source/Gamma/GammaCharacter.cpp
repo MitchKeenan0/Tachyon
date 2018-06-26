@@ -104,6 +104,7 @@ AGammaCharacter::AGammaCharacter()
 	// Enable replication on the Sprite component so animations show up when networked
 	GetSprite()->SetIsReplicated(true);
 	bReplicates = true;
+	bReplicateMovement = true;
 
 	// TextRender->SetNetAddressable();
 
@@ -204,38 +205,8 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 	
 	
 
-	if (Controller != nullptr)
+	if ((Controller != nullptr))
 	{
-
-		// Personal Timescale
-		float MyTimeDilation = CustomTimeDilation;
-		
-		// Attacks and Secondary Recovery
-		if (GetWorld() && (MyTimeDilation < 1.0f))
-		{
-			if (GetActiveFlash() != nullptr && IsValid(GetActiveFlash()))
-			{
-				GetActiveFlash()->CustomTimeDilation = MyTimeDilation;
-				GetActiveFlash()->SetLifeSpan(GetActiveFlash()->GetLifeSpan() / MyTimeDilation);
-			}
-			if ((ActiveAttack != nullptr) && IsValid(ActiveAttack))
-			{
-				ActiveAttack->CustomTimeDilation = MyTimeDilation;
-				ActiveAttack->SetLifeSpan(ActiveAttack->GetLifeSpan() / CustomTimeDilation);
-			}
-			if (IsValid(ActiveSecondary) && (ActiveSecondary != nullptr))
-			{
-				ActiveSecondary->CustomTimeDilation = MyTimeDilation;
-				if (ActiveSecondary != nullptr)
-				{
-					ActiveSecondary->SetLifeSpan(ActiveSecondary->GetLifeSpan() / CustomTimeDilation);
-				}
-			}
-		}
-
-		// Personal Recovery
-		float ReturnTime = FMath::FInterpTo(MyTimeDilation, 1.0f, DeltaTime, MyTimeDilation * 100.0f); // t or DeltaTime
-		CustomTimeDilation = FMath::Clamp(ReturnTime, 0.001f, 1.0f);
 		
 		//float GlobalTimeDil = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 		//if (GlobalTimeDil > 0.3f)
@@ -251,12 +222,12 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		float TravelDirection = FMath::Clamp(InputX, -1.0f, 1.0f);
 		if (TravelDirection < 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 15.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 11.0f);
 			Controller->SetControlRotation(Fint);
 		}
 		else if (TravelDirection > 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 15.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 11.0f);
 			Controller->SetControlRotation(Fint);
 		}
 		else
@@ -264,12 +235,12 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			// No Input - finish rotation
 			if (Controller->GetControlRotation().Yaw > 90.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 15.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 11.0f);
 				Controller->SetControlRotation(Fint);
 			}
 			else
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 15.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 11.0f);
 				Controller->SetControlRotation(Fint);
 			}
 		}
@@ -280,23 +251,54 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 		{
 			LocatorScaling();
+
+
+			//// Personal Timescale
+			//float MyTimeDilation = CustomTimeDilation;
+
+			//// Attacks and Secondary Recovery
+			//if (MyTimeDilation < 1.0f)
+			//{
+			//	if (GetActiveFlash() != nullptr && IsValid(GetActiveFlash()))
+			//	{
+			//		GetActiveFlash()->CustomTimeDilation = MyTimeDilation;
+			//		GetActiveFlash()->SetLifeSpan(GetActiveFlash()->GetLifeSpan() / MyTimeDilation);
+			//	}
+			//	if ((ActiveAttack != nullptr) && IsValid(ActiveAttack))
+			//	{
+			//		ActiveAttack->CustomTimeDilation = MyTimeDilation;
+			//		ActiveAttack->SetLifeSpan(ActiveAttack->GetLifeSpan() / CustomTimeDilation);
+			//	}
+			//	if (IsValid(ActiveSecondary) && (ActiveSecondary != nullptr))
+			//	{
+			//		ActiveSecondary->CustomTimeDilation = MyTimeDilation;
+			//		if (ActiveSecondary != nullptr)
+			//		{
+			//			ActiveSecondary->SetLifeSpan(ActiveSecondary->GetLifeSpan() / CustomTimeDilation);
+			//		}
+			//	}
+			//}
+
+			//// Personal Recovery
+			//float ReturnTime = FMath::FInterpTo(MyTimeDilation, 1.0f, DeltaTime, MyTimeDilation * 61.8f); // t or DeltaTime
+			//CustomTimeDilation = FMath::Clamp(ReturnTime, 0.001f, 1.0f);
 		}
 
 		// AfterImage rotation
 		
 	}
 
-	// Move timing and clamp
-	if (GetCharacterMovement() && !bMoved) //  HasAuthority() && 
-	{
-		// Clamp velocity
-		/*float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-		float TimeScalar = FMath::Abs(SlowmoMoveBoost * (1 / TimeDilat));
-		GetCharacterMovement()->Velocity = 
-			GetCharacterMovement()->Velocity.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier * TimeScalar);*/
+	//// Move timing and clamp
+	//if (GetCharacterMovement() && !bMoved) //  HasAuthority() && 
+	//{
+	//	// Clamp velocity
+	//	/*float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+	//	float TimeScalar = FMath::Abs(SlowmoMoveBoost * (1 / TimeDilat));
+	//	GetCharacterMovement()->Velocity = 
+	//		GetCharacterMovement()->Velocity.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier * TimeScalar);*/
 
-		MoveTimer += GetWorld()->DeltaTimeSeconds;
-	}
+	//	MoveTimer += GetWorld()->DeltaTimeSeconds;
+	//}
 }
 
 
@@ -355,9 +357,10 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // *GTimeScale); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 			
-			float ChargeScalar = FMath::Clamp((Charge - 1.0f), 1.0f, ChargeMax);
+			float ChargeScalar = FMath::Clamp((FMath::Sqrt(Charge - 0.9f)), 0.1f, ChargeMax);
 			float SizeScalar = GetCapsuleComponent()->GetComponentScale().Size();
-			float CameraMinimumDistance = 1500 + (150.0f * SizeScalar * ChargeScalar) * CameraDistanceScalar;
+			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.5f;
+			float CameraMinimumDistance = 2100.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * CameraDistanceScalar;
 			float CameraMaxDistance = 1551000.0f;
 
 			// Position by another actor
@@ -513,8 +516,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				FTarget.Roll = 0.0f;
 				
 				// Adjust position to work angle
-				Midpoint.X -= (CameraTiltZ * DesiredCameraDistance) * DeltaTime;
-				Midpoint.Z -= (CameraTiltX * DesiredCameraDistance) * DeltaTime;
+				//Midpoint.X -= (CameraTiltZ * DesiredCameraDistance) * DeltaTime;
+				//Midpoint.Z -= (CameraTiltX * DesiredCameraDistance) * DeltaTime;
 
 				// Make it so
 				CameraBoom->SetWorldLocation(Midpoint);
@@ -612,38 +615,38 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	
 	// Main update
-	if (CustomTimeDilation > 0.1f) /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
+	if ((Controller != nullptr))
 	{
 		UpdateCharacter(DeltaSeconds);
-	}
+		
+		// Update prefire
+		if ((GetActiveFlash() != nullptr) && IsValid(GetActiveFlash()))
+		{
+			PrefireTiming();
+		}
 
-	// Update prefire
-	if ((GetActiveFlash() != nullptr) && IsValid(GetActiveFlash()))
-	{
-		PrefireTiming();
-	}
+		// Update boosting
+		if (bBoosting)
+		{
+			KickPropulsion();
+		}
 
-	// Update boosting
-	if (bBoosting)
-	{
-		KickPropulsion();
-	}
+		// Update charge to catch lost input
+		if (bCharging &&
+			((ActiveAttack == nullptr) || (!IsValid(ActiveAttack)) || (ActiveAttack->IsPendingKillOrUnreachable())))
+		{
+			RaiseCharge();
+			bCharging = false;
+			///GEngine->AddOnScreenDebugMessage(-1, 2.1f, FColor::White, FString::Printf(TEXT("Caught a lost Charge, firing %f"), 1.0f));
+		}
 
-	// Update charge to catch lost input
-	if (bCharging &&
-		((ActiveAttack == nullptr) || (!IsValid(ActiveAttack)) || (ActiveAttack->IsPendingKillOrUnreachable())))
-	{
-		RaiseCharge();
-		bCharging = false;
-		///GEngine->AddOnScreenDebugMessage(-1, 2.1f, FColor::White, FString::Printf(TEXT("Caught a lost Charge, firing %f"), 1.0f));
-	}
-
-	// Update player pitch
-	if (PlayerSound != nullptr)
-	{
-		float VectorScale = FMath::Sqrt(GetCharacterMovement()->Velocity.Size()) * 0.033f;
-		float Scalar = FMath::Clamp(VectorScale, 0.2f, 4.0f) * 0.5f;
-		PlayerSound->SetPitchMultiplier(Scalar);
+		// Update player pitch
+		if (PlayerSound != nullptr)
+		{
+			float VectorScale = FMath::Sqrt(GetCharacterMovement()->Velocity.Size()) * 0.033f;
+			float Scalar = FMath::Clamp(VectorScale, 0.2f, 4.0f) * 0.5f;
+			PlayerSound->SetPitchMultiplier(Scalar);
+		}
 	}
 }
 
@@ -655,88 +658,70 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 // MOVE	LEFT / RIGHT
 void AGammaCharacter::MoveRight(float Value)
 {
-	float ValClamped = FMath::Clamp(Value, -1.0f, 1.0f);
-
-	// Adjust aim to reflect move
-	/// Ignoring no inputs and bots
-	if (!ActorHasTag("Bot")
-		&& !(InputX == 0.0f && ValClamped == 0.0f)) // InputX != ValClamped && 
-	{
-		SetX(ValClamped);
-	}
-
-	if ((MoveTimer >= (1 / MovesPerSecond))
-		&& !bSliding
-		&& CustomTimeDilation > 0.1f) /// UGameplayStatics::GetGlobalTimeDilation(GetWorld()
+	if (!bSliding && (CustomTimeDilation > 0.1f))
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = GetMovementComponent()->Velocity;
 		FVector VNorm = CurrentV.GetSafeNormal();
-		
+
 		// Move by dot product for skating effect
-		if (InputX != 0.0f)
+		if ((MoveInput != FVector::ZeroVector)
+			&& (Controller != nullptr))
 		{
 			float MoveByDot = 0.0f;
 			float DeltaTime = GetWorld()->DeltaTimeSeconds;
 			float DotToInput = (FVector::DotProduct(MoveInput, VNorm));
 			float AngleToInput = FMath::Acos(DotToInput);
 
+			// Effect Move
 			float TurnScalar = MoveSpeed + FMath::Square(TurnSpeed * AngleToInput);
 			MoveByDot = MoveSpeed * TurnScalar;
-			
-			GetCharacterMovement()->MaxAcceleration = MoveByDot;
-			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * MoveByDot); // ValClamped
-
-			///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("x: %f"), MoveByDot));
+			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * MoveByDot, true);
 		}
 	}
 
-	
-	ForceNetUpdate();
+	// Adjust aim to reflect move
+	float ValClamped = FMath::Clamp(Value, -1.0f, 1.0f);
+	if (!ActorHasTag("Bot")
+		&& !(InputX == 0.0f && ValClamped == 0.0f))
+	{
+		SetX(ValClamped);
+	}
 }
 
 // MOVE UP / DOWN
 void AGammaCharacter::MoveUp(float Value)
 {
-	float ValClamped = FMath::Clamp(Value, -1.0f, 1.0f);
-
-	// Adjust aim to reflect move
-	/// Ignoring no inputs and bots
-	if (!ActorHasTag("Bot")
-		&& !(InputZ == 0.0f && ValClamped == 0.0f)) // InputZ != ValClamped && 
-	{
-		SetZ(ValClamped);
-	}
-
-	// Abide moves per second
-	if ((MoveTimer >= (1 / MovesPerSecond))
-		&& !bSliding
-		&& CustomTimeDilation > 0.1f) /// UGameplayStatics::GetGlobalTimeDilation(GetWorld()) 
+	if (!bSliding && (CustomTimeDilation > 0.1f))
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = GetMovementComponent()->Velocity;
 		FVector VNorm = CurrentV.GetSafeNormal();
 
 		// Move by dot product for skating effect
-		if (MoveInput != FVector::ZeroVector)
+		if ((MoveInput != FVector::ZeroVector)
+			&& (Controller != nullptr))
 		{
 			float MoveByDot = 0.0f;
 			float DeltaTime = GetWorld()->DeltaTimeSeconds;
 			float DotToInput = (FVector::DotProduct(MoveInput, VNorm));
 			float AngleToInput = FMath::Acos(DotToInput);
 
+			// Effect move
 			float TurnScalar = MoveSpeed + FMath::Square(TurnSpeed * AngleToInput);
 			MoveByDot = MoveSpeed * TurnScalar;
-			
-			GetCharacterMovement()->MaxAcceleration = MoveByDot;
-			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot);
-
-			///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("z: %f"), MoveByDot));
+			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot, true);
 		}
 	}
 
-	
-	ForceNetUpdate();
+	// Adjust aim to reflect move
+	/// Ignoring no inputs and bots
+	float ValClamped = FMath::Clamp(Value, -1.0f, 1.0f);
+	if (!ActorHasTag("Bot")
+		&& !((InputZ == 0.0f) && (ValClamped == 0.0f)))
+	{
+		SetZ(ValClamped);
+	}
 }
 
 // SET X & Z SERVERSIDE
@@ -744,32 +729,30 @@ void AGammaCharacter::SetX(float Value)
 {
 	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 	{
+		// Get delta move value
+		float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(x));
+		float ValClamped = FMath::Clamp(DeltaVal, 0.01f, 1.0f);
+		InputX = (Value + (Value * ValClamped));
+
+		// Update delta
+		x = Value;
+
+		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("x: %f"), InputX));
+
+		if (ActorHasTag("Bot"))
+		{
+			MoveRight(InputX);
+		}
+	}
+
+	if (Role < ROLE_Authority)
+	{
 		ServerSetX(Value);
 	}
 }
 void AGammaCharacter::ServerSetX_Implementation(float Value)
 {
-	// Get delta move value
-	float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(x));
-	float ValClamped = FMath::Clamp(DeltaVal, 0.1f, 1.0f); // DeltaVal * 0.68f
-	//float TimeScaleInfluence = 1 + FMath::Abs(1 - CustomTimeDilation); /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
-	InputX = (Value + (Value * ValClamped));
-
-	// Speed and Acceleration
-	//float ChargeScalar = FMath::Square(FMath::Clamp(Charge, 1.0f, ChargeMax));
-	/*float Scalar = FMath::Abs(InputX);
-	GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * FMath::Square(Scalar);
-	GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar) + TurnSpeed;*/
-
-	///GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("X:  %f"), Scalar));
-
-	// Update delta
-	x = Value;
-
-	if (ActorHasTag("Bot"))
-	{
-		MoveRight(InputX);
-	}
+	SetX(Value);
 }
 bool AGammaCharacter::ServerSetX_Validate(float Value)
 {
@@ -781,32 +764,30 @@ void AGammaCharacter::SetZ(float Value)
 {
 	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 	{
+		// Get move input Delta
+		float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(z));
+		float ValClamped = FMath::Clamp(DeltaVal, 0.01f, 1.0f);
+		InputZ = (Value + (Value * ValClamped));
+
+		// Update delta
+		z = Value;
+
+		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("z: %f"), InputZ));
+
+		if (ActorHasTag("Bot"))
+		{
+			MoveUp(InputZ);
+		}
+	}
+
+	if (Role < ROLE_Authority)
+	{
 		ServerSetZ(Value);
 	}
 }
 void AGammaCharacter::ServerSetZ_Implementation(float Value)
 {
-	// Get move input Delta
-	float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(z));
-	float ValClamped = FMath::Clamp(DeltaVal, 0.1f, 1.0f); // DeltaVal * 0.68f
-	//float TimeScaleInfluence = 1 + FMath::Abs(1 - CustomTimeDilation); /// UGameplayStatics::GetGlobalTimeDilation(GetWorld())
-	InputZ = (Value + (Value * ValClamped));
-
-	// Speed and Acceleration
-	//float ChargeScalar = FMath::Square(FMath::Clamp(Charge, 1.0f, ChargeMax));
-	//float Scalar = FMath::Abs(InputZ);
-	//GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed * FMath::Square(Scalar);
-	//GetCharacterMovement()->MaxAcceleration = MoveSpeed * FMath::Square(Scalar) + TurnSpeed;
-
-	///GEngine->AddOnScreenDebugMessage(-1, DeltaVal, FColor::Green, FString::Printf(TEXT("Z:  %f"), Scalar));
-
-	// Update delta
-	z = Value;
-	
-	if (ActorHasTag("Bot"))
-	{
-		MoveUp(InputZ);
-	}
+	SetZ(Value);
 }
 bool AGammaCharacter::ServerSetZ_Validate(float Value)
 {
@@ -993,7 +974,6 @@ bool AGammaCharacter::ServerUpdateMoveParticles_Validate(FVector Move)
 void AGammaCharacter::RaiseCharge()
 {
 	if ((UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
-		&& (Charge <= (ChargeMax - ChargeGain))
 		&& (((ActiveAttack == nullptr) && !IsValid(ActiveAttack) || ActiveAttack->IsPendingKillOrUnreachable())
 			|| bMultipleAttacks)
 		)
@@ -1004,7 +984,7 @@ void AGammaCharacter::RaiseCharge()
 		}
 
 		// Charge growth
-		if (Charge < ChargeMax)
+		if (Charge <= (ChargeMax - ChargeGain))
 		{
 			Charge += ChargeGain;
 		}
@@ -1065,8 +1045,9 @@ bool AGammaCharacter::ServerRaiseCharge_Validate()
 // PRE-ATTACK flash spawning
 void AGammaCharacter::InitAttack()
 {
+	// Attack cancel for single shooters already shooting
 	bool bCancellingAttack = false;
-	if (ActiveAttack != nullptr)
+	if ((ActiveAttack != nullptr) && !bMultipleAttacks)
 	{
 		ActiveAttack->Destroy();
 		NullifyAttack();

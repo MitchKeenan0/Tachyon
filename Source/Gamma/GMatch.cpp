@@ -26,13 +26,17 @@ void AGMatch::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// On gg wait for gg delay before freezing time
-	if (bGG && (GGDelayTimer <= GGDelayTime))
+	/*if (bGG && (GGDelayTimer <= GGDelayTime))
 	{
 		GGDelayTimer += DeltaTime;
-	}
+	}*/
 
 	// Maintain fix on players
-	GetPlayers();
+	if (!bGG)
+	{
+		GetPlayers();
+	}
+	
 
 	// Timescaling
 	/*if (Role == ROLE_Authority)
@@ -60,15 +64,14 @@ bool AGMatch::PlayersAccountedFor()
 void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 {
 	// Player killer
-	if (!bGG && (HitActor->ActorHasTag("Player") || (HitActor->ActorHasTag("Bot")))) // || UGameplayStatics::GetGlobalTimeDilation(GetWorld()) >= 0.9f
+	if (!bGG && 
+		(HitActor->ActorHasTag("Player") || (HitActor->ActorHasTag("Bot")))) // || UGameplayStatics::GetGlobalTimeDilation(GetWorld()) >= 0.9f
 	{
 		AGammaCharacter* Reciever = Cast<AGammaCharacter>(HitActor);
-		if (Reciever != nullptr)
+		if ((Reciever != nullptr))
 		{
-			/*FTimerHandle UnusedHandle;
-			GetWorldTimerManager().SetTimer(UnusedHandle, 1.0f, false, 0.1f);*/
-
-			// End of game
+			
+			// End of game?
 			if (Reciever->GetHealth() <= 0.0f)
 			{
 				if (!(Reciever->ActorHasTag("Bot")))
@@ -85,11 +88,10 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 					}
 
 					// Transfer timescaling to global
-					HitActor->CustomTimeDilation = 1.0f;
-					Winner->CustomTimeDilation = 1.0f;
+					//HitActor->CustomTimeDilation = 1.0f;
+					//Winner->CustomTimeDilation = 1.0f;
 					SetTimeScale(GGTimescale);
-
-					bReturn = false;
+					ForceNetUpdate();
 
 					// Award winner with a star ;P
 					AGammaCharacter* WinnerPlayer = Cast<AGammaCharacter>(Winner);
@@ -113,7 +115,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 					Reciever->NullifyAttack();
 					Reciever->NullifySecondary();
 					Reciever->ClearFlash();
-					
+
 					Reciever->Destroy();
 					if (Reciever == LocalPlayer)
 					{
@@ -126,33 +128,28 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 					Reciever = nullptr;
 				}
 			}
-			
-		}
-		if (!bGG &&
-			((Winner != nullptr) && (HitActor != nullptr)
-				|| HitActor->ActorHasTag("Hittable")))
-		{
 
 			// Just a hit -- Reduce timescale per hit towards bottomTime
-			bMinorGG = true;
+			/*if (!bGG &&
+				((Winner != nullptr) && (HitActor != nullptr)
+					|| HitActor->ActorHasTag("Hittable"))
+				&& (!HasAuthority()))
+			{
+				float CurrentTScale = (HitActor->CustomTimeDilation + Winner->CustomTimeDilation) * 0.5f;
+				float NewTScale = CurrentTScale * 0.21f;
+				float BottomTScale = (1 + GGTimescale) * 0.1f;
+				NewTScale = FMath::Clamp(NewTScale, BottomTScale, 1.0f);
 
-			float CurrentTScale = (HitActor->CustomTimeDilation + Winner->CustomTimeDilation) * 0.5f;
-			float NewTScale = CurrentTScale * 0.21f;
-			float BottomTScale = (1 + GGTimescale) * 0.1f;
-			NewTScale = FMath::Clamp(NewTScale, BottomTScale, 1.0f);
+				HitActor->CustomTimeDilation = NewTScale;
+				Winner->CustomTimeDilation = NewTScale;
+				bReturn = true;
 
-			HitActor->CustomTimeDilation = NewTScale;
-			Winner->CustomTimeDilation = NewTScale;
-			bReturn = true;
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("timeScale:  %f"), NewTScale));
+			}*/
 		}
 	}
 
-	// Mob killer
-	if (HitActor->ActorHasTag("NoKill"))
-	{
-		bMinorGG = true;
-		bReturn = true;
-	}
+	ForceNetUpdate();
 }
 
 
@@ -165,6 +162,7 @@ void AGMatch::HandleTimeScale(float Delta)
 		//TimeToSet = GGTimescale;
 		GGDelayTimer = 0.0f;
 	}
+
 	//else
 	//{
 	//	// Recovery timescale interpolation
@@ -252,6 +250,7 @@ void AGMatch::HandleTimeScale(float Delta)
 void AGMatch::SetTimeScale(float Time)
 {
 	UGameplayStatics::SetGlobalTimeDilation(this->GetWorld(), Time);
+	ForceNetUpdate();
 }
 
 
