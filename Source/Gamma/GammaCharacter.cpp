@@ -117,13 +117,14 @@ AGammaCharacter::AGammaCharacter()
 void AGammaCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(InputComponent);
-	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AGammaCharacter::InitAttack);
-	PlayerInputComponent->BindAction("Attack", IE_Released, this, &AGammaCharacter::ReleaseAttack);
+	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AGammaCharacter::CheckAttackOn);
+	PlayerInputComponent->BindAction("Attack", IE_Released, this, &AGammaCharacter::CheckAttackOff);
 	PlayerInputComponent->BindAction("PowerSlide", IE_Pressed, this, &AGammaCharacter::CheckPowerSlideOn);
 	PlayerInputComponent->BindAction("PowerSlide", IE_Released, this, &AGammaCharacter::CheckPowerSlideOff);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AGammaCharacter::RaiseCharge);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AGammaCharacter::DisengageKick);
-	PlayerInputComponent->BindAction("Secondary", IE_Pressed, this, &AGammaCharacter::FireSecondary);
+	PlayerInputComponent->BindAction("Secondary", IE_Pressed, this, &AGammaCharacter::CheckSecondaryOn);
+	PlayerInputComponent->BindAction("Secondary", IE_Released, this, &AGammaCharacter::CheckSecondaryOff);
 	PlayerInputComponent->BindAction("Rematch", IE_Pressed, this, &AGammaCharacter::Rematch);
 
 	PlayerInputComponent->BindAxis("MoveRight", this, &AGammaCharacter::MoveRight);
@@ -619,7 +620,24 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	if ((Controller != nullptr))
 	{
 		UpdateCharacter(DeltaSeconds);
+	
+
+		if (bShooting)
+		{
+			InitAttack();
+		}
 		
+		if (!bShooting && (PrefireTimer > 0.0f))
+		{
+			ReleaseAttack();
+		}
+
+		if (bShielding)
+		{
+			FireSecondary();
+			//bShielding = false;
+		}
+
 		// Update prefire
 		if ((GetActiveFlash() != nullptr) && IsValid(GetActiveFlash()))
 		{
@@ -1128,7 +1146,7 @@ void AGammaCharacter::ReleaseAttack()
 		&& (GetActiveSecondary() == nullptr)
 		&& (Charge > 0.0f)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
-		&& ((PrefireTimer >= 0.001f && ActiveFlash != nullptr)))
+		&& ((PrefireTimer >= 0.001f && (ActiveFlash != nullptr))))
 	{
 		// Clean up previous flash
 		if ((GetActiveFlash() != nullptr))
@@ -1180,6 +1198,8 @@ void AGammaCharacter::ReleaseAttack()
 					{
 						ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
 					}
+
+					///GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, FString::Printf(TEXT("PrefireTimer:  %f"), PrefireTimer));
 				}
 			}
 			else
@@ -1257,6 +1277,8 @@ void AGammaCharacter::FireSecondary()
 					{
 						PotentialAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
 					}
+
+					bShielding = false;
 				}
 			}
 		}
@@ -1280,26 +1302,23 @@ bool AGammaCharacter::ServerFireSecondary_Validate()
 // PREFIRE TIMING
 void AGammaCharacter::PrefireTiming()
 {
+	if ((GetActiveFlash() != nullptr)
+		&& (PrefireTimer < PrefireTime))
+	{
+		PrefireTimer += GetWorld()->GetDeltaSeconds() * CustomTimeDilation;
+		///GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::White, FString::Printf(TEXT("ADDING TO PREFIRE T: %f"), PrefireTimer));
+	}
+	else if ((PrefireTimer >= PrefireTime)
+		&& (Charge > 0)
+		&& (ActiveAttack == nullptr)
+		&& (ActiveFlash != nullptr))
+	{
+		ReleaseAttack();
+	}
+
 	if (Role < ROLE_Authority)
 	{
 		ServerPrefireTiming();
-	}
-	else
-	{
-		if (GetActiveFlash() != nullptr
-			&& PrefireTimer < PrefireTime)
-		{
-			PrefireTimer += GetWorld()->GetDeltaSeconds() * CustomTimeDilation;
-			//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("PREFIRE T: %f"), PrefireTimer));
-		}
-		else if ((PrefireTimer >= PrefireTime)
-			&& (Charge > 0)
-			&& ActiveAttack == nullptr
-			&& ActiveFlash != nullptr)
-		{
-			ReleaseAttack();
-		}
-		
 	}
 }
 void AGammaCharacter::ServerPrefireTiming_Implementation()
@@ -1310,6 +1329,130 @@ bool AGammaCharacter::ServerPrefireTiming_Validate()
 {
 	return true;
 }
+
+
+// ATTACK PRIMING
+void AGammaCharacter::CheckAttackOn()
+{
+	if (!bShooting)
+	{
+		ArmAttack();
+	}
+}
+void AGammaCharacter::CheckAttackOff()
+{
+	if ((PrefireTimer > 0.0f)
+		|| GetActiveFlash() != nullptr)
+	{
+		ReleaseAttack();
+	}
+
+	DisarmAttack();
+}
+
+
+void AGammaCharacter::ArmAttack()
+{
+	if (!bShooting)
+	{
+		bShooting = true;
+	}
+
+	if (Role < ROLE_Authority)
+	{
+		ServerArmAttack();
+	}
+}
+void AGammaCharacter::ServerArmAttack_Implementation()
+{
+	ArmAttack();
+}
+bool AGammaCharacter::ServerArmAttack_Validate()
+{
+	return true;
+}
+
+void AGammaCharacter::DisarmAttack()
+{
+	if (bShooting)
+	{
+		bShooting = false;
+	}
+
+	if (Role < ROLE_Authority)
+	{
+		ServerDisarmAttack();
+	}
+}
+void AGammaCharacter::ServerDisarmAttack_Implementation()
+{
+	DisarmAttack();
+}
+bool AGammaCharacter::ServerDisarmAttack_Validate()
+{
+	return true;
+}
+
+
+// SECONDARY PRIMING
+void AGammaCharacter::CheckSecondaryOn()
+{
+	if (!bShielding)
+	{
+		ArmSecondary();
+	}
+}
+void AGammaCharacter::CheckSecondaryOff()
+{
+	if (bShielding)
+	{
+		DisarmSecondary();
+	}
+}
+
+void AGammaCharacter::ArmSecondary()
+{
+	if (!bShielding)
+	{
+		bShielding = true;
+	}
+
+	if (Role < ROLE_Authority)
+	{
+		ServerArmSecondary();
+	}
+}
+void AGammaCharacter::ServerArmSecondary_Implementation()
+{
+	ArmSecondary();
+}
+bool AGammaCharacter::ServerArmSecondary_Validate()
+{
+	return true;
+}
+
+void AGammaCharacter::DisarmSecondary()
+{
+	if (bShielding)
+	{
+		bShielding = false;
+	}
+
+	if (Role < ROLE_Authority)
+	{
+		ServerDisarmSecondary();
+	}
+}
+void AGammaCharacter::ServerDisarmSecondary_Implementation()
+{
+	DisarmSecondary();
+}
+bool AGammaCharacter::ServerDisarmSecondary_Validate()
+{
+	return true;
+}
+
+
 
 
 // POWER SLIDE
@@ -1487,6 +1630,8 @@ void AGammaCharacter::GetLifetimeReplicatedProps(TArray <FLifetimeProperty> & Ou
 	DOREPLIFETIME(AGammaCharacter, MoveTimer);
 	DOREPLIFETIME(AGammaCharacter, bSliding);
 	DOREPLIFETIME(AGammaCharacter, bBoosting);
+	DOREPLIFETIME(AGammaCharacter, bShooting);
+	DOREPLIFETIME(AGammaCharacter, bShielding);
 
 	DOREPLIFETIME(AGammaCharacter, Charge);
 	DOREPLIFETIME(AGammaCharacter, bCharging);

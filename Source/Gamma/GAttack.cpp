@@ -527,8 +527,9 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	bool bTime = (HitTimer >= (1 / HitsPerSecond));
+	bool bActors = (OwningShooter != nullptr) && (OtherActor != nullptr);
 	float TimeSc = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
-	if (bTime && !bHit && bLethal && (OtherActor != OwningShooter) && (TimeSc > 0.5f))
+	if (bTime && bActors && !bHit && bLethal && (OtherActor != OwningShooter) && (TimeSc > 0.5f))
 	{
 		FVector DamageLocation = GetActorLocation() + (OwningShooter->GetActorForwardVector() * RaycastHitRange);
 

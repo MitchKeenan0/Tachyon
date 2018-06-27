@@ -210,6 +210,22 @@ protected:
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation) // see chrome
 	void ServerNewMoveKick();
 
+	void ArmAttack();
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerArmAttack();
+
+	void DisarmAttack();
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerDisarmAttack();
+
+	void ArmSecondary();
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerArmSecondary();
+
+	void DisarmSecondary();
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerDisarmSecondary();
+
 	void KickPropulsion();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerKickPropulsion();
@@ -253,6 +269,12 @@ public:
 	// Handoff functions to avoid net saturation
 	void CheckPowerSlideOn();
 	void CheckPowerSlideOff();
+
+	void CheckAttackOn();
+	void CheckAttackOff();
+
+	void CheckSecondaryOn();
+	void CheckSecondaryOff();
 
 	void PowerSlideEngage();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
@@ -314,6 +336,10 @@ protected:
 	bool bSliding = false;
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
 	bool bBoosting = false;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	bool bShooting = false;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	bool bShielding = false;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
 	float Charge = 0.0f;

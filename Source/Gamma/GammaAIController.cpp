@@ -279,23 +279,25 @@ void AGammaAIController::Tactical(FVector Target)
 					&& (ToPlayer.Size() <= SecondaryRange)
 					&& !MyCharacter->GetActiveSecondary())
 				{
-					MyCharacter->FireSecondary();
+					MyCharacter->CheckSecondaryOn();
 				}
 				else
 				{
 					// Init Attack
-					if ((MyCharacter->GetActiveFlash() == nullptr)
-						&& ToPlayer.Size() <= PrimaryRange)
+					if (ToPlayer.Size() <= PrimaryRange)
 					{
-						MyCharacter->InitAttack();
-						if (RangeToPlayer <= 1000.0f)
+						if (MyCharacter->GetActiveFlash() == nullptr)
 						{
-							MyCharacter->ReleaseAttack();
+							MyCharacter->CheckAttackOn();
+						}
+						else
+						{
+							MyCharacter->CheckAttackOff(); /// will trigger an attack if prefire-timer > 0
 						}
 					}
 					else
 					{
-						MyCharacter->ReleaseAttack();
+						MyCharacter->CheckAttackOff();
 					}
 				}
 			}
