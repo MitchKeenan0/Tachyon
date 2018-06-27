@@ -649,6 +649,10 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		{
 			KickPropulsion();
 		}
+		else if (GetActiveBoost() != nullptr)
+		{
+			DisengageKick();
+		}
 
 		// Update charge to catch lost input
 		if (bCharging &&
@@ -839,24 +843,30 @@ bool AGammaCharacter::ServerNewMoveKick_Validate()
 // DISENGAGE LE KICK
 void AGammaCharacter::DisengageKick()
 {
-	bBoosting = false;
-	bCharging = false;
-
 	// Clear existing boost object
 	if (ActiveBoost != nullptr)
 	{
-		ActiveBoost->Destroy();
-		ActiveBoost = nullptr;
+		if (ActiveBoost->GetGameTimeSinceCreation() >= 0.33f)
+		{
+			ActiveBoost->Destroy();
+			ActiveBoost = nullptr;
+			
+			
+
+			// Clear existing charge object
+			if (ActiveChargeParticles != nullptr)
+			{
+				ActiveChargeParticles->Destroy();
+				ActiveChargeParticles = nullptr;
+			}
+
+			GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, TEXT("DISENGAGE BOOST"));
+		}
 	}
 
-	// Clear existing charge object
-	if ((ActiveChargeParticles != nullptr))
-		/* && (IsValid(ActiveChargeParticles)) 
-		&& (!ActiveChargeParticles->IsPendingKillOrUnreachable()) */
-	{
-		ActiveChargeParticles->Destroy();
-		ActiveChargeParticles = nullptr;
-	}
+	bBoosting = false;
+	bCharging = false;
+
 
 	if (Role < ROLE_Authority)
 	{
@@ -881,6 +891,9 @@ void AGammaCharacter::KickPropulsion()
 		ServerKickPropulsion();
 	}
 
+	FVector MoveInputVector = FVector::ZeroVector;
+	FVector KickVector = FVector::ZeroVector;
+
 	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
 	{
 
@@ -890,7 +903,7 @@ void AGammaCharacter::KickPropulsion()
 			&& (GetCharacterMovement() != nullptr))
 		{
 			// Algo scaling for timescale & max velocity
-			FVector MoveInputVector = FVector(InputX, 0.0f, InputZ * 0.75f).GetSafeNormal();
+			MoveInputVector = FVector(InputX, 0.0f, InputZ * 0.75f).GetSafeNormal();
 			FVector CurrentVelocity = GetCharacterMovement()->Velocity;
 			float TimeDelta = CustomTimeDilation; // (GetWorld()->DeltaTimeSeconds / CustomTimeDilation)
 			float DeltaTime = GetWorld()->DeltaTimeSeconds;
@@ -899,7 +912,7 @@ void AGammaCharacter::KickPropulsion()
 
 			// Force, clamp, & effect chara movement
 			float ChargeScalar = FMath::Sqrt(FMath::Clamp(Charge, 0.1f, 1.0f));
-			FVector KickVector = MoveInputVector
+			KickVector = MoveInputVector
 				* MoveFreshMultiplier
 				* 1000.0f ///previously RelativityToMaxSpeed
 				* TimeDelta
@@ -914,25 +927,6 @@ void AGammaCharacter::KickPropulsion()
 			//bMoved = false;
 			//MoveTimer = 0.0f;
 
-			// Spawn visuals
-			if ((BoostClass != nullptr) && (ActiveBoost == nullptr))
-			{
-				// Initial kick
-				GetCharacterMovement()->AddImpulse(KickVector * 3.33f);
-
-				// Set up Kick Visuals direction
-				FActorSpawnParameters SpawnParams;
-				FVector PlayerVelocity = GetCharacterMovement()->Velocity;
-				FRotator PlayerVelRotator = PlayerVelocity.Rotation();
-				FRotator InputRotator = MoveInputVector.Rotation();
-				PlayerVelocity.Z *= 0.01f;
-				FVector SpawnLocation = GetActorLocation() + (FVector::UpVector * 10.0f); /// + (PlayerVelocity / 3);
-
-				// Spawn the visuals
-				ActiveBoost = GetWorld()->SpawnActor<AActor>
-					(BoostClass, SpawnLocation, InputRotator, SpawnParams); /// PlayerVelRotator
-			}
-
 			ForceNetUpdate();
 
 			//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("MoveInputVector  %f"), MoveInputVector.Size()));
@@ -944,6 +938,25 @@ void AGammaCharacter::KickPropulsion()
 		else
 		{
 			DisengageKick();
+		}
+
+		// Spawn visuals
+		if ((BoostClass != nullptr) && (ActiveBoost == nullptr))
+		{
+			// Initial kick
+			GetCharacterMovement()->AddImpulse(KickVector * 3.33f);
+
+			// Set up Kick Visuals direction
+			FActorSpawnParameters SpawnParams;
+			FVector PlayerVelocity = GetCharacterMovement()->Velocity;
+			FRotator PlayerVelRotator = PlayerVelocity.Rotation();
+			FRotator InputRotator = MoveInputVector.Rotation();
+			PlayerVelocity.Z *= 0.01f;
+			FVector SpawnLocation = GetActorLocation() + (FVector::UpVector * 10.0f); /// + (PlayerVelocity / 3);
+
+																					  // Spawn the visuals
+			ActiveBoost = GetWorld()->SpawnActor<AActor>
+				(BoostClass, SpawnLocation, InputRotator, SpawnParams); /// PlayerVelRotator
 		}
 	}
 
@@ -1074,7 +1087,7 @@ void AGammaCharacter::InitAttack()
 	}
 
 	// If we're shooting dry, trigger ChargeBar warning by going sub-zero
-	if ((Charge < ChargeGain) || (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 0.3f))
+	if (Charge < ChargeGain)
 	{
 		Charge = (-1.0f);
 		return;
@@ -1082,6 +1095,7 @@ void AGammaCharacter::InitAttack()
 
 	// Conditions for shooting
 	bool bWeaponAllowed = !bCancellingAttack && 
+		(GetActiveBoost() == nullptr) && 
 		(((GetActiveFlash() == nullptr) && (ActiveAttack == nullptr))
 			|| bMultipleAttacks);
 	bool bFireAllowed = bWeaponAllowed
@@ -1090,14 +1104,6 @@ void AGammaCharacter::InitAttack()
 
 	if (bFireAllowed)
 	{
-
-		// Singleton shooters, clean up first
-		/*if (!bMultipleAttacks &&
-			((ActiveAttack != nullptr) && (IsValid(ActiveAttack))))
-		{
-			ActiveAttack->Nullify(0);
-		}*/
-		
 		// Direction & setting up
 		float AimClampedInputZ = FMath::Clamp((InputZ * 10.0f), -1.0f, 1.0f);
 		FVector FirePosition = AttackScene->GetComponentLocation();
