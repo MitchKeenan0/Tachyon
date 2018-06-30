@@ -195,16 +195,16 @@ protected:
 	void ServerRematch();
 
 	public:
-	void SetX(float Value);
+	void SetX(float Value, float MoveScalar);
 	protected:
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
-	void ServerSetX(float Value);
+	void ServerSetX(float Value, float MoveScalar);
 	
 	public:
-	void SetZ(float Value);
+	void SetZ(float Value, float MoveScalar);
 	protected:
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
-	void ServerSetZ(float Value);
+	void ServerSetZ(float Value, float MoveScalar);
 
 	void NewMoveKick();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation) // see chrome
@@ -233,6 +233,11 @@ protected:
 	void UpdateMoveParticles(FVector Move);
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerUpdateMoveParticles(FVector Move);
+
+	void RecoverTimescale(float DeltaTime);
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerRecoverTimescale(float DeltaTime);
+
 
 public:
 	AActor* GetActiveFlash() { return ActiveFlash; }
@@ -319,6 +324,8 @@ protected:
 	// Replicated variables
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
 	float Health = 100.0f;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
+	float Timescale = 1.0f;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadOnly)
 	float InputX = 0.0f;

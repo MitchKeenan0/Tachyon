@@ -64,23 +64,23 @@ bool AGMatch::PlayersAccountedFor()
 void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 {
 	// Player killer
-	if (!bGG && 
-		(HitActor->ActorHasTag("Player") || (HitActor->ActorHasTag("Bot")))) // || UGameplayStatics::GetGlobalTimeDilation(GetWorld()) >= 0.9f
+	if (!bGG && (HitActor->ActorHasTag("Player") || (HitActor->ActorHasTag("Bot"))))
 	{
 		AGammaCharacter* Reciever = Cast<AGammaCharacter>(HitActor);
-		if ((Reciever != nullptr))
+		AGammaCharacter* Shooter = Cast<AGammaCharacter>(Winner);
+		if ((Reciever != nullptr) && (Shooter != nullptr))
 		{
-			
 			// End of game?
 			if (Reciever->GetHealth() <= 0.0f)
 			{
-				if (!(Reciever->ActorHasTag("Bot")))
+				if ((!Reciever->ActorHasTag("Bot"))
+					|| (Shooter->ActorHasTag("Bot")))
 				{
 					bGG = true;
 
 					//Calcify killed HitActor
 					UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
-						(HitActor->FindComponentByClass<UPaperFlipbookComponent>());
+						(Reciever->FindComponentByClass<UPaperFlipbookComponent>());
 					if (ActorFlipbook != nullptr)
 					{
 						float CurrentPosition = FMath::FloorToInt(ActorFlipbook->GetPlaybackPosition());
@@ -94,12 +94,8 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 					ForceNetUpdate();
 
 					// Award winner with a star ;P
-					AGammaCharacter* WinnerPlayer = Cast<AGammaCharacter>(Winner);
-					if (WinnerPlayer != nullptr)
-					{
-						FString DecoratedName = FString(WinnerPlayer->GetCharacterName().Append(" *"));
-						WinnerPlayer->SetCharacterName(DecoratedName);
-					}
+					FString DecoratedName = FString(Shooter->GetCharacterName().Append(" *"));
+					Shooter->SetCharacterName(DecoratedName);
 
 
 					// Clear shot-out NPCs
@@ -128,27 +124,24 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 					Reciever = nullptr;
 				}
 			}
-
-			// Just a hit -- Reduce timescale per hit towards bottomTime
-			if (!bGG &&
-				((Winner != nullptr) && (HitActor != nullptr)
-					|| HitActor->ActorHasTag("Hittable")))
+			else
 			{
-				float CurrentTScale = (HitActor->CustomTimeDilation + Winner->CustomTimeDilation) * 0.5f;
-				float NewTScale = CurrentTScale * 0.21f;
-				float BottomTScale = (1 + GGTimescale) * 0.1f;
-				NewTScale = FMath::Clamp(NewTScale, BottomTScale, 1.0f);
+				// Hit-confirm timescaling
+				float CurrentTScale = Shooter->CustomTimeDilation;
+				float NewTScale = CurrentTScale * 0.15f;
+				NewTScale = FMath::Clamp(NewTScale, GGTimescale, 1.0f);
 
-				HitActor->CustomTimeDilation = NewTScale;
-				Winner->CustomTimeDilation = NewTScale;
-				bReturn = true;
+				Reciever->CustomTimeDilation = NewTScale;
+				Shooter->CustomTimeDilation = NewTScale;
+				Reciever->ForceNetUpdate();
+				Shooter->ForceNetUpdate();
 
-				ForceNetUpdate();
+				GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Blue, TEXT("Set new timescale.."));
 			}
 		}
-	}
 
-	ForceNetUpdate();
+		ForceNetUpdate();
+	}
 }
 
 

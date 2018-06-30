@@ -135,7 +135,11 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 	// Get match obj
 	TArray<AActor*> Actors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGMatch::StaticClass(), Actors);
-	CurrentMatch = Cast<AGMatch>(Actors[0]);
+	if (Actors.Num() >= 1)
+	{
+		CurrentMatch = Cast<AGMatch>(Actors[0]);
+	}
+	
 
 	// Color & cosmetics
 	/*FlashMesh->SetMaterial(0, MainMaterial);
@@ -168,37 +172,40 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 // Called every frame
 void AGAttack::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
-	LifeTimer += DeltaTime;
-	HitTimer += DeltaTime;
-
-	// Healthy attack activities
-	if (bLethal && HasAuthority())
+	if (HasAuthority())
 	{
-		UpdateAttack(DeltaTime);
-	}
+		Super::Tick(DeltaTime);
+		LifeTimer += DeltaTime;
+		HitTimer += DeltaTime;
 
-	// Life-tracking activities
-	float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
-	if (GlobalTimeScale > 0.3f)
-	{
-		float CloseEnough = DurationTime * 0.97f;
-		if (LifeTimer >= CloseEnough)
+		// Healthy attack activities
+		if (bLethal) //  && HasAuthority()
 		{
-			AttackParticles->bSuppressSpawning = true;
-
-			AGammaCharacter* PotentialGamma = Cast<AGammaCharacter>(OwningShooter);
-			if (PotentialGamma != nullptr)
-			{
-				bool Input = bSecondary;
-				Nullify(Input);
-			}
+			UpdateAttack(DeltaTime);
 		}
 
-		// Neutralize before smooth visual exit
-		if (LifeTimer >= LethalTime)
+		// Life-tracking activities
+		float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+		if (GlobalTimeScale > 0.3f)
 		{
-			bLethal = false;
+			float CloseEnough = DurationTime * 0.97f;
+			if (LifeTimer >= CloseEnough)
+			{
+				AttackParticles->bSuppressSpawning = true;
+
+				AGammaCharacter* PotentialGamma = Cast<AGammaCharacter>(OwningShooter);
+				if (PotentialGamma != nullptr)
+				{
+					bool Input = bSecondary;
+					Nullify(Input);
+				}
+			}
+
+			// Neutralize before smooth visual exit
+			if (LifeTimer >= LethalTime)
+			{
+				bLethal = false;
+			}
 		}
 	}
 }
@@ -380,6 +387,8 @@ void AGAttack::ReportHit(AActor* HitActor)
 			MeshComp->SetMassScale(NAME_None, MeshMass * 0.9f);
 		}*/
 	}
+
+	ForceNetUpdate();
 }
 
 

@@ -263,16 +263,16 @@ void AGammaAIController::Tactical(FVector Target)
 				// Line up a shot with player Z input
 				if (FMath::Abs(AngleToPlayer) <= 0.25f)
 				{
-					MyCharacter->SetZ(0.0f);
+					MyCharacter->SetZ(0.0f, 1.0f);
 				}
 				else
 				{
-					MyCharacter->SetZ(VerticalDist);
+					MyCharacter->SetZ(VerticalDist, 1.0f);
 				}
 
 				// Aim input
 				float XTarget = FMath::Clamp(ToPlayer.X, -1.0f, 1.0f);
-				MyCharacter->SetX(XTarget);
+				MyCharacter->SetX(XTarget, 1.0f);
 				
 				// Fire Secondary
 				if (RandomDc < SecoVal
@@ -392,14 +392,14 @@ void AGammaAIController::NavigateTo(FVector Target)
 		if (LateralDistance != 0.0f)
 		{
 			ValueX = FMath::Clamp((ToTarget.X * 0.01f), -1.0f, 1.0f);
-			MyCharacter->SetX(ValueX);
+			MyCharacter->SetX(ValueX, 1.0f);
 		}
 		if (VerticalDistance != 0.0f
 			|| LongitudeDistance != 0.0f)
 		{
 			ValueZ = FMath::Clamp((ToTarget.Z * 0.01f), -1.0f, 1.0f);
 
-			MyCharacter->SetZ(ValueZ);
+			MyCharacter->SetZ(ValueZ, 1.0f);
 		}
 
 

@@ -251,39 +251,6 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 		{
 			LocatorScaling();
-
-
-			// Personal Timescale
-			float MyTimeDilation = CustomTimeDilation;
-
-			// Attacks and Secondary Recovery
-			if (MyTimeDilation < 1.0f)
-			{
-				if (GetActiveFlash() != nullptr && IsValid(GetActiveFlash()))
-				{
-					GetActiveFlash()->CustomTimeDilation = MyTimeDilation;
-					GetActiveFlash()->SetLifeSpan(GetActiveFlash()->GetLifeSpan() / MyTimeDilation);
-				}
-				if ((ActiveAttack != nullptr) && IsValid(ActiveAttack))
-				{
-					ActiveAttack->CustomTimeDilation = MyTimeDilation;
-					ActiveAttack->SetLifeSpan(ActiveAttack->GetLifeSpan() / CustomTimeDilation);
-				}
-				if (IsValid(ActiveSecondary) && (ActiveSecondary != nullptr))
-				{
-					ActiveSecondary->CustomTimeDilation = MyTimeDilation;
-					if (ActiveSecondary != nullptr)
-					{
-						ActiveSecondary->SetLifeSpan(ActiveSecondary->GetLifeSpan() / CustomTimeDilation);
-					}
-				}
-			}
-
-			// Personal Recovery
-			float ReturnTime = FMath::FInterpTo(MyTimeDilation, 1.0f, DeltaTime, MyTimeDilation * 61.8f); // t or DeltaTime
-			CustomTimeDilation = FMath::Clamp(ReturnTime, 0.001f, 1.0f);
-
-			ForceNetUpdate();
 		}
 
 		// AfterImage rotation
@@ -615,14 +582,35 @@ float AGammaCharacter::GetChargePercentage()
 void AGammaCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	/*if ((!HasAuthority() || IsLocallyControlled())
+		&& (CustomTimeDilation < 1.0f))
+	{
+		RecoverTimescale(DeltaSeconds);
+	}*/
+
+	
+	
 	
 	// Main update
 	if ((Controller != nullptr))
 	{
 		UpdateCharacter(DeltaSeconds);
-	
 
-		if (bShooting)
+		// Timescaling
+		
+		
+		if (IsLocallyControlled())
+		{
+			RecoverTimescale(DeltaSeconds);
+
+			GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Blue, FString::Printf(TEXT("Timescale:  %f"), CustomTimeDilation));
+		}
+		
+
+
+
+		if (bShooting && (GetActiveFlash() == nullptr) && (ActiveAttack == nullptr))
 		{
 			InitAttack();
 		}
@@ -681,6 +669,8 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 // MOVE	LEFT / RIGHT
 void AGammaCharacter::MoveRight(float Value)
 {
+	float MoveByDot = 0.0f;
+
 	if (!bSliding && (CustomTimeDilation > 0.1f))
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
@@ -691,30 +681,30 @@ void AGammaCharacter::MoveRight(float Value)
 		if ((MoveInput != FVector::ZeroVector)
 			&& (Controller != nullptr))
 		{
-			float MoveByDot = 0.0f;
-			float DeltaTime = GetWorld()->DeltaTimeSeconds;
+			
 			float DotToInput = (FVector::DotProduct(MoveInput, VNorm));
 			float AngleToInput = FMath::Acos(DotToInput);
+			AngleToInput = FMath::Clamp(AngleToInput, 1.0f, 1000.0f);
 
 			// Effect Move
 			float TurnScalar = MoveSpeed + FMath::Square(TurnSpeed * AngleToInput);
 			MoveByDot = MoveSpeed * TurnScalar;
-			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * MoveByDot, true);
+			//AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * MoveByDot, true);
+			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * Timescale);
 		}
 	}
 
-	// Adjust aim to reflect move
-	float ValClamped = FMath::Clamp(Value, -1.0f, 1.0f);
-	if (!ActorHasTag("Bot")
-		&& !(InputX == 0.0f && ValClamped == 0.0f))
+	if (!ActorHasTag("Bot"))
 	{
-		SetX(ValClamped);
+		SetX(Value, MoveByDot);
 	}
 }
 
 // MOVE UP / DOWN
 void AGammaCharacter::MoveUp(float Value)
 {
+	float MoveByDot = 0.0f;
+
 	if (!bSliding && (CustomTimeDilation > 0.1f))
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
@@ -725,40 +715,37 @@ void AGammaCharacter::MoveUp(float Value)
 		if ((MoveInput != FVector::ZeroVector)
 			&& (Controller != nullptr))
 		{
-			float MoveByDot = 0.0f;
-			float DeltaTime = GetWorld()->DeltaTimeSeconds;
+			
 			float DotToInput = (FVector::DotProduct(MoveInput, VNorm));
 			float AngleToInput = FMath::Acos(DotToInput);
+			AngleToInput = FMath::Clamp(AngleToInput, 1.0f, 1000.0f);
 
 			// Effect move
 			float TurnScalar = MoveSpeed + FMath::Square(TurnSpeed * AngleToInput);
 			MoveByDot = MoveSpeed * TurnScalar;
-			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot, true);
+			//AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot, true);
+			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * Timescale);
 		}
 	}
 
-	// Adjust aim to reflect move
-	/// Ignoring no inputs and bots
-	float ValClamped = FMath::Clamp(Value, -1.0f, 1.0f);
-	if (!ActorHasTag("Bot")
-		&& !((InputZ == 0.0f) && (ValClamped == 0.0f)))
+	if (!ActorHasTag("Bot"))
 	{
-		SetZ(ValClamped);
+		SetZ(Value, MoveByDot);
 	}
 }
 
 // SET X & Z SERVERSIDE
-void AGammaCharacter::SetX(float Value)
+void AGammaCharacter::SetX(float Value, float MoveScalar)
 {
 	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 	{
-		// Get delta move value
-		float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(x));
-		float ValClamped = FMath::Clamp(DeltaVal, 0.01f, 1.0f);
-		InputX = (Value + (Value * ValClamped));
-
-		// Update delta
+		InputX = Value;
 		x = Value;
+		
+		/*if (GetCharacterMovement() != nullptr)
+		{
+			GetCharacterMovement()->MaxAcceleration = MoveScalar * Timescale;
+		}*/
 
 		///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("x: %f"), InputX));
 
@@ -770,30 +757,30 @@ void AGammaCharacter::SetX(float Value)
 
 	if (Role < ROLE_Authority)
 	{
-		ServerSetX(Value);
+		ServerSetX(Value, MoveScalar);
 	}
 }
-void AGammaCharacter::ServerSetX_Implementation(float Value)
+void AGammaCharacter::ServerSetX_Implementation(float Value, float MoveScalar)
 {
-	SetX(Value);
+	SetX(Value, MoveScalar);
 }
-bool AGammaCharacter::ServerSetX_Validate(float Value)
+bool AGammaCharacter::ServerSetX_Validate(float Value, float MoveScalar)
 {
 	return true;
 }
 
 
-void AGammaCharacter::SetZ(float Value)
+void AGammaCharacter::SetZ(float Value, float MoveScalar)
 {
 	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 	{
-		// Get move input Delta
-		float DeltaVal = FMath::Abs(FMath::Abs(Value) - FMath::Abs(z));
-		float ValClamped = FMath::Clamp(DeltaVal, 0.01f, 1.0f);
-		InputZ = (Value + (Value * ValClamped));
-
-		// Update delta
+		InputZ = Value;
 		z = Value;
+		
+		/*if (GetCharacterMovement() != nullptr)
+		{
+			GetCharacterMovement()->MaxAcceleration = MoveScalar * Timescale;
+		}*/
 
 		///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("z: %f"), InputZ));
 
@@ -805,14 +792,14 @@ void AGammaCharacter::SetZ(float Value)
 
 	if (Role < ROLE_Authority)
 	{
-		ServerSetZ(Value);
+		ServerSetZ(Value, MoveScalar);
 	}
 }
-void AGammaCharacter::ServerSetZ_Implementation(float Value)
+void AGammaCharacter::ServerSetZ_Implementation(float Value, float MoveScalar)
 {
-	SetZ(Value);
+	SetZ(Value, MoveScalar);
 }
-bool AGammaCharacter::ServerSetZ_Validate(float Value)
+bool AGammaCharacter::ServerSetZ_Validate(float Value, float MoveScalar)
 {
 	return true;
 }
@@ -859,8 +846,6 @@ void AGammaCharacter::DisengageKick()
 				ActiveChargeParticles->Destroy();
 				ActiveChargeParticles = nullptr;
 			}
-
-			GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, TEXT("DISENGAGE BOOST"));
 		}
 	}
 
@@ -1152,7 +1137,7 @@ void AGammaCharacter::ReleaseAttack()
 		&& (GetActiveSecondary() == nullptr)
 		&& (Charge > 0.0f)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
-		&& ((PrefireTimer >= 0.001f && (ActiveFlash != nullptr))))
+		&& ((PrefireTimer > 0.0f && (ActiveFlash != nullptr))))
 	{
 		// Clean up previous flash
 		if ((GetActiveFlash() != nullptr))
@@ -1214,7 +1199,14 @@ void AGammaCharacter::ReleaseAttack()
 			}
 
 			// Spend it!
-			Charge -= ChargeGain;
+			float ChargeSpend = 1.0f;
+			if (PrefireTimer >= 0.33f)
+			{
+				float BigSpend = 1.0f + FMath::FloorToFloat(ChargeMax * PrefireTimer);
+				ChargeSpend = BigSpend;
+			}
+			Charge -= ChargeSpend;
+			
 
 			// Sprite Scaling
 			float ClampedCharge = FMath::Clamp(Charge * 0.7f, 1.0f, ChargeMax);
@@ -1300,6 +1292,51 @@ void AGammaCharacter::ServerFireSecondary_Implementation()
 	FireSecondary();
 }
 bool AGammaCharacter::ServerFireSecondary_Validate()
+{
+	return true;
+}
+
+
+// TIMESCALE RECOVERY
+void AGammaCharacter::RecoverTimescale(float DeltaTime)
+{
+	// Personal Timescale
+	Timescale = CustomTimeDilation;
+
+	if (GetActiveFlash() != nullptr)
+	{
+		GetActiveFlash()->CustomTimeDilation = Timescale;
+		float NewLife = GetActiveFlash()->GetLifeSpan() * (1.0f / Timescale);
+		GetActiveFlash()->SetLifeSpan(NewLife);
+	}
+	if (ActiveAttack != nullptr)
+	{
+		ActiveAttack->CustomTimeDilation = Timescale;
+		float NewLife = ActiveAttack->GetLifeSpan() * (1.0f / Timescale);
+		ActiveAttack->SetLifeSpan(NewLife);
+	}
+	if (ActiveSecondary != nullptr)
+	{
+		ActiveSecondary->CustomTimeDilation = Timescale;
+		float NewLife = ActiveSecondary->GetLifeSpan() * (1.0f / Timescale);
+		ActiveSecondary->SetLifeSpan(NewLife);
+	}
+
+	// Personal Recovery
+	float ReturnTime = FMath::FInterpTo(Timescale, 1.0f, DeltaTime, Timescale * 15.0f);
+	CustomTimeDilation = FMath::Clamp(ReturnTime, 0.001f, 1.0f);
+
+
+	if (Role < ROLE_Authority)
+	{
+		ServerRecoverTimescale(DeltaTime);
+	}
+}
+void AGammaCharacter::ServerRecoverTimescale_Implementation(float DeltaTime)
+{
+	RecoverTimescale(DeltaTime);
+}
+bool AGammaCharacter::ServerRecoverTimescale_Validate(float DeltaTime)
 {
 	return true;
 }
@@ -1628,6 +1665,7 @@ void AGammaCharacter::GetLifetimeReplicatedProps(TArray <FLifetimeProperty> & Ou
 
 	DOREPLIFETIME(AGammaCharacter, Health);
 	DOREPLIFETIME(AGammaCharacter, Score);
+	DOREPLIFETIME(AGammaCharacter, Timescale);
 
 	DOREPLIFETIME(AGammaCharacter, InputX);
 	DOREPLIFETIME(AGammaCharacter, InputZ);
