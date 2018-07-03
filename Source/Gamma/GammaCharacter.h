@@ -271,6 +271,10 @@ public:
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerPrefireTiming();
 
+	void NewTimescale(float Value);
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerNewTimescale(float Value);
+
 	// Handoff functions to avoid net saturation
 	void CheckPowerSlideOn();
 	void CheckPowerSlideOff();

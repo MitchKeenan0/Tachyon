@@ -358,9 +358,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			// Setting up distance and speed dynamics
 			float GTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 			float ChargeScalar = FMath::Clamp((FMath::Sqrt(Charge - 0.9f)), 0.1f, ChargeMax);
-			float SizeScalar = GetCapsuleComponent()->GetComponentScale().Size();
+			float SizeScalar = 1.0f; /// GetCapsuleComponent()->GetComponentScale().Size()
 			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.5f;
-			float CameraMinimumDistance = 1.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * CameraDistanceScalar;
+			float CameraMinimumDistance = 500.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * CameraDistanceScalar;
 			float CameraMaxDistance = 1551000.0f;
 
 
@@ -369,7 +369,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				
 				// Distance check i.e pair bounds
-				float PairDistanceThreshold = 3501.0f;
+				float PairDistanceThreshold = 3200.0f;
 				if (this->ActorHasTag("Spectator"))
 				{
 					PairDistanceThreshold *= 3.3f;
@@ -423,7 +423,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, (VelocityCameraSpeed * 0.5f)); // UnDilatedDeltaTime
 				
 				// Distance controls
-				ConsideredDistanceScalar *= 1.5f;
+				ConsideredDistanceScalar *= 1.1f;
 				CameraMaxDistance = 150000.0f;
 			}
 
@@ -677,7 +677,7 @@ void AGammaCharacter::MoveRight(float Value)
 {
 	float MoveByDot = 0.0f;
 
-	if (!bSliding && (CustomTimeDilation > 0.1f))
+	if (!bSliding && (Timescale > 0.215f))
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = GetMovementComponent()->Velocity;
@@ -696,8 +696,12 @@ void AGammaCharacter::MoveRight(float Value)
 			float TurnScalar = MoveSpeed + FMath::Square(TurnSpeed * AngleToInput);
 			MoveByDot = MoveSpeed * TurnScalar;
 			//AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * MoveByDot, true);
-			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * Timescale);
+			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX);
 		}
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, TEXT("MOVE LOCKED"));
 	}
 
 	if (!ActorHasTag("Bot"))
@@ -711,7 +715,7 @@ void AGammaCharacter::MoveUp(float Value)
 {
 	float MoveByDot = 0.0f;
 
-	if (!bSliding && (CustomTimeDilation > 0.1f))
+	if (!bSliding && (Timescale > 0.215f))
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
 		FVector CurrentV = GetMovementComponent()->Velocity;
@@ -730,8 +734,12 @@ void AGammaCharacter::MoveUp(float Value)
 			float TurnScalar = MoveSpeed + FMath::Square(TurnSpeed * AngleToInput);
 			MoveByDot = MoveSpeed * TurnScalar;
 			//AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot, true);
-			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * Timescale);
+			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ);
 		}
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, TEXT("MOVE LOCKED"));
 	}
 
 	if (!ActorHasTag("Bot"))
@@ -813,14 +821,13 @@ bool AGammaCharacter::ServerSetZ_Validate(float Value, float MoveScalar)
 // BOOST KICK HUSTLE DASH
 void AGammaCharacter::NewMoveKick()
 {
-	if (!bBoosting)
-	{
-		bBoosting = true;
-	}
-
 	if (Role < ROLE_Authority)
 	{
 		ServerNewMoveKick();
+	}
+	else if (!bBoosting)
+	{
+		bBoosting = true;
 	}
 }
 void AGammaCharacter::ServerNewMoveKick_Implementation()
@@ -836,30 +843,31 @@ bool AGammaCharacter::ServerNewMoveKick_Validate()
 // DISENGAGE LE KICK
 void AGammaCharacter::DisengageKick()
 {
-	// Clear existing boost object
-	if (ActiveBoost != nullptr)
-	{
-		if (ActiveBoost->GetGameTimeSinceCreation() >= 0.33f)
-		{
-			ActiveBoost->Destroy();
-			ActiveBoost = nullptr;
-			
-			// Clear existing charge object
-			if (ActiveChargeParticles != nullptr)
-			{
-				ActiveChargeParticles->Destroy();
-				ActiveChargeParticles = nullptr;
-			}
-		}
-	}
-
-	bBoosting = false;
-	bCharging = false;
-
-
 	if (Role < ROLE_Authority)
 	{
 		ServerDisengageKick();
+	}
+	else
+	{
+		// Clear existing boost object
+		if (ActiveBoost != nullptr)
+		{
+			if (ActiveBoost->GetGameTimeSinceCreation() >= 0.33f)
+			{
+				ActiveBoost->Destroy();
+				ActiveBoost = nullptr;
+
+				// Clear existing charge object
+				if (ActiveChargeParticles != nullptr)
+				{
+					ActiveChargeParticles->Destroy();
+					ActiveChargeParticles = nullptr;
+				}
+			}
+		}
+
+		bBoosting = false;
+		bCharging = false;
 	}
 }
 void AGammaCharacter::ServerDisengageKick_Implementation()
@@ -875,11 +883,6 @@ bool AGammaCharacter::ServerDisengageKick_Validate()
 // LE KICK PROPULSION
 void AGammaCharacter::KickPropulsion()
 {
-	if (Role == ROLE_SimulatedProxy)
-	{
-		ServerKickPropulsion();
-	}
-
 	FVector MoveInputVector = FVector::ZeroVector;
 	FVector KickVector = FVector::ZeroVector;
 
@@ -923,10 +926,6 @@ void AGammaCharacter::KickPropulsion()
 			//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("vel  %f"), (GetCharacterMovement()->Velocity.Size())));
 			//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("kick   %f"), KickVector.Size()));
 		}
-		else
-		{
-			DisengageKick();
-		}
 
 		// Spawn visuals
 		if ((BoostClass != nullptr) && (ActiveBoost == nullptr))
@@ -948,9 +947,9 @@ void AGammaCharacter::KickPropulsion()
 		}
 	}
 
-	if (GetCharacterMovement()->Velocity.Size() >= (MaxMoveSpeed * 5.0f))
+	if (Role < ROLE_Authority)
 	{
-		DisengageKick();
+		ServerKickPropulsion();
 	}
 }
 void AGammaCharacter::ServerKickPropulsion_Implementation()
@@ -1253,9 +1252,7 @@ void AGammaCharacter::FireSecondary()
 		&& (ActiveAttack == nullptr)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
 	{
-		/// Clean burn
-		///MoveParticles->bSuppressSpawning = true;
-
+		
 		// Direction & setting up
 		FVector FirePosition = GetActorLocation();
 		FVector LocalForward = AttackScene->GetForwardVector();
@@ -1352,6 +1349,34 @@ void AGammaCharacter::ServerRecoverTimescale_Implementation(float DeltaTime)
 	RecoverTimescale(DeltaTime);
 }
 bool AGammaCharacter::ServerRecoverTimescale_Validate(float DeltaTime)
+{
+	return true;
+}
+
+
+// Setter for Timescale from remote places i.e Match
+void AGammaCharacter::NewTimescale(float Value)
+{
+	if (Role < ROLE_Authority)
+	{
+		ServerNewTimescale(Value);
+	}
+	else
+	{
+		CustomTimeDilation = Value;
+
+		if (GetMovementComponent() != nullptr)
+		{
+			float VelocityTimeScalar = FMath::Clamp(Value, 0.5f, 1.0f);
+			GetMovementComponent()->Velocity *= VelocityTimeScalar;
+		}
+	}
+}
+void AGammaCharacter::ServerNewTimescale_Implementation(float Value)
+{
+	NewTimescale(Value);
+}
+bool AGammaCharacter::ServerNewTimescale_Validate(float Value)
 {
 	return true;
 }
