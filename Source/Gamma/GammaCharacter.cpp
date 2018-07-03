@@ -294,7 +294,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		Actor1 = this;
 	}
 	
-	if (FramingActors.Num() >= 1)
+	if ((Controller != nullptr) && (FramingActors.Num() >= 1))
 	{
 		// Edge case: player is spectator, find a sub
 		if (Actor1 == nullptr)
@@ -316,22 +316,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		// Let's go
 		if ((Actor1 != nullptr)) ///  && IsValid(Actor1) && !Actor1->IsUnreachable()
 		{
-			float GTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
-
-			// Framing up first actor with their own velocity
-			FVector Actor1Velocity = (Actor1->GetVelocity() + 1.0f);
-			float SafeVelocitySize = FMath::Clamp(Actor1->GetVelocity().Size(), 350.0f, MaxMoveSpeed);
-			VelocityCameraSpeed = CameraMoveSpeed * (FMath::Sqrt(SafeVelocitySize)) * DeltaTime;
-			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 0.0f, CameraMaxSpeed);
-			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // *GTimeScale); // * TimeDilationScalarClamped
-			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 			
-			float ChargeScalar = FMath::Clamp((FMath::Sqrt(Charge - 0.9f)), 0.1f, ChargeMax);
-			float SizeScalar = GetCapsuleComponent()->GetComponentScale().Size();
-			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.5f;
-			float CameraMinimumDistance = 1000.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * CameraDistanceScalar;
-			float CameraMaxDistance = 1551000.0f;
-
 			// Position by another actor
 			bool bAlone = true;
 			// Find closest best candidate for Actor 2
@@ -359,19 +344,38 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}
 			}
 
+			
 
-			// If Actor2 isn't too far away, make 'Pair Framing'
+			// Framing up first actor with their own velocity
+			FVector Actor1Velocity = (Actor1->GetVelocity()) * CustomTimeDilation;
+			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size(), 350.0f, MaxMoveSpeed);
+			VelocityCameraSpeed = CameraMoveSpeed * (FMath::Sqrt(SafeVelocitySize)) * DeltaTime;
+			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 1.0f, CameraMaxSpeed);
+
+			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // *GTimeScale); // * TimeDilationScalarClamped
+			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
+
+			// Setting up distance and speed dynamics
+			float GTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+			float ChargeScalar = FMath::Clamp((FMath::Sqrt(Charge - 0.9f)), 0.1f, ChargeMax);
+			float SizeScalar = GetCapsuleComponent()->GetComponentScale().Size();
+			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.5f;
+			float CameraMinimumDistance = 1.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * CameraDistanceScalar;
+			float CameraMaxDistance = 1551000.0f;
+
+
+			// If Actor2 is valid, make Pair Framing
 			if (Actor2 != nullptr)
 			{
 				
-				// Use a distance check to determine if Actor2 is too far away
-				float PairDistanceThreshold = 3501.0f; // 6666.0f * CameraDistanceScalar;
+				// Distance check i.e pair bounds
+				float PairDistanceThreshold = 3501.0f;
 				if (this->ActorHasTag("Spectator"))
 				{
 					PairDistanceThreshold *= 3.3f;
 				}
 				
-				// Special care taken for vertical as per widescreen
+				// Special care taken for vertical as we are probably widescreen
 				float Vertical = FMath::Abs((Actor2->GetActorLocation() - Actor1->GetActorLocation()).Z);
 				bool bInRange = (FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= PairDistanceThreshold)
 					&& (Vertical <= (PairDistanceThreshold * 0.55f));
@@ -381,29 +385,31 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					bAlone = false;
 
 					// Framing up with second actor
-					float SafeVelocitySize = FMath::Clamp(Actor2->GetVelocity().Size(), 350.0f, MaxMoveSpeed);
+					FVector Actor2Velocity = (Actor2->GetVelocity()) * CustomTimeDilation;
+					float SafeVelocitySize = FMath::Clamp(Actor2Velocity.Size(), 350.0f, MaxMoveSpeed);
 					VelocityCameraSpeed = CameraMoveSpeed * (FMath::Sqrt(SafeVelocitySize)) * DeltaTime;
-					VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 0.0f, CameraMaxSpeed);
-					FVector Actor2Velocity = (Actor2->GetVelocity() + 1.0f);
-					Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(1500); // *CustomTimeDilation);
+					VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 1.0f, CameraMaxSpeed);
+					
+					
+					Actor2Velocity = Actor2Velocity.GetClampedToSize(1.0f, 1500.0f); // *CustomTimeDilation);
 					///Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(15000.0f * (CustomTimeDilation + 0.5f));
 					Actor2Velocity.Z *= 0.85f;
 
 					// Declare Position Two
-					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase); // *GTimeScale); // * TimeDilationScalarClamped
+					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase * CustomTimeDilation);
 					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, VelocityCameraSpeed);
 				}
 			}
 			
-			// Lone player gets 'Velocity Framing'
+			// Lone player gets Velocity Framing
 			if (bAlone || (FramingActors.Num() == 1))
 			{
 				
 				// Framing lone player by their velocity
-				Actor1Velocity = (Actor1->GetVelocity() + 1.0f);
+				Actor1Velocity = (Actor1->GetVelocity()) * CustomTimeDilation;
 
 				// Clamp to max size
-				Actor1Velocity = Actor1Velocity.GetClampedToMaxSize(1500.0f); // *CustomTimeDilation);
+				Actor1Velocity = Actor1Velocity.GetClampedToSize(300.0f, 1500.0f); // *CustomTimeDilation);
 				Actor1Velocity.Z *= 0.85f;
 
 				// Smooth-over low velocities with a standard framing
@@ -426,8 +432,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			// Find the midpoint, leaning to actor one
 			FVector TargetMidpoint = PositionOne + ((PositionTwo - PositionOne) * 0.5f);
 			//Midpoint = TargetMidpoint;
-			Midpoint = FMath::VInterpTo(Midpoint, TargetMidpoint, DeltaTime, VelocityCameraSpeed * CustomTimeDilation);
-			if (Midpoint.Size() > 0.001f)
+			Midpoint = FMath::VInterpTo(Midpoint, TargetMidpoint, DeltaTime, VelocityCameraSpeed);
+			if (Midpoint.Size() > 0.0f)
 			{
 
 				// Distance
@@ -494,8 +500,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				SideViewCameraComponent->SetRelativeRotation(FTarget);
 
 				/// debug Velocity size
-				GEngine->AddOnScreenDebugMessage(-1, 0.f,
-					FColor::White, FString::Printf(TEXT("DesiredCameraDistance: %f"), DesiredCameraDistance));
+				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,
+					FColor::White, FString::Printf(TEXT("DesiredCameraDistance: %f"), DesiredCameraDistance));*/
 			}
 		}
 	}
@@ -1299,40 +1305,46 @@ bool AGammaCharacter::ServerFireSecondary_Validate()
 // TIMESCALE RECOVERY
 void AGammaCharacter::RecoverTimescale(float DeltaTime)
 {
-	
-
-
 	if (Role < ROLE_Authority)
 	{
 		ServerRecoverTimescale(DeltaTime);
 	}
 	else
 	{
-		// Personal Timescale
-		Timescale = CustomTimeDilation;
+		float Global = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+		if (Global < 1.0f)
+		{
+			Timescale = 1.0f;
+			CustomTimeDilation = 1.0f;
+		}
+		else if (CustomTimeDilation != 1.0f)
+		{
+			// Personal Timescale
+			Timescale = CustomTimeDilation;
 
-		if (GetActiveFlash() != nullptr)
-		{
-			GetActiveFlash()->CustomTimeDilation = Timescale;
-			float NewLife = GetActiveFlash()->GetLifeSpan() * (1.0f / Timescale);
-			GetActiveFlash()->SetLifeSpan(NewLife);
-		}
-		if (ActiveAttack != nullptr)
-		{
-			ActiveAttack->CustomTimeDilation = Timescale;
-			float NewLife = ActiveAttack->GetLifeSpan() * (1.0f / Timescale);
-			ActiveAttack->SetLifeSpan(NewLife);
-		}
-		if (ActiveSecondary != nullptr)
-		{
-			ActiveSecondary->CustomTimeDilation = Timescale;
-			float NewLife = ActiveSecondary->GetLifeSpan() * (1.0f / Timescale);
-			ActiveSecondary->SetLifeSpan(NewLife);
-		}
+			if (GetActiveFlash() != nullptr)
+			{
+				GetActiveFlash()->CustomTimeDilation = Timescale;
+				float NewLife = GetActiveFlash()->GetLifeSpan() * (1.0f / Timescale);
+				GetActiveFlash()->SetLifeSpan(NewLife);
+			}
+			if (ActiveAttack != nullptr)
+			{
+				ActiveAttack->CustomTimeDilation = Timescale;
+				float NewLife = ActiveAttack->GetLifeSpan() * (1.0f / Timescale);
+				ActiveAttack->SetLifeSpan(NewLife);
+			}
+			if (ActiveSecondary != nullptr)
+			{
+				ActiveSecondary->CustomTimeDilation = Timescale;
+				float NewLife = ActiveSecondary->GetLifeSpan() * (1.0f / Timescale);
+				ActiveSecondary->SetLifeSpan(NewLife);
+			}
 
-		// Personal Recovery
-		float ReturnTime = FMath::FInterpTo(Timescale, 1.0f, DeltaTime, Timescale * 21.0f);
-		CustomTimeDilation = FMath::Clamp(ReturnTime, 0.1f, 1.0f);
+			// Personal Recovery
+			float ReturnTime = FMath::FInterpTo(Timescale, 1.0f, DeltaTime, Timescale * 21.0f);
+			CustomTimeDilation = FMath::Clamp(ReturnTime, 0.1f, 1.0f);
+		}
 	}
 }
 void AGammaCharacter::ServerRecoverTimescale_Implementation(float DeltaTime)

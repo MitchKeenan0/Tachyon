@@ -169,7 +169,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 			}
 		}
 
-		GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("Magnitude:  %f"), AttackMagnitude));
+		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("Magnitude:  %f"), AttackMagnitude));
 	}
 }
 
@@ -394,6 +394,8 @@ void AGAttack::ReportHit(AActor* HitActor)
 			MeshComp->SetMassScale(NAME_None, MeshMass * 0.9f);
 			}*/
 		}
+
+		ForceNetUpdate();
 	}
 }
 

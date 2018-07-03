@@ -135,7 +135,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 				//Reciever->ForceNetUpdate();
 				//Shooter->ForceNetUpdate();
 
-				GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Blue, TEXT("Set new timescale.."));
+				//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Blue, TEXT("Set new timescale.."));
 			}
 		}
 
