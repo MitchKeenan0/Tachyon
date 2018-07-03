@@ -329,7 +329,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			float ChargeScalar = FMath::Clamp((FMath::Sqrt(Charge - 0.9f)), 0.1f, ChargeMax);
 			float SizeScalar = GetCapsuleComponent()->GetComponentScale().Size();
 			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.5f;
-			float CameraMinimumDistance = 2100.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * CameraDistanceScalar;
+			float CameraMinimumDistance = 1000.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * CameraDistanceScalar;
 			float CameraMaxDistance = 1551000.0f;
 
 			// Position by another actor
@@ -424,15 +424,15 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Positions done
 			// Find the midpoint, leaning to actor one
-			FVector TargetMidpoint = PositionOne + ((PositionTwo - PositionOne) * FMath::Clamp(Actor1->CustomTimeDilation, 0.4f, 0.5f));
+			FVector TargetMidpoint = PositionOne + ((PositionTwo - PositionOne) * 0.5f);
 			//Midpoint = TargetMidpoint;
-			Midpoint = FMath::VInterpTo(Midpoint, TargetMidpoint, DeltaTime, VelocityCameraSpeed);
+			Midpoint = FMath::VInterpTo(Midpoint, TargetMidpoint, DeltaTime, VelocityCameraSpeed * CustomTimeDilation);
 			if (Midpoint.Size() > 0.001f)
 			{
 
 				// Distance
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo);
-				float ProcessedDist = DistBetweenActors + (FMath::Sqrt(DistBetweenActors) * 111.1f);
+				float ProcessedDist = DistBetweenActors + (FMath::Sqrt(DistBetweenActors) * 750.0f);
 				float VerticalDist = FMath::Abs((PositionTwo - PositionOne).Z);
 				// If paired, widescreen edges are vulnerable to overshoot
 				if (!bAlone)
@@ -460,7 +460,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				TargetLength *= RefinedGScalar;
 
 				// Clamp useable distance
-				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 1200.0f) * ConsideredDistanceScalar,
+				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 200.0f) * ConsideredDistanceScalar,
 					CameraMinimumDistance * RefinedGScalar,
 					CameraMaxDistance);
 
@@ -494,8 +494,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				SideViewCameraComponent->SetRelativeRotation(FTarget);
 
 				/// debug Velocity size
-				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,
-					FColor::White, FString::Printf(TEXT("GTimeScale: %f"), GTimeScale));*/
+				GEngine->AddOnScreenDebugMessage(-1, 0.f,
+					FColor::White, FString::Printf(TEXT("DesiredCameraDistance: %f"), DesiredCameraDistance));
 			}
 		}
 	}
@@ -600,7 +600,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		// Timescaling
 		
 		
-		if (IsLocallyControlled())
+		if (CustomTimeDilation < 1.0f)
 		{
 			RecoverTimescale(DeltaSeconds);
 
@@ -838,8 +838,6 @@ void AGammaCharacter::DisengageKick()
 			ActiveBoost->Destroy();
 			ActiveBoost = nullptr;
 			
-			
-
 			// Clear existing charge object
 			if (ActiveChargeParticles != nullptr)
 			{
@@ -884,7 +882,6 @@ void AGammaCharacter::KickPropulsion()
 
 		// Conditions for propulsion
 		if (GetWorld() && (ActiveChargeParticles != nullptr)
-			&& (ActiveChargeParticles->WasRecentlyRendered(0.1f))
 			&& (GetCharacterMovement() != nullptr))
 		{
 			// Algo scaling for timescale & max velocity
@@ -931,17 +928,17 @@ void AGammaCharacter::KickPropulsion()
 			// Initial kick
 			GetCharacterMovement()->AddImpulse(KickVector * 3.33f);
 
-			// Set up Kick Visuals direction
-			FActorSpawnParameters SpawnParams;
-			FVector PlayerVelocity = GetCharacterMovement()->Velocity;
-			FRotator PlayerVelRotator = PlayerVelocity.Rotation();
-			FRotator InputRotator = MoveInputVector.Rotation();
-			PlayerVelocity.Z *= 0.01f;
-			FVector SpawnLocation = GetActorLocation() + (FVector::UpVector * 10.0f); /// + (PlayerVelocity / 3);
 
-																					  // Spawn the visuals
-			ActiveBoost = GetWorld()->SpawnActor<AActor>
-				(BoostClass, SpawnLocation, InputRotator, SpawnParams); /// PlayerVelRotator
+			if (Controller != nullptr)
+			{
+				// Set up Kick Visuals direction
+				FActorSpawnParameters SpawnParams;
+				FRotator InputRotator = MoveInputVector.Rotation();
+				FVector SpawnLocation = GetActorLocation() + (FVector::UpVector * 10.0f); /// + (PlayerVelocity / 3);
+
+				ActiveBoost = GetWorld()->SpawnActor<AActor>
+					(BoostClass, SpawnLocation, InputRotator, SpawnParams); /// PlayerVelRotator
+			}
 		}
 	}
 
@@ -1026,7 +1023,7 @@ void AGammaCharacter::RaiseCharge()
 		}
 
 		// visual charge vfx
-		if ((ChargeParticles != nullptr) && (ActiveChargeParticles == nullptr))
+		if (HasAuthority() && (ChargeParticles != nullptr) && (ActiveChargeParticles == nullptr))
 		{
 			FActorSpawnParameters SpawnParams;
 			ActiveChargeParticles = Cast<AActor>(GetWorld()->SpawnActor<AActor>(ChargeParticles, GetActorLocation(), GetActorRotation(), SpawnParams));
@@ -1062,62 +1059,64 @@ bool AGammaCharacter::ServerRaiseCharge_Validate()
 // PRE-ATTACK flash spawning
 void AGammaCharacter::InitAttack()
 {
-	// Attack cancel for single shooters already shooting
-	bool bCancellingAttack = false;
-	if ((ActiveAttack != nullptr) && !bMultipleAttacks)
-	{
-		ActiveAttack->Destroy();
-		NullifyAttack();
-		bCancellingAttack = true;
-	}
-
-	// If we're shooting dry, trigger ChargeBar warning by going sub-zero
-	if (Charge < ChargeGain)
-	{
-		Charge = (-1.0f);
-		return;
-	}
-
-	// Conditions for shooting
-	bool bWeaponAllowed = !bCancellingAttack && 
-		(GetActiveBoost() == nullptr) && 
-		(((GetActiveFlash() == nullptr) && (ActiveAttack == nullptr))
-			|| bMultipleAttacks);
-	bool bFireAllowed = bWeaponAllowed
-						&& (!IsValid(GetActiveFlash()))
-						&& (Charge > 0.0f) && (FlashClass != nullptr);
-
-	if (bFireAllowed)
-	{
-		// Direction & setting up
-		float AimClampedInputZ = FMath::Clamp((InputZ * 10.0f), -1.0f, 1.0f);
-		FVector FirePosition = AttackScene->GetComponentLocation();
-		FVector LocalForward = AttackScene->GetForwardVector();
-		LocalForward.Y = 0.0f;
-		FRotator FireRotation = LocalForward.Rotation() + FRotator(InputZ * 21.0f, 0.0f, 0.0f); /// AimClampedInputZ
-		FireRotation.Yaw = GetActorRotation().Yaw;
-		if (FMath::Abs(FireRotation.Yaw) > 90.0f)
-		{
-			FireRotation.Yaw = 180.0f;
-		}
-		else
-		{
-			FireRotation.Yaw = 0.0f;
-		}
-
-		// Spawning
-		if (HasAuthority() && (FlashClass != nullptr))
-		{
-			// Spawn eye heat
-			FActorSpawnParameters SpawnParams;
-			ActiveFlash = Cast<AGFlash>(GetWorld()->SpawnActor<AGFlash>(FlashClass, FirePosition, FireRotation, SpawnParams));
-			ActiveFlash->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
-		}
-	}
-
 	if (Role < ROLE_Authority)
 	{
 		ServerInitAttack();
+	}
+	else
+	{
+		// Attack cancel for single shooters already shooting
+		bool bCancellingAttack = false;
+		if ((ActiveAttack != nullptr) && !bMultipleAttacks)
+		{
+			ActiveAttack->Destroy();
+			NullifyAttack();
+			bCancellingAttack = true;
+		}
+
+		// If we're shooting dry, trigger ChargeBar warning by going sub-zero
+		if (Charge < ChargeGain)
+		{
+			Charge = (-1.0f);
+			return;
+		}
+
+		// Conditions for shooting
+		bool bWeaponAllowed = !bCancellingAttack &&
+			(GetActiveBoost() == nullptr) &&
+			(((GetActiveFlash() == nullptr) && (ActiveAttack == nullptr))
+				|| bMultipleAttacks);
+		bool bFireAllowed = bWeaponAllowed
+			&& (!IsValid(GetActiveFlash()))
+			&& (Charge > 0.0f) && (FlashClass != nullptr);
+
+		if (bFireAllowed)
+		{
+			// Direction & setting up
+			float AimClampedInputZ = FMath::Clamp((InputZ * 10.0f), -1.0f, 1.0f);
+			FVector FirePosition = AttackScene->GetComponentLocation();
+			FVector LocalForward = AttackScene->GetForwardVector();
+			LocalForward.Y = 0.0f;
+			FRotator FireRotation = LocalForward.Rotation() + FRotator(InputZ * 21.0f, 0.0f, 0.0f); /// AimClampedInputZ
+			FireRotation.Yaw = GetActorRotation().Yaw;
+			if (FMath::Abs(FireRotation.Yaw) > 90.0f)
+			{
+				FireRotation.Yaw = 180.0f;
+			}
+			else
+			{
+				FireRotation.Yaw = 0.0f;
+			}
+
+			// Spawning
+			if (HasAuthority() && (FlashClass != nullptr))
+			{
+				// Spawn eye heat
+				FActorSpawnParameters SpawnParams;
+				ActiveFlash = Cast<AGFlash>(GetWorld()->SpawnActor<AGFlash>(FlashClass, FirePosition, FireRotation, SpawnParams));
+				ActiveFlash->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+			}
+		}
 	}
 }
 void AGammaCharacter::ServerInitAttack_Implementation()
@@ -1300,36 +1299,40 @@ bool AGammaCharacter::ServerFireSecondary_Validate()
 // TIMESCALE RECOVERY
 void AGammaCharacter::RecoverTimescale(float DeltaTime)
 {
-	// Personal Timescale
-	Timescale = CustomTimeDilation;
-
-	if (GetActiveFlash() != nullptr)
-	{
-		GetActiveFlash()->CustomTimeDilation = Timescale;
-		float NewLife = GetActiveFlash()->GetLifeSpan() * (1.0f / Timescale);
-		GetActiveFlash()->SetLifeSpan(NewLife);
-	}
-	if (ActiveAttack != nullptr)
-	{
-		ActiveAttack->CustomTimeDilation = Timescale;
-		float NewLife = ActiveAttack->GetLifeSpan() * (1.0f / Timescale);
-		ActiveAttack->SetLifeSpan(NewLife);
-	}
-	if (ActiveSecondary != nullptr)
-	{
-		ActiveSecondary->CustomTimeDilation = Timescale;
-		float NewLife = ActiveSecondary->GetLifeSpan() * (1.0f / Timescale);
-		ActiveSecondary->SetLifeSpan(NewLife);
-	}
-
-	// Personal Recovery
-	float ReturnTime = FMath::FInterpTo(Timescale, 1.0f, DeltaTime, Timescale * 15.0f);
-	CustomTimeDilation = FMath::Clamp(ReturnTime, 0.001f, 1.0f);
+	
 
 
 	if (Role < ROLE_Authority)
 	{
 		ServerRecoverTimescale(DeltaTime);
+	}
+	else
+	{
+		// Personal Timescale
+		Timescale = CustomTimeDilation;
+
+		if (GetActiveFlash() != nullptr)
+		{
+			GetActiveFlash()->CustomTimeDilation = Timescale;
+			float NewLife = GetActiveFlash()->GetLifeSpan() * (1.0f / Timescale);
+			GetActiveFlash()->SetLifeSpan(NewLife);
+		}
+		if (ActiveAttack != nullptr)
+		{
+			ActiveAttack->CustomTimeDilation = Timescale;
+			float NewLife = ActiveAttack->GetLifeSpan() * (1.0f / Timescale);
+			ActiveAttack->SetLifeSpan(NewLife);
+		}
+		if (ActiveSecondary != nullptr)
+		{
+			ActiveSecondary->CustomTimeDilation = Timescale;
+			float NewLife = ActiveSecondary->GetLifeSpan() * (1.0f / Timescale);
+			ActiveSecondary->SetLifeSpan(NewLife);
+		}
+
+		// Personal Recovery
+		float ReturnTime = FMath::FInterpTo(Timescale, 1.0f, DeltaTime, Timescale * 21.0f);
+		CustomTimeDilation = FMath::Clamp(ReturnTime, 0.1f, 1.0f);
 	}
 }
 void AGammaCharacter::ServerRecoverTimescale_Implementation(float DeltaTime)

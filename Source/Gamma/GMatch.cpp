@@ -91,7 +91,6 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 					//HitActor->CustomTimeDilation = 1.0f;
 					//Winner->CustomTimeDilation = 1.0f;
 					SetTimeScale(GGTimescale);
-					ForceNetUpdate();
 
 					// Award winner with a star ;P
 					FString DecoratedName = FString(Shooter->GetCharacterName().Append(" *"));
@@ -128,13 +127,13 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			{
 				// Hit-confirm timescaling
 				float CurrentTScale = Shooter->CustomTimeDilation;
-				float NewTScale = CurrentTScale * 0.15f;
+				float NewTScale = CurrentTScale * 0.1f;
 				NewTScale = FMath::Clamp(NewTScale, GGTimescale, 1.0f);
 
 				Reciever->CustomTimeDilation = NewTScale;
 				Shooter->CustomTimeDilation = NewTScale;
-				Reciever->ForceNetUpdate();
-				Shooter->ForceNetUpdate();
+				//Reciever->ForceNetUpdate();
+				//Shooter->ForceNetUpdate();
 
 				GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Blue, TEXT("Set new timescale.."));
 			}

@@ -67,104 +67,109 @@ void AGAttack::BeginPlay()
 
 void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 {
-	// Set local variables
-	OwningShooter = Shooter;
-	AttackMagnitude = Magnitude;
-	ShotDirection = YScale;
-
-	/*if (!bSecondary)
+	if (HasAuthority())
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("AttackMagnitude: %f"), AttackMagnitude));
-	}*/
+		// Set local variables
+		OwningShooter = Shooter;
+		AttackMagnitude = Magnitude;
+		ShotDirection = YScale;
 
-	// set sounds
-	AttackSound->SetPitchMultiplier(AttackSound->PitchMultiplier + AttackMagnitude);
-	//AttackSound->SetVolumeMultiplier(FMath::Clamp(1.0f + (AttackMagnitude * 1.25f), 0.1f, 1.5f));
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Pitch After: %f"), AttackSound->PitchMultiplier));
-
-	// Lifespan
-	if (MagnitudeTimeScalar != 1.0f)
-	{
-		DurationTime = (DurationTime + AttackMagnitude) * MagnitudeTimeScalar;
-		LethalTime = DurationTime * 0.5f;
-	}
-	else
-	{ 
-		DynamicLifetime = DurationTime;
-	}
-	SetLifeSpan(DurationTime);
-
-	// Scale HitsPerSecond by Magnitude
-	HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 55.0f, 1000.0f);
-
-	// Adjust lethal time by magnitude
-	float NewLethalTime = LethalTime * AttackMagnitude;
-	LethalTime = NewLethalTime;
-
-	//// Last-second update to direction after fire
-	float DirRecalc = ShotDirection * ShootingAngle;
-	if (AngleSweep != 0.0f)
-	{
-		DirRecalc *= (-2.1f * AttackMagnitude);
-		FVector LocalForward = GetActorForwardVector(); // .ProjectOnToNormal(FVector::ForwardVector);
-		//LocalForward.Y = 0.0f;
-		FRotator FireRotation = LocalForward.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
-		//FRotator FireRotation = LocalForward.Rotation() + FRotator(InputZ * 21.0f, 0.0f, 0.0f);
-		SetActorRotation(FireRotation);
-	}
-	
-
-	// Projectile movement
-	if (ProjectileSpeed > 0.0f)
-	{
-		ProjectileComponent->Velocity = GetActorForwardVector() * ProjectileSpeed;
-
-		if (ProjectileComponent)
+		/*if (!bSecondary)
 		{
-			/*if (bScaleProjectileSpeed)
-			{
-				ProjectileComponent->Velocity = GetActorForwardVector() * ProjectileSpeed * AttackMagnitude * ProjectileMaxSpeed;
-			}*/
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("AttackMagnitude: %f"), AttackMagnitude));
+		}*/
+
+		// set sounds
+		AttackSound->SetPitchMultiplier(AttackSound->PitchMultiplier + AttackMagnitude);
+		//AttackSound->SetVolumeMultiplier(FMath::Clamp(1.0f + (AttackMagnitude * 1.25f), 0.1f, 1.5f));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Pitch After: %f"), AttackSound->PitchMultiplier));
+
+		// Lifespan
+		if (MagnitudeTimeScalar != 1.0f)
+		{
+			DurationTime = (DurationTime + AttackMagnitude) * MagnitudeTimeScalar;
+			LethalTime = DurationTime * 0.5f;
 		}
 		else
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("no projectile comp"));
+			DynamicLifetime = DurationTime;
 		}
-	}
+		SetLifeSpan(DurationTime);
 
-	// Get match obj
-	TArray<AActor*> Actors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGMatch::StaticClass(), Actors);
-	if (Actors.Num() >= 1)
-	{
-		CurrentMatch = Cast<AGMatch>(Actors[0]);
-	}
-	
+		// Scale HitsPerSecond by Magnitude
+		HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 55.0f, 1000.0f);
 
-	// Color & cosmetics
-	/*FlashMesh->SetMaterial(0, MainMaterial);
-	AttackMesh->SetMaterial(0, MainMaterial);*/
+		// Adjust lethal time by magnitude
+		float NewLethalTime = LethalTime * AttackMagnitude;
+		LethalTime = NewLethalTime;
 
-
-	// Recoil &
-	// Init Success
-	if ((OwningShooter != nullptr) && (CurrentMatch != nullptr))
-	{
-		ACharacter* Chara = Cast<ACharacter>(OwningShooter);
-		if (Chara != nullptr)
+		//// Last-second update to direction after fire
+		float DirRecalc = ShotDirection * ShootingAngle;
+		if (AngleSweep != 0.0f)
 		{
-			float RecoilScalar = KineticForce * FMath::Clamp((10.0f * AttackMagnitude), 0.5f, 2.1f);
-			FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
-			FRotator RecoilRotator = LocalForward.Rotation() + FRotator(ShotDirection * ShootingAngle, 0.0f, 0.0f);
-			Chara->GetCharacterMovement()->AddImpulse(RecoilRotator.Vector() * RecoilScalar);
-
-			// Take the first shot
-			HitTimer = (1.0f / HitsPerSecond);
-			bLethal = true;
-			DetectHit(GetActorForwardVector());
-
-			///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("LethalTime:  %f"), LethalTime));
+			DirRecalc *= (-2.1f * AttackMagnitude);
+			FVector LocalForward = GetActorForwardVector(); // .ProjectOnToNormal(FVector::ForwardVector);
+															//LocalForward.Y = 0.0f;
+			FRotator FireRotation = LocalForward.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
+			//FRotator FireRotation = LocalForward.Rotation() + FRotator(InputZ * 21.0f, 0.0f, 0.0f);
+			SetActorRotation(FireRotation);
 		}
+
+
+		// Projectile movement
+		if (ProjectileSpeed > 0.0f)
+		{
+			ProjectileComponent->Velocity = GetActorForwardVector() * ProjectileSpeed;
+
+			if (ProjectileComponent)
+			{
+				/*if (bScaleProjectileSpeed)
+				{
+				ProjectileComponent->Velocity = GetActorForwardVector() * ProjectileSpeed * AttackMagnitude * ProjectileMaxSpeed;
+				}*/
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("no projectile comp"));
+			}
+		}
+
+		// Get match obj
+		TArray<AActor*> Actors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGMatch::StaticClass(), Actors);
+		if (Actors.Num() >= 1)
+		{
+			CurrentMatch = Cast<AGMatch>(Actors[0]);
+		}
+
+
+		// Color & cosmetics
+		/*FlashMesh->SetMaterial(0, MainMaterial);
+		AttackMesh->SetMaterial(0, MainMaterial);*/
+
+
+		// Recoil &
+		// Init Success
+		if ((OwningShooter != nullptr) && (CurrentMatch != nullptr))
+		{
+			ACharacter* Chara = Cast<ACharacter>(OwningShooter);
+			if (Chara != nullptr)
+			{
+				float RecoilScalar = KineticForce * FMath::Clamp((10.0f * AttackMagnitude), 0.5f, 2.1f);
+				FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
+				FRotator RecoilRotator = LocalForward.Rotation() + FRotator(ShotDirection * ShootingAngle, 0.0f, 0.0f);
+				Chara->GetCharacterMovement()->AddImpulse(RecoilRotator.Vector() * RecoilScalar);
+
+				// Take the first shot
+				HitTimer = (1.0f / HitsPerSecond);
+				bLethal = true;
+				DetectHit(GetActorForwardVector());
+
+				///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("LethalTime:  %f"), LethalTime));
+			}
+		}
+
+		GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("Magnitude:  %f"), AttackMagnitude));
 	}
 }
 
@@ -349,46 +354,47 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 
 void AGAttack::ReportHit(AActor* HitActor)
 {
-	/// Track hitscale curvature for increasing knockback and damage
-	numHits = FMath::Clamp((numHits += (numHits - 1)), 2, 9);
-
-	/// Damage
-	AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
-	if (PotentialPlayer != nullptr)
+	if (HasAuthority())
 	{
-		PotentialPlayer->ModifyHealth((-AttackDamage) * numHits);
-		
-		/// Marked killed AI for the reset sweep
-		if (PotentialPlayer->GetHealth() <= 0.0f
-			&& PotentialPlayer->ActorHasTag("Bot"))
+		/// Track hitscale curvature for increasing knockback and damage
+		numHits = FMath::Clamp((numHits += (numHits - 1)), 2, 9);
+
+		/// Damage
+		AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
+		if (PotentialPlayer != nullptr)
 		{
-			PotentialPlayer->Tags.Add("Doomed");
+			PotentialPlayer->ModifyHealth((-AttackDamage) * numHits);
+
+			/// Marked killed AI for the reset sweep
+			if (PotentialPlayer->GetHealth() <= 0.0f
+				&& PotentialPlayer->ActorHasTag("Bot"))
+			{
+				PotentialPlayer->Tags.Add("Doomed");
+			}
 		}
-	}
 
-	/// Call for slowtime
-	if (CurrentMatch != nullptr)
-	{
-		CurrentMatch->ClaimHit(HitActor, OwningShooter);
-	}
-
-	/// Grow maze cubes
-	if (HitActor->ActorHasTag("Grow"))
-	{
-		FVector HitActorScale = HitActor->GetActorScale3D();
-		HitActor->SetActorScale3D(HitActorScale * 1.01f);
-		
-		/// Affect object's mass
-		/*TSubclassOf<UStaticMeshComponent> MeshCompTest;
-		UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(HitActor->GetComponentByClass(MeshCompTest));
-		if (MeshComp != nullptr)
+		/// Call for slowtime
+		if (CurrentMatch != nullptr)
 		{
+			CurrentMatch->ClaimHit(HitActor, OwningShooter);
+		}
+
+		/// Grow maze cubes
+		if (HitActor->ActorHasTag("Grow"))
+		{
+			FVector HitActorScale = HitActor->GetActorScale3D();
+			HitActor->SetActorScale3D(HitActorScale * 1.0521f);
+
+			/// Affect object's mass
+			/*TSubclassOf<UStaticMeshComponent> MeshCompTest;
+			UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(HitActor->GetComponentByClass(MeshCompTest));
+			if (MeshComp != nullptr)
+			{
 			float MeshMass = MeshComp->GetMass();
 			MeshComp->SetMassScale(NAME_None, MeshMass * 0.9f);
-		}*/
+			}*/
+		}
 	}
-
-	ForceNetUpdate();
 }
 
 
