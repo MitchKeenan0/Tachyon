@@ -595,7 +595,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 	{
 		UpdateCharacter(DeltaSeconds);
 
-		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("timescale  %f"), CustomTimeDilation));
+		///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("timescale  %f"), CustomTimeDilation));
 
 		// Timescaling
 		/*if (CustomTimeDilation < 1.0f)
@@ -1066,21 +1066,8 @@ void AGammaCharacter::InitAttack()
 			return;
 		}
 
-		// AMENABLE Boost cancel
-		/*if (GetActiveBoost() != nullptr)
-		{
-			GetActiveBoost()->Destroy();
-			ActiveBoost = nullptr;
-		}
-		if (GetActiveFlash() != nullptr)
-		{
-			GetActiveFlash()->Destroy();
-			ActiveFlash = nullptr;
-		}
-		bBoosting = false;*/
-
 		// Conditions for shooting
-		bool bWeaponAllowed = (ActiveAttack == nullptr) || bMultipleAttacks;
+		bool bWeaponAllowed = ((ActiveAttack == nullptr) || bMultipleAttacks) && (ActiveSecondary == nullptr);
 		bool bFireAllowed = bWeaponAllowed && (GetActiveFlash() == nullptr)
 			&& (Charge > 0.0f) && (FlashClass != nullptr);
 		/// Extra bools for action heirarchy, currently moving away from this...
@@ -1201,7 +1188,7 @@ void AGammaCharacter::ReleaseAttack()
 				float ChargeSpend = 1.0f;
 				if (PrefireTimer >= 0.33f)
 				{
-					float BigSpend = 1.0f + FMath::FloorToFloat(ChargeMax * PrefireTimer);
+					float BigSpend = FMath::FloorToFloat(ChargeMax * PrefireTimer);
 					ChargeSpend = BigSpend;
 				}
 				Charge -= ChargeSpend;
@@ -1238,12 +1225,17 @@ bool AGammaCharacter::ServerReleaseAttack_Validate()
 void AGammaCharacter::FireSecondary()
 {
 	if (SecondaryClass && (ActiveSecondary == nullptr)
-		&& GetActiveFlash() == nullptr
-		&& GetActiveBoost() == nullptr
+		&& (GetActiveBoost() == nullptr)
 		&& (ActiveAttack == nullptr)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
 	{
-		
+		// Cancel the Flash if there is one
+		if (GetActiveFlash() != nullptr)
+		{
+			ActiveFlash->Destroy();
+			ActiveFlash = nullptr;
+		}
+
 		// Direction & setting up
 		FVector FirePosition = GetActorLocation();
 		FVector LocalForward = AttackScene->GetForwardVector();
@@ -1456,7 +1448,7 @@ void AGammaCharacter::PrefireTiming()
 		&& (PrefireTimer < PrefireTime))
 	{
 		PrefireTimer += GetWorld()->GetDeltaSeconds() * CustomTimeDilation;
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::White, FString::Printf(TEXT("Prefire: %f"), PrefireTimer));
+		///GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::White, FString::Printf(TEXT("Prefire: %f"), PrefireTimer));
 	}
 	else if ((PrefireTimer >= PrefireTime)
 		&& (Charge > 0)

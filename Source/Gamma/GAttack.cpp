@@ -108,13 +108,16 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		}
 
 		// Last-second update to direction after fire
-		float DirRecalc = ShotDirection * ShootingAngle;
 		if (AngleSweep != 0.0f)
 		{
+			float DirRecalc = ShotDirection * ShootingAngle;
 			DirRecalc *= (-2.1f * AttackMagnitude);
 			FVector LocalForward = GetActorForwardVector();
 			FRotator FireRotation = LocalForward.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
-			if (FireRotation.Yaw >= 0.0f)
+
+			float YawAbs = FMath::Abs(FireRotation.Yaw);
+			GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("FireRotation.Yaw:  %f"), YawAbs));
+			if ((YawAbs < 90.0f) || (YawAbs > 270.0f))
 			{
 				FireRotation.Yaw = 0.0f;
 			}
@@ -276,8 +279,9 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		IgnoredActors.Add(OwningShooter);
 
 		FVector Start = GetActorLocation() + GetActorForwardVector();
+		Start.Y = 0.0f;
 		FVector End = Start + (RaycastVector * RaycastHitRange);
-		//End.Y = 0.0f; /// strange y-axis drift
+		End.Y = 0.0f; /// strange y-axis drift
 
 		FHitResult Hit;
 
@@ -287,7 +291,9 @@ void AGAttack::DetectHit(FVector RaycastVector)
 			float SpriteLength = (AttackSprite->Bounds.BoxExtent.X) * (1.0f + AttackMagnitude);
 			float AttackBodyLength = SpriteLength * RaycastHitRange;
 			Start = AttackSprite->GetComponentLocation() + (GetActorForwardVector() * (-SpriteLength / 2.0f));
+			Start.Y = 0.0f;
 			End = Start + (RaycastVector * AttackBodyLength);
+			End.Y = 0.0f;
 		}
 
 		// Pew pew
@@ -298,7 +304,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 			TraceObjects,
 			false,
 			IgnoredActors,
-			EDrawDebugTrace::ForDuration,
+			EDrawDebugTrace::None,
 			Hit,
 			true,
 			FLinearColor::White, FLinearColor::Red, 5.0f);
