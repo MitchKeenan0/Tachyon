@@ -589,33 +589,29 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	/*if ((!HasAuthority() || IsLocallyControlled())
-		&& (CustomTimeDilation < 1.0f))
-	{
-		RecoverTimescale(DeltaSeconds);
-	}*/
 
-	
-	
-	
 	// Main update
 	if ((Controller != nullptr))
 	{
 		UpdateCharacter(DeltaSeconds);
 
+		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("timescale  %f"), CustomTimeDilation));
+
 		// Timescaling
-		
-		
-		if (CustomTimeDilation < 1.0f)
+		/*if (CustomTimeDilation < 1.0f)
 		{
 			RecoverTimescale(DeltaSeconds);
-		}
+		}*/
 		
 
-		if (bShooting && (GetActiveFlash() == nullptr) && (ActiveAttack == nullptr))
+		if (bShooting)
 		{
-			InitAttack();
+			if ((GetActiveFlash() == nullptr) && (ActiveAttack == nullptr))
+			{
+				InitAttack();
+			}
 		}
+		
 		
 		if (!bShooting && (PrefireTimer > 0.0f))
 		{
@@ -649,7 +645,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 			((ActiveAttack == nullptr) || (!IsValid(ActiveAttack)) || (ActiveAttack->IsPendingKillOrUnreachable())))
 		{
 			RaiseCharge();
-			bCharging = false;
+			//bCharging = false;
 			///GEngine->AddOnScreenDebugMessage(-1, 2.1f, FColor::White, FString::Printf(TEXT("Caught a lost Charge, firing %f"), 1.0f));
 		}
 
@@ -843,28 +839,26 @@ void AGammaCharacter::DisengageKick()
 	{
 		ServerDisengageKick();
 	}
-	else
+	
+	// Clear existing boost object
+	if (GetActiveBoost() != nullptr)
 	{
-		// Clear existing boost object
-		if (ActiveBoost != nullptr)
+		if (GetActiveBoost()->GetGameTimeSinceCreation() >= 0.33f)
 		{
-			if (ActiveBoost->GetGameTimeSinceCreation() >= 0.33f)
-			{
-				ActiveBoost->Destroy();
-				ActiveBoost = nullptr;
+			ActiveBoost->Destroy();
+			ActiveBoost = nullptr;
 
-				// Clear existing charge object
-				if (ActiveChargeParticles != nullptr)
-				{
-					ActiveChargeParticles->Destroy();
-					ActiveChargeParticles = nullptr;
-				}
+			// Clear existing charge object
+			if (ActiveChargeParticles != nullptr)
+			{
+				ActiveChargeParticles->Destroy();
+				ActiveChargeParticles = nullptr;
 			}
 		}
-
-		bBoosting = false;
-		bCharging = false;
 	}
+
+	bBoosting = false;
+	bCharging = false;
 }
 void AGammaCharacter::ServerDisengageKick_Implementation()
 {
@@ -879,69 +873,59 @@ bool AGammaCharacter::ServerDisengageKick_Validate()
 // LE KICK PROPULSION
 void AGammaCharacter::KickPropulsion()
 {
+	FVector CurrentVelocity = GetCharacterMovement()->Velocity;
 	FVector MoveInputVector = FVector::ZeroVector;
 	FVector KickVector = FVector::ZeroVector;
+	
+	// Algo scaling for timescale & max velocity
+	
+	///float RelativityToMaxSpeed = FMath::Clamp((MaxMoveSpeed - CurrentVelocity.Size()), 0.1f, 1.0f);
+	///float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
 
-	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
+	// Force, clamp, & effect chara movement
+	float ChargeScalar = FMath::Sqrt(FMath::Clamp(Charge, 0.1f, 1.0f));
+	float DeltaTime = GetWorld()->DeltaTimeSeconds;
+	KickVector = MoveInputVector
+		* MoveFreshMultiplier
+		* 1000.0f ///previously RelativityToMaxSpeed
+		* DeltaTime;
+
+	// Trimming
+	KickVector.Z *= 0.9f;
+	KickVector.Y = 0.0f;
+
+	// Initial kick for good feels
+	MoveInputVector = FVector(InputX, 0.0f, InputZ * 0.75f).GetSafeNormal();
+	if ((GetActiveBoost() == nullptr) && (BoostClass != nullptr))
 	{
+		GetCharacterMovement()->AddImpulse(KickVector * 3.33f);
 
-		// Conditions for propulsion
-		if (GetWorld() && (ActiveChargeParticles != nullptr)
-			&& (GetCharacterMovement() != nullptr))
+		if (HasAuthority())
 		{
-			// Algo scaling for timescale & max velocity
-			MoveInputVector = FVector(InputX, 0.0f, InputZ * 0.75f).GetSafeNormal();
-			FVector CurrentVelocity = GetCharacterMovement()->Velocity;
-			float TimeDelta = CustomTimeDilation; // (GetWorld()->DeltaTimeSeconds / CustomTimeDilation)
-			float DeltaTime = GetWorld()->DeltaTimeSeconds;
-			//float RelativityToMaxSpeed = (MaxMoveSpeed) - CurrentVelocity.Size();
-			//float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
+			// Set up Kick Visuals direction
+			FActorSpawnParameters SpawnParams;
+			FRotator InputRotator = MoveInputVector.Rotation();
+			FVector SpawnLocation = GetActorLocation() + (FVector::UpVector * 10.0f); /// + (PlayerVelocity / 3);
 
-			// Force, clamp, & effect chara movement
-			float ChargeScalar = FMath::Sqrt(FMath::Clamp(Charge, 0.1f, 1.0f));
-			KickVector = MoveInputVector
-				* MoveFreshMultiplier
-				* 1000.0f ///previously RelativityToMaxSpeed
-				* TimeDelta
-				* DeltaTime;
-				//* ChargeScalar;
-			
-			// Trimming
-			KickVector.Z *= 0.9f;
-			KickVector.Y = 0.0f;
-			GetCharacterMovement()->AddImpulse(KickVector, false);
-
-			//bMoved = false;
-			//MoveTimer = 0.0f;
-
-			ForceNetUpdate();
-
-			//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("MoveInputVector  %f"), MoveInputVector.Size()));
-			//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
-			//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
-			//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("vel  %f"), (GetCharacterMovement()->Velocity.Size())));
-			//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("kick   %f"), KickVector.Size()));
-		}
-
-		// Spawn visuals
-		if ((BoostClass != nullptr) && (ActiveBoost == nullptr))
-		{
-			// Initial kick
-			GetCharacterMovement()->AddImpulse(KickVector * 3.33f);
-
-
-			if (Controller != nullptr)
-			{
-				// Set up Kick Visuals direction
-				FActorSpawnParameters SpawnParams;
-				FRotator InputRotator = MoveInputVector.Rotation();
-				FVector SpawnLocation = GetActorLocation() + (FVector::UpVector * 10.0f); /// + (PlayerVelocity / 3);
-
-				ActiveBoost = GetWorld()->SpawnActor<AActor>
-					(BoostClass, SpawnLocation, InputRotator, SpawnParams); /// PlayerVelRotator
-			}
+			ActiveBoost = GetWorld()->SpawnActor<AActor>
+				(BoostClass, SpawnLocation, InputRotator, SpawnParams); /// PlayerVelRotator
 		}
 	}
+
+	// Sustained Propulsion
+	if (GetWorld() && (ActiveChargeParticles != nullptr)
+		&& (GetCharacterMovement() != nullptr))
+	{
+		GetCharacterMovement()->AddImpulse(KickVector, false);
+
+		//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("MoveInputVector  %f"), MoveInputVector.Size()));
+		//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
+		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
+		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("vel  %f"), (GetCharacterMovement()->Velocity.Size())));
+		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("kick   %f"), KickVector.Size()));
+	}
+
+	//ForceNetUpdate();
 
 	if (Role < ROLE_Authority)
 	{
@@ -988,64 +972,65 @@ bool AGammaCharacter::ServerUpdateMoveParticles_Validate(FVector Move)
 // RAISE CHARGE
 void AGammaCharacter::RaiseCharge()
 {
-	if ((UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
-		&& (((ActiveAttack == nullptr) && !IsValid(ActiveAttack) || ActiveAttack->IsPendingKillOrUnreachable())
-			|| bMultipleAttacks)
-		)
-	{
-		// Noobish recovery from empty-case -1 charge
-		if (Charge < 0.0f) {
-			Charge = 0.0f;
-		}
-
-		// Charge growth
-		if (Charge <= (ChargeMax - ChargeGain))
-		{
-			Charge += ChargeGain;
-		}
-
-		// Sprite Scaling
-		float ClampedCharge = FMath::Clamp(Charge * 0.7f, 1.0f, ChargeMax);
-		float SCharge = FMath::Sqrt(ClampedCharge);
-		FVector ChargeSize = FVector(SCharge, SCharge, SCharge);
-		GetCapsuleComponent()->SetWorldScale3D(ChargeSize);
-
-		// Move boost o.o
-		if (FVector(InputX, 0.0f, InputZ) != FVector::ZeroVector)
-		{
-			NewMoveKick();
-		}
-
-		// Sound fx
-		if (PlayerSound != nullptr)
-		{
-			//PlayerSound->SetPitchMultiplier(Charge * 0.3f);
-			PlayerSound->Play();
-		}
-
-		// visual charge vfx
-		if (HasAuthority() && (ChargeParticles != nullptr) && (ActiveChargeParticles == nullptr))
-		{
-			FActorSpawnParameters SpawnParams;
-			ActiveChargeParticles = Cast<AActor>(GetWorld()->SpawnActor<AActor>(ChargeParticles, GetActorLocation(), GetActorRotation(), SpawnParams));
-			if (ActiveChargeParticles != nullptr)
-			{
-				ActiveChargeParticles->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
-				ActiveChargeParticles->SetActorScale3D(ChargeSize);
-			}
-		}
-	}
-
-	// Catch misfire - if we were shooting, etc
-	if ((ActiveChargeParticles == nullptr) || (!IsValid(ActiveChargeParticles)))
-	{
-		///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("Charging = TRUE"));
-		bCharging = true;
-	}
-
 	if (Role < ROLE_Authority)
 	{
 		ServerRaiseCharge();
+	}
+	else
+	{
+		if ((UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+			&& (((ActiveAttack == nullptr) && !IsValid(ActiveAttack) || ActiveAttack->IsPendingKillOrUnreachable())
+				|| bMultipleAttacks)
+			)
+		{
+			// Noobish recovery from empty-case -1 charge
+			if (Charge < 0.0f) {
+				Charge = 0.0f;
+			}
+
+			// Charge growth
+			if (Charge <= (ChargeMax - ChargeGain))
+			{
+				Charge += ChargeGain;
+			}
+
+			// Sprite Scaling
+			float ClampedCharge = FMath::Clamp(Charge * 0.7f, 1.0f, ChargeMax);
+			float SCharge = FMath::Sqrt(ClampedCharge);
+			FVector ChargeSize = FVector(SCharge, SCharge, SCharge);
+			GetCapsuleComponent()->SetWorldScale3D(ChargeSize);
+
+			// Sound fx
+			if (PlayerSound != nullptr)
+			{
+				//PlayerSound->SetPitchMultiplier(Charge * 0.3f);
+				PlayerSound->Play();
+			}
+
+			// visual charge vfx
+			if (HasAuthority() && (ChargeParticles != nullptr) && (ActiveChargeParticles == nullptr))
+			{
+				FActorSpawnParameters SpawnParams;
+				ActiveChargeParticles = Cast<AActor>(GetWorld()->SpawnActor<AActor>(ChargeParticles, GetActorLocation(), GetActorRotation(), SpawnParams));
+				if (ActiveChargeParticles != nullptr)
+				{
+					ActiveChargeParticles->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+					ActiveChargeParticles->SetActorScale3D(ChargeSize);
+				}
+			}
+
+			// Move boost o.o
+			if (FVector(InputX, 0.0f, InputZ) != FVector::ZeroVector)
+			{
+				NewMoveKick();
+			}
+		}
+
+		// Catch misfire - if we were shooting, etc
+		if ((ActiveChargeParticles == nullptr) || (!IsValid(ActiveChargeParticles)))
+		{
+			bCharging = true;
+		}
 	}
 }
 void AGammaCharacter::ServerRaiseCharge_Implementation()
@@ -1066,15 +1051,6 @@ void AGammaCharacter::InitAttack()
 	}
 	else
 	{
-		// Attack cancel for single shooters already shooting
-		bool bCancellingAttack = false;
-		if ((ActiveAttack != nullptr) && !bMultipleAttacks)
-		{
-			ActiveAttack->Destroy();
-			NullifyAttack();
-			bCancellingAttack = true;
-		}
-
 		// If we're shooting dry, trigger ChargeBar warning by going sub-zero
 		if (Charge < ChargeGain)
 		{
@@ -1082,14 +1058,33 @@ void AGammaCharacter::InitAttack()
 			return;
 		}
 
+		// PROHIBITIVE Attack cancel for single shooters already shooting
+		if ((ActiveAttack != nullptr) && !bMultipleAttacks)
+		{
+			ActiveAttack->Destroy();
+			NullifyAttack();
+			return;
+		}
+
+		// AMENABLE Boost cancel
+		/*if (GetActiveBoost() != nullptr)
+		{
+			GetActiveBoost()->Destroy();
+			ActiveBoost = nullptr;
+		}
+		if (GetActiveFlash() != nullptr)
+		{
+			GetActiveFlash()->Destroy();
+			ActiveFlash = nullptr;
+		}
+		bBoosting = false;*/
+
 		// Conditions for shooting
-		bool bWeaponAllowed = !bCancellingAttack &&
-			(GetActiveBoost() == nullptr) &&
-			(((GetActiveFlash() == nullptr) && (ActiveAttack == nullptr))
-				|| bMultipleAttacks);
-		bool bFireAllowed = bWeaponAllowed
-			&& (!IsValid(GetActiveFlash()))
+		bool bWeaponAllowed = (ActiveAttack == nullptr) || bMultipleAttacks;
+		bool bFireAllowed = bWeaponAllowed && (GetActiveFlash() == nullptr)
 			&& (Charge > 0.0f) && (FlashClass != nullptr);
+		/// Extra bools for action heirarchy, currently moving away from this...
+		/// (GetActiveBoost() == nullptr) &&  && (!IsValid(GetActiveFlash()))
 
 		if (bFireAllowed)
 		{
@@ -1132,102 +1127,102 @@ bool AGammaCharacter::ServerInitAttack_Validate()
 // ATTACK
 void AGammaCharacter::ReleaseAttack()
 {
-	if ((AttackClass != nullptr)
-		&& ((ActiveAttack == nullptr) || bMultipleAttacks)
-		&& (GetActiveSecondary() == nullptr)
-		&& (Charge > 0.0f)
-		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
-		&& ((PrefireTimer > 0.0f && (ActiveFlash != nullptr))))
-	{
-		// Clean up previous flash
-		if ((GetActiveFlash() != nullptr))
-		{
-			ActiveFlash->Destroy();
-			ActiveFlash = nullptr;
-		}
-
-		// Aim by InputY
-		float AimClampedInputZ = FMath::Clamp((InputZ * 10.0f), -1.0f, 1.0f);
-		FVector FirePosition = AttackScene->GetComponentLocation();
-		FVector LocalForward = AttackScene->GetForwardVector();
-		LocalForward.Y = 0.0f;
-		FRotator FireRotation = LocalForward.Rotation() + FRotator(InputZ * 21.0f, 0.0f, 0.0f); /// AimClampedInputZ
-		FireRotation.Yaw = GetActorRotation().Yaw;
-		if (FMath::Abs(FireRotation.Yaw) > 90.0f)
-		{
-			FireRotation.Yaw = 180.0f;
-		}
-		else
-		{
-			FireRotation.Yaw = 0.0f;
-		}
-
-
-		// Spawning
-		if (HasAuthority())
-		{
-			if (AttackClass != nullptr || bMultipleAttacks)
-			{
-				FActorSpawnParameters SpawnParams;
-				ActiveAttack = Cast<AGAttack>(GetWorld()->SpawnActor<AGAttack>(AttackClass, FirePosition, FireRotation, SpawnParams));
-				if (ActiveAttack != nullptr)
-				{
-
-					// Imbue with magnitude by PrefireTimer
-					float PrefireClamped = FMath::Clamp(PrefireTimer, 0.1f, 1.0f);
-					float PrefireCurve = FMath::Square(PrefireClamped) * 2.1f;
-					PrefireCurve = FMath::Clamp(PrefireCurve, 0.1f, 1.0f);
-
-					// The attack is born
-					if (ActiveAttack != nullptr)
-					{
-						ActiveAttack->InitAttack(this, PrefireCurve, AimClampedInputZ);
-					}
-
-					// Position lock, or naw
-					if ((ActiveAttack != nullptr) && ActiveAttack->LockedEmitPoint)
-					{
-						ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
-					}
-
-					///GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, FString::Printf(TEXT("PrefireTimer:  %f"), PrefireTimer));
-				}
-			}
-			else
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No attack class to spawn"));
-			}
-
-			// Spend it!
-			float ChargeSpend = 1.0f;
-			if (PrefireTimer >= 0.33f)
-			{
-				float BigSpend = 1.0f + FMath::FloorToFloat(ChargeMax * PrefireTimer);
-				ChargeSpend = BigSpend;
-			}
-			Charge -= ChargeSpend;
-			
-
-			// Sprite Scaling
-			float ClampedCharge = FMath::Clamp(Charge * 0.7f, 1.0f, ChargeMax);
-			float SCharge = FMath::Sqrt(ClampedCharge);
-			FVector ChargeSize = FVector(SCharge, SCharge, SCharge);
-			GetCapsuleComponent()->SetWorldScale3D(ChargeSize);
-		}
-
-		PrefireTimer = 0.0f;
-	}
-
-	// If we're 'shooting dry', notify the chargebar to flash
-	if (Charge <= 0.0f)
-	{
-		Charge = -1.0f;
-		return;
-	}
-
 	if (Role < ROLE_Authority)
 	{
 		ServerReleaseAttack();
+	}
+	else
+	{
+		if ((AttackClass != nullptr)
+			&& ((ActiveAttack == nullptr) || bMultipleAttacks)
+			&& (GetActiveSecondary() == nullptr)
+			&& (Charge > 0.0f)
+			&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
+			&& ((PrefireTimer > 0.0f && (ActiveFlash != nullptr))))
+		{
+			// Clean up previous flash
+			if ((GetActiveFlash() != nullptr))
+			{
+				ActiveFlash->Destroy();
+				ActiveFlash = nullptr;
+			}
+
+			// Aim by InputY
+			float AimClampedInputZ = FMath::Clamp((InputZ * 10.0f), -1.0f, 1.0f);
+			FVector FirePosition = AttackScene->GetComponentLocation();
+			FVector LocalForward = AttackScene->GetForwardVector();
+			LocalForward.Y = 0.0f;
+			FRotator FireRotation = LocalForward.Rotation() + FRotator(InputZ * 21.0f, 0.0f, 0.0f); /// AimClampedInputZ
+			FireRotation.Yaw = GetActorRotation().Yaw;
+			if (FMath::Abs(FireRotation.Yaw) > 90.0f)
+			{
+				FireRotation.Yaw = 180.0f;
+			}
+			else
+			{
+				FireRotation.Yaw = 0.0f;
+			}
+
+
+			// Spawning
+			if (HasAuthority() && (ActiveAttack == nullptr))
+			{
+				if ((AttackClass != nullptr) || bMultipleAttacks)
+				{
+					FActorSpawnParameters SpawnParams;
+					ActiveAttack = Cast<AGAttack>(GetWorld()->SpawnActor<AGAttack>(AttackClass, FirePosition, FireRotation, SpawnParams));
+					if (ActiveAttack != nullptr)
+					{
+
+						// Imbue with magnitude by PrefireTimer
+						float PrefireClamped = FMath::Clamp(PrefireTimer, 0.1f, 1.0f);
+						float PrefireCurve = FMath::Square(PrefireClamped) * 2.1f;
+						PrefireCurve = FMath::Clamp(PrefireCurve, 0.1f, 1.0f);
+
+						// The attack is born
+						if (ActiveAttack != nullptr)
+						{
+							ActiveAttack->InitAttack(this, PrefireCurve, AimClampedInputZ);
+						}
+
+						// Position lock, or naw
+						if ((ActiveAttack != nullptr) && ActiveAttack->LockedEmitPoint)
+						{
+							ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
+						}
+					}
+				}
+				else
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("No attack class to spawn"));
+				}
+
+				// Spend it!
+				float ChargeSpend = 1.0f;
+				if (PrefireTimer >= 0.33f)
+				{
+					float BigSpend = 1.0f + FMath::FloorToFloat(ChargeMax * PrefireTimer);
+					ChargeSpend = BigSpend;
+				}
+				Charge -= ChargeSpend;
+
+
+				// Sprite Scaling
+				float ClampedCharge = FMath::Clamp(Charge * 0.7f, 1.0f, ChargeMax);
+				float SCharge = FMath::Sqrt(ClampedCharge);
+				FVector ChargeSize = FVector(SCharge, SCharge, SCharge);
+				GetCapsuleComponent()->SetWorldScale3D(ChargeSize);
+			}
+
+			PrefireTimer = 0.0f;
+		}
+
+		// If we're 'shooting dry', notify the chargebar to flash
+		if (Charge <= 0.0f)
+		{
+			Charge = -1.0f;
+			return;
+		}
 	}
 }
 void AGammaCharacter::ServerReleaseAttack_Implementation()
@@ -1298,51 +1293,85 @@ bool AGammaCharacter::ServerFireSecondary_Validate()
 // TIMESCALE RECOVERY
 void AGammaCharacter::RecoverTimescale(float DeltaTime)
 {
+	float Global = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+	if (Global < 1.0f)
+	{
+		Timescale = 1.0f;
+		CustomTimeDilation = 1.0f;
+	}
+
+	if (CustomTimeDilation != 1.0f)
+	{
+		// Personal Timescale
+		Timescale = CustomTimeDilation;
+
+		/*if (GetActiveFlash() != nullptr)
+		{
+			GetActiveFlash()->CustomTimeDilation = Timescale;
+			float NewLife = GetActiveFlash()->GetLifeSpan() * (1.0f / Timescale);
+			GetActiveFlash()->SetLifeSpan(NewLife);
+		}
+		if (ActiveAttack != nullptr)
+		{
+			ActiveAttack->CustomTimeDilation = Timescale;
+			float NewLife = ActiveAttack->GetLifeSpan() * (1.0f / Timescale);
+			ActiveAttack->SetLifeSpan(NewLife);
+			ActiveAttack->ForceNetUpdate();
+		}
+		if (ActiveSecondary != nullptr)
+		{
+			ActiveSecondary->CustomTimeDilation = Timescale;
+			float NewLife = ActiveSecondary->GetLifeSpan() * (1.0f / Timescale);
+			ActiveSecondary->SetLifeSpan(NewLife);
+		}*/
+
+		// Personal Recovery
+		float ReturnTime = FMath::FInterpTo(Timescale, 1.0f, DeltaTime, Timescale * MoveSpeed);
+		CustomTimeDilation = FMath::Clamp(ReturnTime, 0.1f, 1.0f);
+
+		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("RECOVERING: %f"), CustomTimeDilation));
+	}
+
 	if (Role < ROLE_Authority)
 	{
 		ServerRecoverTimescale(DeltaTime);
-	}
-	else
-	{
-		float Global = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
-		if (Global < 1.0f)
-		{
-			Timescale = 1.0f;
-			CustomTimeDilation = 1.0f;
-		}
-		else if (CustomTimeDilation != 1.0f)
-		{
-			// Personal Timescale
-			Timescale = CustomTimeDilation;
-
-			if (GetActiveFlash() != nullptr)
-			{
-				GetActiveFlash()->CustomTimeDilation = Timescale;
-				float NewLife = GetActiveFlash()->GetLifeSpan() * (1.0f / Timescale);
-				GetActiveFlash()->SetLifeSpan(NewLife);
-			}
-			if (ActiveAttack != nullptr)
-			{
-				ActiveAttack->CustomTimeDilation = Timescale;
-				float NewLife = ActiveAttack->GetLifeSpan() * (1.0f / Timescale);
-				ActiveAttack->SetLifeSpan(NewLife);
-			}
-			if (ActiveSecondary != nullptr)
-			{
-				ActiveSecondary->CustomTimeDilation = Timescale;
-				float NewLife = ActiveSecondary->GetLifeSpan() * (1.0f / Timescale);
-				ActiveSecondary->SetLifeSpan(NewLife);
-			}
-
-			// Personal Recovery
-			float ReturnTime = FMath::FInterpTo(Timescale, 1.0f, DeltaTime, Timescale * MoveSpeed);
-			CustomTimeDilation = FMath::Clamp(ReturnTime, 0.1f, 1.0f);
-		}
 	}
 }
 void AGammaCharacter::ServerRecoverTimescale_Implementation(float DeltaTime)
 {
 	RecoverTimescale(DeltaTime);
+
+	if (CustomTimeDilation != 1.0f)
+	{
+		// Personal Timescale
+		Timescale = CustomTimeDilation;
+
+		/*if (GetActiveFlash() != nullptr)
+		{
+			GetActiveFlash()->CustomTimeDilation = Timescale;
+			float NewLife = GetActiveFlash()->GetLifeSpan() * (1.0f / Timescale);
+			GetActiveFlash()->SetLifeSpan(NewLife);
+		}
+		if (ActiveAttack != nullptr)
+		{
+			ActiveAttack->CustomTimeDilation = Timescale;
+			float NewLife = ActiveAttack->GetLifeSpan() * (1.0f / Timescale);
+			ActiveAttack->SetLifeSpan(NewLife);
+			ActiveAttack->ForceNetUpdate();
+		}
+		if (ActiveSecondary != nullptr)
+		{
+			ActiveSecondary->CustomTimeDilation = Timescale;
+			float NewLife = ActiveSecondary->GetLifeSpan() * (1.0f / Timescale);
+			ActiveSecondary->SetLifeSpan(NewLife);
+		}*/
+
+		// Personal Recovery
+		float ReturnTime = FMath::FInterpTo(Timescale, 1.0f, DeltaTime, Timescale * MoveSpeed);
+		CustomTimeDilation = FMath::Clamp(ReturnTime, 0.1f, 1.0f);
+
+		ForceNetUpdate();
+	}
 }
 bool AGammaCharacter::ServerRecoverTimescale_Validate(float DeltaTime)
 {
@@ -1353,22 +1382,29 @@ bool AGammaCharacter::ServerRecoverTimescale_Validate(float DeltaTime)
 // Setter for Timescale from remote places i.e Match
 void AGammaCharacter::NewTimescale(float Value)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("NEW TIMESCALE WAS CALLED: %f"), CustomTimeDilation));
+
 	if (Role < ROLE_Authority)
 	{
 		ServerNewTimescale(Value);
+		ForceNetUpdate();
 	}
 	else
 	{
 		CustomTimeDilation = Value;
 
-		if (ActiveAttack != nullptr)
+		if ((ActiveAttack != nullptr) && HasAuthority())
 		{
 			ActiveAttack->CustomTimeDilation = Value;
 			UParticleSystemComponent* ParticleComp = ActiveAttack->GetParticles();
 			if (ParticleComp != nullptr)
 			{
-				ParticleComp->CustomTimeDilation = (Value * Value);
+				ParticleComp->CustomTimeDilation = Value;
 			}
+			float NewLife = ActiveAttack->GetLifeSpan() * (1.0f / CustomTimeDilation);
+			ActiveAttack->SetLifeSpan(NewLife);
+
+			ActiveAttack->ForceNetUpdate();
 		}
 		if (ActiveSecondary != nullptr)
 		{
@@ -1378,14 +1414,20 @@ void AGammaCharacter::NewTimescale(float Value)
 			{
 				ParticleComp->CustomTimeDilation = (Value);
 			}
+			float NewLife = ActiveSecondary->GetLifeSpan() * (1.0f / CustomTimeDilation);
+			ActiveSecondary->SetLifeSpan(NewLife);
 		}
 		if (GetActiveBoost() != nullptr)
 		{
 			GetActiveBoost()->CustomTimeDilation = Value;
+			float NewLife = GetActiveBoost()->GetLifeSpan() * (1.0f / CustomTimeDilation);
+			GetActiveBoost()->SetLifeSpan(NewLife);
 		}
 		if (GetActiveFlash() != nullptr)
 		{
 			GetActiveFlash()->CustomTimeDilation = Value;
+			float NewLife = GetActiveFlash()->GetLifeSpan() * (1.0f / CustomTimeDilation);
+			GetActiveFlash()->SetLifeSpan(NewLife);
 		}
 
 		if (GetMovementComponent() != nullptr)
@@ -1393,6 +1435,8 @@ void AGammaCharacter::NewTimescale(float Value)
 			float VelocityTimeScalar = FMath::Clamp(Value, 0.8f, 1.0f);
 			GetMovementComponent()->Velocity *= VelocityTimeScalar;
 		}
+
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, FString::Printf(TEXT("set Timescale:  %f"), Value));
 	}
 }
 void AGammaCharacter::ServerNewTimescale_Implementation(float Value)
@@ -1412,7 +1456,7 @@ void AGammaCharacter::PrefireTiming()
 		&& (PrefireTimer < PrefireTime))
 	{
 		PrefireTimer += GetWorld()->GetDeltaSeconds() * CustomTimeDilation;
-		///GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::White, FString::Printf(TEXT("ADDING TO PREFIRE T: %f"), PrefireTimer));
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::White, FString::Printf(TEXT("Prefire: %f"), PrefireTimer));
 	}
 	else if ((PrefireTimer >= PrefireTime)
 		&& (Charge > 0)
@@ -1447,8 +1491,7 @@ void AGammaCharacter::CheckAttackOn()
 }
 void AGammaCharacter::CheckAttackOff()
 {
-	if ((PrefireTimer > 0.0f)
-		|| GetActiveFlash() != nullptr)
+	if ((PrefireTimer > 0.0f) || (GetActiveFlash() != nullptr))
 	{
 		ReleaseAttack();
 	}

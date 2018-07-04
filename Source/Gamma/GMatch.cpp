@@ -64,7 +64,7 @@ bool AGMatch::PlayersAccountedFor()
 void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 {
 	// Player killer
-	if (!bGG && (HitActor->ActorHasTag("Player") || (HitActor->ActorHasTag("Bot"))))
+	if (HasAuthority() && !bGG && (HitActor->ActorHasTag("Player") || (HitActor->ActorHasTag("Bot"))))
 	{
 		AGammaCharacter* Reciever = Cast<AGammaCharacter>(HitActor);
 		AGammaCharacter* Shooter = Cast<AGammaCharacter>(Winner);
@@ -123,26 +123,25 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 					Reciever = nullptr;
 				}
 			}
-			else
-			{
-				// Hit-confirm timescaling
-				float CurrentTScale = Shooter->CustomTimeDilation;
-				float NewTScale = CurrentTScale * 0.11f;
-				NewTScale = FMath::Clamp(NewTScale, GGTimescale * 0.1f, 1.0f);
+			//else
+			//{
+			//	// Hit-confirm timescaling
+			//	float CurrentTScale = Shooter->CustomTimeDilation;
+			//	float NewTScale = CurrentTScale * 0.11f;
+			//	NewTScale = FMath::Clamp(NewTScale, GGTimescale * 0.1f, 1.0f);
 
-				Shooter->NewTimescale(NewTScale);
-				Reciever->NewTimescale(NewTScale);
-				
-				//Reciever->CustomTimeDilation = NewTScale;
-				//Shooter->CustomTimeDilation = NewTScale;
-				//Reciever->ForceNetUpdate();
-				//Shooter->ForceNetUpdate();
+			//	//Shooter->NewTimescale(NewTScale);
+			//	//Reciever->NewTimescale(NewTScale);
 
-				//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Blue, TEXT("Set new timescale.."));
-			}
+			//	bMinorGG = true;
+			//}
+
+			// Warning
+			// Just above ^^ these may have been deleted
+			/*ForceNetUpdate();
+			Shooter->ForceNetUpdate();
+			Reciever->ForceNetUpdate();*/
 		}
-
-		ForceNetUpdate();
 	}
 }
 

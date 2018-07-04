@@ -37,6 +37,7 @@ AGAttack::AGAttack()
 	bReplicates = true;
 	bReplicateMovement = true;
 	AttackSprite->SetIsReplicated(true);
+	AttackParticles->SetIsReplicated(true);
 	ProjectileComponent->SetIsReplicated(true);
 }
 
@@ -97,7 +98,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		SetLifeSpan(DurationTime);
 
 		// Scale HitsPerSecond by Magnitude
-		HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 9.1f, 99.1f);
+		HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 1.0f, 100.0f);
 
 		// Adjust lethal time by magnitude
 		if (DurationTime < 1.0f)
@@ -111,10 +112,16 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		if (AngleSweep != 0.0f)
 		{
 			DirRecalc *= (-2.1f * AttackMagnitude);
-			FVector LocalForward = GetActorForwardVector(); // .ProjectOnToNormal(FVector::ForwardVector);
-															//LocalForward.Y = 0.0f;
+			FVector LocalForward = GetActorForwardVector();
 			FRotator FireRotation = LocalForward.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
-			//FRotator FireRotation = LocalForward.Rotation() + FRotator(InputZ * 21.0f, 0.0f, 0.0f);
+			if (FireRotation.Yaw >= 0.0f)
+			{
+				FireRotation.Yaw = 0.0f;
+			}
+			else
+			{
+				FireRotation.Yaw = 180.0f;
+			}
 			SetActorRotation(FireRotation);
 		}
 
@@ -183,11 +190,12 @@ void AGAttack::Tick(float DeltaTime)
 	if (HasAuthority())
 	{
 		Super::Tick(DeltaTime);
-		LifeTimer += DeltaTime;
-		HitTimer += DeltaTime;
 
+		LifeTimer += DeltaTime;
+		HitTimer += (DeltaTime * CustomTimeDilation);
+		
 		// Healthy attack activities
-		if (bLethal) //  && HasAuthority()
+		if (bLethal)
 		{
 			UpdateAttack(DeltaTime);
 		}
@@ -216,66 +224,93 @@ void AGAttack::Tick(float DeltaTime)
 			}
 		}
 	}
+
+	// Timescaling
+	//if (OwningShooter != nullptr)
+	//{
+	//	if (CustomTimeDilation != OwningShooter->CustomTimeDilation)
+	//	{
+	//		CustomTimeDilation = OwningShooter->CustomTimeDilation;
+	//		AttackParticles->CustomTimeDilation = OwningShooter->CustomTimeDilation * 0.5f;
+	//		float NewLife = GetLifeSpan() * (1.0f / CustomTimeDilation);
+	//		SetLifeSpan(NewLife);
+	//		HitsPerSecond *= CustomTimeDilation;
+
+	//		ForceNetUpdate();
+
+	//		//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::White, FString::Printf(TEXT("Attack update timescale to  : %f"), CustomTimeDilation));
+	//	}
+	//}
+
+	
 }
 
 
 void AGAttack::UpdateAttack(float DeltaTime)
 {
-	bool bTime = (HitTimer >= (1.0f / HitsPerSecond));
-	float TimeSc = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
-	if (bTime && !bHit && (OwningShooter != nullptr) && (TimeSc > 0.5f))
+	if (OwningShooter != nullptr)
 	{
-		DetectHit(GetActorForwardVector());
+		bool bTime = (HitTimer >= (1.0f / HitsPerSecond));
+		float TimeSc = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+		if (bTime && !bHit && (TimeSc > 0.5f))
+		{
+			DetectHit(GetActorForwardVector());
+		}
 	}
 }
+	
 
 
 void AGAttack::DetectHit(FVector RaycastVector)
 {
-	// Linecast ingredients
-	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
-	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
-	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
-	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
-	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_PhysicsBody));
-	
-	TArray<AActor*> IgnoredActors;
-	IgnoredActors.Add(OwningShooter);
-	
-	FVector Start = GetActorLocation() + GetActorForwardVector();
-	FVector End = Start + (RaycastVector * RaycastHitRange);
-	//End.Y = 0.0f; /// strange y-axis drift
-	
-	FHitResult Hit;
-	
-	// Swords, etc, get tangible ray space
-	if (bRaycastOnMesh && (AttackSprite->GetSprite() != nullptr))
+	if (HasAuthority())
 	{
-		float AttackBodyLength = (AttackSprite->Bounds.BoxExtent.X) * RaycastHitRange;
-		Start	= GetActorLocation() + (GetActorForwardVector());
-		End		= Start + (RaycastVector * AttackBodyLength);
-	}
-	
-	// Pew pew
-	bool HitResult = UKismetSystemLibrary::LineTraceSingleForObjects(
-											this,
-											Start,
-											End,
-											TraceObjects,
-											false,
-											IgnoredActors,
-											EDrawDebugTrace::None,
-											Hit,
-											true,
-											FLinearColor::White, FLinearColor::Red, 0.15f);
-	
-	if (!bHit && HitResult)
-	{
-		//FVector ClosestHit = Hit.Component.Get()->GetClosestPointOnCollision(Hit.ImpactPoint, Hit.ImpactPoint);
-		HitActor = Hit.Actor.Get();
-		if (HitActor != nullptr)
+		// Linecast ingredients
+		TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
+		TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+		TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
+		TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
+		TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_PhysicsBody));
+
+		TArray<AActor*> IgnoredActors;
+		IgnoredActors.Add(OwningShooter);
+
+		FVector Start = GetActorLocation() + GetActorForwardVector();
+		FVector End = Start + (RaycastVector * RaycastHitRange);
+		//End.Y = 0.0f; /// strange y-axis drift
+
+		FHitResult Hit;
+
+		// Swords, etc, get tangible ray space
+		if (bRaycastOnMesh && (AttackSprite->GetSprite() != nullptr))
 		{
-			HitEffects(HitActor, Hit.ImpactPoint);
+			float SpriteLength = (AttackSprite->Bounds.BoxExtent.X) * (1.0f + AttackMagnitude);
+			float AttackBodyLength = SpriteLength * RaycastHitRange;
+			Start = AttackSprite->GetComponentLocation() + (GetActorForwardVector() * (-SpriteLength / 2.0f));
+			End = Start + (RaycastVector * AttackBodyLength);
+		}
+
+		// Pew pew
+		bool HitResult = UKismetSystemLibrary::LineTraceSingleForObjects(
+			this,
+			Start,
+			End,
+			TraceObjects,
+			false,
+			IgnoredActors,
+			EDrawDebugTrace::ForDuration,
+			Hit,
+			true,
+			FLinearColor::White, FLinearColor::Red, 5.0f);
+
+		if (!bHit && HitResult)
+		{
+			//FVector ClosestHit = Hit.Component.Get()->GetClosestPointOnCollision(Hit.ImpactPoint, Hit.ImpactPoint);
+			HitActor = Hit.Actor.Get();
+			if (HitActor != nullptr)
+			{
+				HitEffects(HitActor, Hit.ImpactPoint);
+			}
 		}
 	}
 }
@@ -283,28 +318,36 @@ void AGAttack::DetectHit(FVector RaycastVector)
 
 void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 {
-	if ((DamageClass != nullptr) && (HitActor != nullptr))
+	if (HasAuthority() && (DamageClass != nullptr) && (HitActor != nullptr))
 	{
 		/// Spawning damage fx
 		FActorSpawnParameters SpawnParams;
 		FRotator Forward = GetActorForwardVector().Rotation(); //HitActor->GetActorRotation();
 
 		/// Get closest point on bounds of HitActor
-		FVector OutFVector = FVector::ZeroVector;
-		UPrimitiveComponent* HitPrimitive = Cast<UPrimitiveComponent>(HitActor->GetRootComponent());
-		if (HitPrimitive != nullptr)
+		FVector SpawnLocation = FVector::ZeroVector;
+		if (HitActor != this)
 		{
-			/// Root capsules are easy
-			float ClosestPointDist = HitPrimitive->GetClosestPointOnCollision(HitPoint, OutFVector);
+			UPrimitiveComponent* HitPrimitive = Cast<UPrimitiveComponent>(HitActor->GetRootComponent());
+			if (HitPrimitive != nullptr)
+			{
+				/// Root capsules are easy
+				float ClosestPointDist = HitPrimitive->GetClosestPointOnCollision(HitPoint, SpawnLocation);
+			}
+			else
+			{
+				/// else do it the old fashioned way
+				SpawnLocation = HitPoint;
+			}
 		}
 		else
 		{
-			/// else do it the old fashioned way
-			OutFVector = HitPoint;
+			SpawnLocation = HitPoint;
 		}
+		
 
 		/// Spawn!
-		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, OutFVector, Forward, SpawnParams)); /// HitPoint
+		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, SpawnLocation, Forward, SpawnParams)); /// HitPoint
 		DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
 
 		ForceNetUpdate();
@@ -546,15 +589,18 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 // COLLISION BEGIN
 void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	bool bTime = (HitTimer >= (1 / HitsPerSecond));
-	bool bActors = (OwningShooter != nullptr) && (OtherActor != nullptr);
-	float TimeSc = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
-	if (bTime && bActors && !bHit && bLethal && (OtherActor != OwningShooter) && (TimeSc > 0.5f))
+	if (HasAuthority())
 	{
-		FVector DamageLocation = GetActorLocation() + (OwningShooter->GetActorForwardVector() * RaycastHitRange);
+		bool bTime = (HitTimer >= (1 / HitsPerSecond));
+		bool bActors = (OwningShooter != nullptr) && (OtherActor != nullptr);
+		float TimeSc = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+		if (bTime && bActors && !bHit && bLethal && (OtherActor != OwningShooter) && (TimeSc > 0.5f))
+		{
+			FVector DamageLocation = GetActorLocation() + (OwningShooter->GetActorForwardVector() * RaycastHitRange);
 
-		// Got'em
-		HitEffects(OtherActor, DamageLocation);
+			// Got'em
+			HitEffects(OtherActor, DamageLocation);
+		}
 	}
 }
 
