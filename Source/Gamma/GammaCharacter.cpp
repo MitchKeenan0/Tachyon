@@ -609,12 +609,8 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		if (CustomTimeDilation < 1.0f)
 		{
 			RecoverTimescale(DeltaSeconds);
-
-			GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Blue, FString::Printf(TEXT("Timescale:  %f"), CustomTimeDilation));
 		}
 		
-
-
 
 		if (bShooting && (GetActiveFlash() == nullptr) && (ActiveAttack == nullptr))
 		{

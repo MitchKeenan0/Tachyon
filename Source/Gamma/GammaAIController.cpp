@@ -7,28 +7,31 @@ void AGammaAIController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Get our Gamma Character
-	MyPawn = GetPawn();
-	if (MyPawn != nullptr)
+	if (HasAuthority())
 	{
-		MyCharacter = Cast<AGammaCharacter>(MyPawn);
-	}
-	if (MyCharacter != nullptr)
-	{
-		MyCharacter->Tags.Add("Bot");
-	}
+		// Get our Gamma Character
+		MyPawn = GetPawn();
+		if (MyPawn != nullptr)
+		{
+			MyCharacter = Cast<AGammaCharacter>(MyPawn);
+		}
+		if (MyCharacter != nullptr)
+		{
+			MyCharacter->Tags.Add("Bot");
+		}
 
-	RandStream = new FRandomStream;
-	if (RandStream != nullptr)
-	{
-		RandStream->GenerateNewSeed();
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 12.f, FColor::Blue, TEXT("NO RAND STREAM"));
-	}
+		RandStream = new FRandomStream;
+		if (RandStream != nullptr)
+		{
+			RandStream->GenerateNewSeed();
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 12.f, FColor::Blue, TEXT("NO RAND STREAM"));
+		}
 
-	Player = nullptr;
+		Player = nullptr;
+	}
 }
 
 
@@ -36,123 +39,126 @@ void AGammaAIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (!MyCharacter)
+	if (HasAuthority())
 	{
-		MyPawn = GetPawn();
-		if (MyPawn != nullptr)
+		if (!MyCharacter)
 		{
-			MyCharacter = Cast<AGammaCharacter>(MyPawn);
-		}
-	}
-	else if ((MyCharacter != nullptr)
-		&& (GetGameTimeSinceCreation() > 1.0f))
-	{
-
-		// Set move values by character's flavour
-		if (MoveSpeed == -1.0f)
-		{
-			MoveSpeed = MyCharacter->GetMoveSpeed();
-			TurnSpeed = MyCharacter->GetTurnSpeed();
-			MovesPerSec = MyCharacter->GetMovesPerSec();
-			PrefireTime = MyCharacter->GetPrefireTime();
-		}
-
-		// Got a player - stunt on'em
-		if ((Player != nullptr) && IsValid(Player)
-			&& (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f))
-		{
-			// Reation time
-			if (ReactionTiming(DeltaSeconds))
+			MyPawn = GetPawn();
+			if (MyPawn != nullptr)
 			{
-				Tactical(FVector::ZeroVector);
+				MyCharacter = Cast<AGammaCharacter>(MyPawn);
+			}
+		}
+		else if ((MyCharacter != nullptr)
+			&& (GetGameTimeSinceCreation() > 1.0f))
+		{
+
+			// Set move values by character's flavour
+			if (MoveSpeed == -1.0f)
+			{
+				MoveSpeed = MyCharacter->GetMoveSpeed();
+				TurnSpeed = MyCharacter->GetTurnSpeed();
+				MovesPerSec = MyCharacter->GetMovesPerSec();
+				PrefireTime = MyCharacter->GetPrefireTime();
 			}
 
-			// Update attacks to be
-			if (PrefireTimer >= PrefireTime
-				&& MyCharacter->GetActiveFlash() != nullptr)
+			// Got a player - stunt on'em
+			if ((Player != nullptr) && IsValid(Player)
+				&& (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f))
 			{
-				MyCharacter->ReleaseAttack();
-			}
+				// Reation time
+				if (ReactionTiming(DeltaSeconds))
+				{
+					Tactical(FVector::ZeroVector);
+				}
+
+				// Update attacks to be
+				if (PrefireTimer >= PrefireTime
+					&& MyCharacter->GetActiveFlash() != nullptr)
+				{
+					MyCharacter->ReleaseAttack();
+				}
 
 
-			// Finial line draw to Player
-			/*DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(), Player->GetActorLocation(),
+				// Finial line draw to Player
+				/*DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(), Player->GetActorLocation(),
 				FColor::White, false, -1.0f, 0, 3.0f);*/
 
-			
-			// Movement
-			if (TravelTimer < 2.0f)
-			{
-				// Get some moves
-				if ((TravelTimer >= 1.0f)
-					|| (LocationTarget == FVector::ZeroVector))
-				{
-					GetNewLocationTarget();
-					TravelTimer = 0.0f;
-				}
 
-				if ((LocationTarget != FVector::ZeroVector) && !bShootingSoon
-					&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+				// Movement
+				if (TravelTimer < 2.0f)
 				{
-					NavigateTo(LocationTarget);
-					MoveTimer += DeltaSeconds;
-					TravelTimer += DeltaSeconds;
-				}
-			}
-		}
-		else
-		{
-			// Locate "player" target
-			bool bPlayerFound = false;
-			UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray); // FramingActor for brawl
-			if (PlayersArray.Num() > 0)
-			{
-				int LoopCount = PlayersArray.Num();
-				for (int i = 0; i < LoopCount; ++i)
-				{
-					if (PlayersArray[i] != nullptr)
+					// Get some moves
+					if ((TravelTimer >= 1.0f)
+						|| (LocationTarget == FVector::ZeroVector))
 					{
-						AActor* TempActor = PlayersArray[i];
-						if (TempActor != nullptr
-							&& TempActor != MyPawn
-							&& TempActor != MyCharacter
-							&& !TempActor->ActorHasTag("Spectator")
-							&& !TempActor->ActorHasTag("Bot"))
-						{
-							AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(TempActor);
-							if ((PotentialPlayer != nullptr)
-								&& PotentialPlayer->ActorHasTag("Player"))
-							{
-								Player = PotentialPlayer;
-								bPlayerFound = true;
-								///GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::White, FString::Printf(TEXT("p %s   targeting %s"), *MyCharacter->GetName(), *Player->GetName()));
-								break;
-							}
-						}
+						GetNewLocationTarget();
+						TravelTimer = 0.0f;
+					}
+
+					if ((LocationTarget != FVector::ZeroVector) && !bShootingSoon
+						&& UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+					{
+						NavigateTo(LocationTarget);
+						MoveTimer += DeltaSeconds;
+						TravelTimer += DeltaSeconds;
 					}
 				}
 			}
-			if (!bPlayerFound)
+			else
 			{
-				// Edge case for spectator match with no players
-				UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Bot"), PlayersArray);
+				// Locate "player" target
+				bool bPlayerFound = false;
+				UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray); // FramingActor for brawl
 				if (PlayersArray.Num() > 0)
 				{
-					for (int i = 0; i < PlayersArray.Num(); ++i)
+					int LoopCount = PlayersArray.Num();
+					for (int i = 0; i < LoopCount; ++i)
 					{
 						if (PlayersArray[i] != nullptr)
 						{
 							AActor* TempActor = PlayersArray[i];
 							if (TempActor != nullptr
 								&& TempActor != MyPawn
-								&& TempActor != MyCharacter)
+								&& TempActor != MyCharacter
+								&& !TempActor->ActorHasTag("Spectator")
+								&& !TempActor->ActorHasTag("Bot"))
 							{
 								AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(TempActor);
-								if (PotentialPlayer != nullptr)
+								if ((PotentialPlayer != nullptr)
+									&& PotentialPlayer->ActorHasTag("Player"))
 								{
 									Player = PotentialPlayer;
 									bPlayerFound = true;
+									///GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::White, FString::Printf(TEXT("p %s   targeting %s"), *MyCharacter->GetName(), *Player->GetName()));
 									break;
+								}
+							}
+						}
+					}
+				}
+				if (!bPlayerFound)
+				{
+					// Edge case for spectator match with no players
+					UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Bot"), PlayersArray);
+					if (PlayersArray.Num() > 0)
+					{
+						for (int i = 0; i < PlayersArray.Num(); ++i)
+						{
+							if (PlayersArray[i] != nullptr)
+							{
+								AActor* TempActor = PlayersArray[i];
+								if (TempActor != nullptr
+									&& TempActor != MyPawn
+									&& TempActor != MyCharacter)
+								{
+									AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(TempActor);
+									if (PotentialPlayer != nullptr)
+									{
+										Player = PotentialPlayer;
+										bPlayerFound = true;
+										break;
+									}
 								}
 							}
 						}
@@ -246,20 +252,23 @@ void AGammaAIController::Tactical(FVector Target)
 		// Attack and Secondary
 		FVector LocalForward = MyCharacter->GetAttackScene()->GetForwardVector();
 		FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
-		float VerticalDist = FMath::FloorToFloat(FMath::Clamp((ToPlayer.GetSafeNormal()).Z, -1.0f, 1.0f));
+		float VerticalNorm = FMath::FloorToFloat(FMath::Clamp((ToPlayer.GetSafeNormal()).Z, -1.0f, 1.0f));
 
 		// Aim - leads to attacks and secondaries
-		float DotToPlayer = FVector::DotProduct(LocalForward.GetSafeNormal(), ToPlayer.GetSafeNormal());
+		FVector ForwardNorm = LocalForward.GetSafeNormal();
+		FVector ToPlayerNorm = ToPlayer.GetSafeNormal();
+		float DotToPlayer = FVector::DotProduct(ForwardNorm, ToPlayerNorm);
 		float RangeToPlayer = ToPlayer.Size();
-		if (DotToPlayer > 0.0f
-			&& RangeToPlayer <= PrimaryRange)
+		if (RangeToPlayer <= PrimaryRange)
 		{
-
+			
 			// Only fire if a) we're on screen & b) angle looks good
-			float AngleToPlayer = FMath::Acos(DotToPlayer);
-			if (AngleToPlayer <= ShootingAngle
-				&& MyCharacter->WasRecentlyRendered(0.75f))
+			float AngleToPlayer = FMath::RadiansToDegrees(FMath::Acos(DotToPlayer));
+
+			if (AngleToPlayer <= ShootingAngle)  // && MyCharacter->WasRecentlyRendered(0.15f)
 			{
+				
+
 				// Line up a shot with player Z input
 				if (FMath::Abs(AngleToPlayer) <= 0.25f)
 				{
@@ -267,7 +276,7 @@ void AGammaAIController::Tactical(FVector Target)
 				}
 				else
 				{
-					MyCharacter->SetZ(VerticalDist, 1.0f);
+					MyCharacter->SetZ(VerticalNorm, 1.0f);
 				}
 
 				// Aim input
@@ -283,6 +292,7 @@ void AGammaAIController::Tactical(FVector Target)
 				}
 				else
 				{
+
 					// Init Attack
 					if (ToPlayer.Size() <= PrimaryRange)
 					{
@@ -304,6 +314,10 @@ void AGammaAIController::Tactical(FVector Target)
 		}
 
 		bShootingSoon = false;
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, TEXT("MyCharacter not valid"));
 	}
 }
 
