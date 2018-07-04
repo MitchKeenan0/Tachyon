@@ -29,6 +29,7 @@ public:
 
 	bool GetHit() { return bHit; }
 	bool GetLethal() { return bLethal; }
+	UParticleSystemComponent* GetParticles() { return AttackParticles; }
 
 	UFUNCTION(BlueprintCallable)
 	void ReportHit(AActor* HitActor);

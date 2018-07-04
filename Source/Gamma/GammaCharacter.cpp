@@ -1368,22 +1368,20 @@ void AGammaCharacter::NewTimescale(float Value)
 		if (ActiveAttack != nullptr)
 		{
 			ActiveAttack->CustomTimeDilation = Value;
-
-			TSubclassOf<UParticleSystemComponent> ParticleClass;
-			UParticleSystemComponent* ParticleComp = Cast<UParticleSystemComponent>(ActiveAttack->GetComponentByClass(ParticleClass));
+			UParticleSystemComponent* ParticleComp = ActiveAttack->GetParticles();
 			if (ParticleComp != nullptr)
 			{
-				ParticleComp->CustomTimeDilation *= Value;
-				GEngine->AddOnScreenDebugMessage(-1, 5.5f, FColor::White, TEXT("SEtTi sphaggeti"));
-			}
-			else
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 5.5f, FColor::White, TEXT("N A W BRU"));
+				ParticleComp->CustomTimeDilation = (Value * Value);
 			}
 		}
 		if (ActiveSecondary != nullptr)
 		{
 			ActiveSecondary->CustomTimeDilation = Value;
+			UParticleSystemComponent* ParticleComp = ActiveSecondary->GetParticles();
+			if (ParticleComp != nullptr)
+			{
+				ParticleComp->CustomTimeDilation = (Value);
+			}
 		}
 		if (GetActiveBoost() != nullptr)
 		{

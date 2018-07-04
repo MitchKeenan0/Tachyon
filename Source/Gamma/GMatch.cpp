@@ -128,7 +128,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 				// Hit-confirm timescaling
 				float CurrentTScale = Shooter->CustomTimeDilation;
 				float NewTScale = CurrentTScale * 0.11f;
-				NewTScale = FMath::Clamp(NewTScale, GGTimescale, 1.0f);
+				NewTScale = FMath::Clamp(NewTScale, GGTimescale * 0.1f, 1.0f);
 
 				Shooter->NewTimescale(NewTScale);
 				Reciever->NewTimescale(NewTScale);
