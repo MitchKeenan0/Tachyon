@@ -1339,7 +1339,7 @@ void AGammaCharacter::RecoverTimescale(float DeltaTime)
 			}
 
 			// Personal Recovery
-			float ReturnTime = FMath::FInterpTo(Timescale, 1.0f, DeltaTime, Timescale * 21.0f);
+			float ReturnTime = FMath::FInterpTo(Timescale, 1.0f, DeltaTime, Timescale * MoveSpeed);
 			CustomTimeDilation = FMath::Clamp(ReturnTime, 0.1f, 1.0f);
 		}
 	}
@@ -1365,9 +1365,38 @@ void AGammaCharacter::NewTimescale(float Value)
 	{
 		CustomTimeDilation = Value;
 
+		if (ActiveAttack != nullptr)
+		{
+			ActiveAttack->CustomTimeDilation = Value;
+
+			TSubclassOf<UParticleSystemComponent> ParticleClass;
+			UParticleSystemComponent* ParticleComp = Cast<UParticleSystemComponent>(ActiveAttack->GetComponentByClass(ParticleClass));
+			if (ParticleComp != nullptr)
+			{
+				ParticleComp->CustomTimeDilation *= Value;
+				GEngine->AddOnScreenDebugMessage(-1, 5.5f, FColor::White, TEXT("SEtTi sphaggeti"));
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.5f, FColor::White, TEXT("N A W BRU"));
+			}
+		}
+		if (ActiveSecondary != nullptr)
+		{
+			ActiveSecondary->CustomTimeDilation = Value;
+		}
+		if (GetActiveBoost() != nullptr)
+		{
+			GetActiveBoost()->CustomTimeDilation = Value;
+		}
+		if (GetActiveFlash() != nullptr)
+		{
+			GetActiveFlash()->CustomTimeDilation = Value;
+		}
+
 		if (GetMovementComponent() != nullptr)
 		{
-			float VelocityTimeScalar = FMath::Clamp(Value, 0.5f, 1.0f);
+			float VelocityTimeScalar = FMath::Clamp(Value, 0.8f, 1.0f);
 			GetMovementComponent()->Velocity *= VelocityTimeScalar;
 		}
 	}

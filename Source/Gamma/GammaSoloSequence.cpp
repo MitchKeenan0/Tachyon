@@ -16,7 +16,10 @@ void AGammaSoloSequence::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	AquirePlayer();
+	if (HasAuthority())
+	{
+		AquirePlayer();
+	}
 
 	//// Init Rand
 	//RandStream = new FRandomStream;
@@ -66,11 +69,14 @@ void AGammaSoloSequence::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	MainSequence(DeltaTime);
-
-	if (Player == nullptr)
+	if (HasAuthority())
 	{
-		AquirePlayer();
+		MainSequence(DeltaTime);
+
+		if (Player == nullptr)
+		{
+			AquirePlayer();
+		}
 	}
 }
 

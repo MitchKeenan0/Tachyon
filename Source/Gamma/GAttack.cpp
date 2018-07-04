@@ -97,7 +97,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		SetLifeSpan(DurationTime);
 
 		// Scale HitsPerSecond by Magnitude
-		HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 100.0f, 1000.0f);
+		HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 9.1f, 99.1f);
 
 		// Adjust lethal time by magnitude
 		if (DurationTime < 1.0f)
@@ -106,7 +106,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 			LethalTime = NewLethalTime;
 		}
 
-		//// Last-second update to direction after fire
+		// Last-second update to direction after fire
 		float DirRecalc = ShotDirection * ShootingAngle;
 		if (AngleSweep != 0.0f)
 		{
@@ -360,7 +360,7 @@ void AGAttack::ReportHit(AActor* HitActor)
 	if (HasAuthority())
 	{
 		/// Track hitscale curvature for increasing knockback and damage
-		numHits = FMath::Clamp((numHits += (numHits - 1)), 2, 9);
+		numHits = FMath::Clamp((numHits += 1), 1, 10); /// (numHits += (numHits - 1)), 2, 9
 
 		/// Damage
 		AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
