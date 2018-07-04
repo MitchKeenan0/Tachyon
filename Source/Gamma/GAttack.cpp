@@ -97,11 +97,14 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		SetLifeSpan(DurationTime);
 
 		// Scale HitsPerSecond by Magnitude
-		HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 55.0f, 1000.0f);
+		HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 100.0f, 1000.0f);
 
 		// Adjust lethal time by magnitude
-		float NewLethalTime = LethalTime * AttackMagnitude;
-		LethalTime = NewLethalTime;
+		if (DurationTime < 1.0f)
+		{
+			float NewLethalTime = LethalTime * AttackMagnitude;
+			LethalTime = NewLethalTime;
+		}
 
 		//// Last-second update to direction after fire
 		float DirRecalc = ShotDirection * ShootingAngle;
