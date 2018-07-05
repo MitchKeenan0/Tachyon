@@ -874,12 +874,14 @@ bool AGammaCharacter::ServerDisengageKick_Validate()
 void AGammaCharacter::KickPropulsion()
 {
 	FVector CurrentVelocity = GetCharacterMovement()->Velocity;
-	FVector MoveInputVector = FVector::ZeroVector;
+	FVector MoveInputVector = FVector(InputX, 0.0f, InputZ * 0.75f).GetSafeNormal();
 	FVector KickVector = FVector::ZeroVector;
 	
 	// Algo scaling for timescale & max velocity
 	
-	///float RelativityToMaxSpeed = FMath::Clamp((MaxMoveSpeed - CurrentVelocity.Size()), 0.1f, 1.0f);
+	float PropulsiveMax = MaxMoveSpeed * MoveFreshMultiplier;
+	float Relativity = PropulsiveMax - CurrentVelocity.Size();
+	float RelativityToMaxSpeed = FMath::Clamp(Relativity, 0.03f, 33.3f);
 	///float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
 
 	// Force, clamp, & effect chara movement
@@ -887,15 +889,20 @@ void AGammaCharacter::KickPropulsion()
 	float DeltaTime = GetWorld()->DeltaTimeSeconds;
 	KickVector = MoveInputVector
 		* MoveFreshMultiplier
-		* 1000.0f ///previously RelativityToMaxSpeed
+		* RelativityToMaxSpeed
 		* DeltaTime;
+
+	FVector VelNorm = CurrentVelocity.GetSafeNormal();
+	float DotToVelocity = FVector::DotProduct(MoveInputVector, VelNorm);
+	float RotatorAngle = FMath::RadiansToDegrees(FMath::Acos(DotToVelocity));
+	KickVector = KickVector.RotateAngleAxis(RotatorAngle, FVector::ForwardVector);
 
 	// Trimming
 	KickVector.Z *= 0.9f;
 	KickVector.Y = 0.0f;
 
 	// Initial kick for good feels
-	MoveInputVector = FVector(InputX, 0.0f, InputZ * 0.75f).GetSafeNormal();
+	
 	if ((GetActiveBoost() == nullptr) && (BoostClass != nullptr))
 	{
 		GetCharacterMovement()->AddImpulse(KickVector * 3.33f);
