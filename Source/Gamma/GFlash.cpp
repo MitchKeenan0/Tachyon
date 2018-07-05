@@ -42,7 +42,7 @@ void AGFlash::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (CustomTimeDilation >= 0.9f)
+	if (HasAuthority())
 	{
 		UpdateFlash(DeltaTime);
 	}
@@ -54,11 +54,12 @@ void AGFlash::UpdateFlash(float DeltaTime)
 {
 	// Scaling size and sound
 	FVector MaxV = FVector(FlashMaxScale, FlashMaxScale, FlashMaxScale);
+	float MaxSize = MaxV.Size();
 	
 	if (FlashParticles != nullptr)
 	{
 		FVector FScale = FMath::VInterpConstantTo(FlashParticles->GetComponentScale(), MaxV, DeltaTime, FlashGrowthIntensity);
-		FScale = FScale.GetClampedToMaxSize(3.0f);
+		FScale = FScale.GetClampedToMaxSize(MaxSize);
 		FlashParticles->SetRelativeScale3D(FScale);
 	}
 	

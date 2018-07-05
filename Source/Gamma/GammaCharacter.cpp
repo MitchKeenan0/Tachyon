@@ -284,7 +284,10 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 	float ConsideredDistanceScalar = CameraDistanceScalar;
 
 	// Poll for framing actors
-	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
+	if ((Actor1 == nullptr) && (Actor2 == nullptr))
+	{
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
+	}
 	///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("FramingActors Num:  %i"), FramingActors.Num()));
 	/// TODO - add defense on running get?
 	
@@ -425,6 +428,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// Distance controls
 				ConsideredDistanceScalar *= 1.1f;
 				CameraMaxDistance = 150000.0f;
+
+				Actor2 = nullptr;
 			}
 
 
@@ -606,7 +611,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 
 		if (bShooting)
 		{
-			if ((GetActiveFlash() == nullptr) && (ActiveAttack == nullptr))
+			if ((ActiveAttack == nullptr) || !(IsValid(ActiveAttack)))
 			{
 				InitAttack();
 			}
@@ -615,7 +620,10 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		
 		if (!bShooting && (PrefireTimer > 0.0f))
 		{
-			ReleaseAttack();
+			if (ActiveAttack == nullptr)
+			{
+				ReleaseAttack();
+			}
 		}
 
 		if (bShielding)
@@ -691,10 +699,6 @@ void AGammaCharacter::MoveRight(float Value)
 			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX);
 		}
 	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, TEXT("MOVE LOCKED"));
-	}
 
 	if (!ActorHasTag("Bot"))
 	{
@@ -728,10 +732,6 @@ void AGammaCharacter::MoveUp(float Value)
 			//AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot, true);
 			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ);
 		}
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, TEXT("MOVE LOCKED"));
 	}
 
 	if (!ActorHasTag("Bot"))
@@ -881,7 +881,7 @@ void AGammaCharacter::KickPropulsion()
 	
 	float PropulsiveMax = MaxMoveSpeed * MoveFreshMultiplier;
 	float Relativity = PropulsiveMax - CurrentVelocity.Size();
-	float RelativityToMaxSpeed = FMath::Clamp(Relativity, 0.03f, 33.3f);
+	float RelativityToMaxSpeed = FMath::Clamp(Relativity, 0.001f, 100.0f);
 	///float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
 
 	// Force, clamp, & effect chara movement
@@ -1065,18 +1065,22 @@ void AGammaCharacter::InitAttack()
 			return;
 		}
 
+		bool bCancelling = false;
 		// PROHIBITIVE Attack cancel for single shooters already shooting
 		if ((ActiveAttack != nullptr) && !bMultipleAttacks)
 		{
-			ActiveAttack->Destroy();
-			NullifyAttack();
+			bCancelling = true;
 			return;
 		}
 
 		// Conditions for shooting
-		bool bWeaponAllowed = ((ActiveAttack == nullptr) || bMultipleAttacks) && (ActiveSecondary == nullptr);
-		bool bFireAllowed = bWeaponAllowed && (GetActiveFlash() == nullptr)
-			&& (Charge > 0.0f) && (FlashClass != nullptr);
+		bool bWeaponAllowed = !bCancelling 
+			&& ((ActiveAttack == nullptr) || bMultipleAttacks) 
+			&& (ActiveSecondary == nullptr);
+		bool bFireAllowed = bWeaponAllowed 
+			&& (GetActiveFlash() == nullptr)
+			&& (Charge > 0.0f) 
+			&& (FlashClass != nullptr);
 		/// Extra bools for action heirarchy, currently moving away from this...
 		/// (GetActiveBoost() == nullptr) &&  && (!IsValid(GetActiveFlash()))
 
@@ -1127,19 +1131,14 @@ void AGammaCharacter::ReleaseAttack()
 	}
 	else
 	{
-		if ((AttackClass != nullptr)
+		if ((GetActiveFlash() != nullptr)
+			&& (AttackClass != nullptr)
 			&& ((ActiveAttack == nullptr) || bMultipleAttacks)
 			&& (GetActiveSecondary() == nullptr)
 			&& (Charge > 0.0f)
-			&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f)
-			&& ((PrefireTimer > 0.0f && (ActiveFlash != nullptr))))
+			&& (PrefireTimer > 0.0f)
+			&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
 		{
-			// Clean up previous flash
-			if ((GetActiveFlash() != nullptr))
-			{
-				ActiveFlash->Destroy();
-				ActiveFlash = nullptr;
-			}
 
 			// Aim by InputY
 			float AimClampedInputZ = FMath::Clamp((InputZ * 10.0f), -1.0f, 1.0f);
@@ -1148,7 +1147,7 @@ void AGammaCharacter::ReleaseAttack()
 			LocalForward.Y = 0.0f;
 			FRotator FireRotation = LocalForward.Rotation() + FRotator(InputZ * 21.0f, 0.0f, 0.0f); /// AimClampedInputZ
 			FireRotation.Yaw = GetActorRotation().Yaw;
-			if (FMath::Abs(FireRotation.Yaw) > 90.0f)
+			if (FMath::Abs(FireRotation.Yaw) >= 90.0f)
 			{
 				FireRotation.Yaw = 180.0f;
 			}
@@ -1157,6 +1156,12 @@ void AGammaCharacter::ReleaseAttack()
 				FireRotation.Yaw = 0.0f;
 			}
 
+			// Scale prefire output's minimum by missing HP
+			float MissingLife = FMath::Clamp((MaxHealth - Health), 0.1f, MaxHealth);
+			float PrefireVal = FMath::Square(PrefireTimer);
+			float PrefireMin = (MissingLife / 100.0f);
+			PrefireVal = FMath::Clamp(PrefireVal, PrefireMin, 1.0f);
+			///GEngine->AddOnScreenDebugMessage(-1, 5.5f, FColor::White, FString::Printf(TEXT("PrefireVal: %f"), PrefireVal));
 
 			// Spawning
 			if (HasAuthority() && (ActiveAttack == nullptr))
@@ -1167,22 +1172,24 @@ void AGammaCharacter::ReleaseAttack()
 					ActiveAttack = Cast<AGAttack>(GetWorld()->SpawnActor<AGAttack>(AttackClass, FirePosition, FireRotation, SpawnParams));
 					if (ActiveAttack != nullptr)
 					{
-
-						// Imbue with magnitude by PrefireTimer
-						float PrefireClamped = FMath::Clamp(PrefireTimer, 0.1f, 1.0f);
-						float PrefireCurve = FMath::Square(PrefireClamped) * 2.1f;
-						PrefireCurve = FMath::Clamp(PrefireCurve, 0.1f, 1.0f);
-
+						
 						// The attack is born
 						if (ActiveAttack != nullptr)
 						{
-							ActiveAttack->InitAttack(this, PrefireCurve, AimClampedInputZ);
+							ActiveAttack->InitAttack(this, PrefireVal, AimClampedInputZ);
 						}
 
 						// Position lock, or naw
 						if ((ActiveAttack != nullptr) && ActiveAttack->LockedEmitPoint)
 						{
 							ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
+						}
+
+						// Clean up previous flash
+						if ((GetActiveFlash() != nullptr))
+						{
+							ActiveFlash->Destroy();
+							ActiveFlash = nullptr;
 						}
 					}
 				}
@@ -1193,11 +1200,12 @@ void AGammaCharacter::ReleaseAttack()
 
 				// Spend it!
 				float ChargeSpend = 1.0f;
-				if (PrefireTimer >= 0.33f)
+				/// More magnitude -> higher cost
+				/*if (PrefireTimer >= 0.33f)
 				{
 					float BigSpend = FMath::FloorToFloat(ChargeMax * PrefireTimer);
 					ChargeSpend = BigSpend;
-				}
+				}*/
 				Charge -= ChargeSpend;
 
 
@@ -1454,7 +1462,7 @@ void AGammaCharacter::PrefireTiming()
 	if ((GetActiveFlash() != nullptr)
 		&& (PrefireTimer < PrefireTime))
 	{
-		PrefireTimer += GetWorld()->GetDeltaSeconds() * CustomTimeDilation;
+		PrefireTimer += GetWorld()->GetDeltaSeconds();
 		///GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::White, FString::Printf(TEXT("Prefire: %f"), PrefireTimer));
 	}
 	else if ((PrefireTimer >= PrefireTime)
@@ -1483,7 +1491,7 @@ bool AGammaCharacter::ServerPrefireTiming_Validate()
 // ATTACK PRIMING
 void AGammaCharacter::CheckAttackOn()
 {
-	if (!bShooting)
+	if (!bShooting && (ActiveAttack == nullptr))
 	{
 		ArmAttack();
 	}
@@ -1547,7 +1555,14 @@ void AGammaCharacter::CheckSecondaryOn()
 {
 	if (!bShielding)
 	{
-		ArmSecondary();
+		if (ActiveSecondary == nullptr)
+		{
+			ArmSecondary();
+		}
+		else
+		{
+			CheckSecondaryOff();
+		}
 	}
 }
 void AGammaCharacter::CheckSecondaryOff()

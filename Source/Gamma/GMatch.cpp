@@ -73,54 +73,28 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			// End of game?
 			if (Reciever->GetHealth() <= 0.0f)
 			{
-				if ((!Reciever->ActorHasTag("Bot"))
-					|| (Shooter->ActorHasTag("Bot")))
+				bGG = true;
+
+				//Calcify killed HitActor
+				UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
+					(Reciever->FindComponentByClass<UPaperFlipbookComponent>());
+				if (ActorFlipbook != nullptr)
 				{
-					bGG = true;
-
-					//Calcify killed HitActor
-					UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
-						(Reciever->FindComponentByClass<UPaperFlipbookComponent>());
-					if (ActorFlipbook != nullptr)
-					{
-						float CurrentPosition = FMath::FloorToInt(ActorFlipbook->GetPlaybackPosition());
-						ActorFlipbook->SetPlaybackPositionInFrames(1, true);
-					}
-
-					// Transfer timescaling to global
-					//HitActor->CustomTimeDilation = 1.0f;
-					//Winner->CustomTimeDilation = 1.0f;
-					SetTimeScale(GGTimescale);
-
-					// Award winner with a star ;P
-					FString DecoratedName = FString(Shooter->GetCharacterName().Append(" *"));
-					Shooter->SetCharacterName(DecoratedName);
-
-
-					// Clear shot-out NPCs
-					/*if (HitActor->ActorHasTag("Bot"))
-					{
-					HitActor->Tags.Add("Doomed");
-					}*/
+					float CurrentPosition = FMath::FloorToInt(ActorFlipbook->GetPlaybackPosition());
+					ActorFlipbook->SetPlaybackPositionInFrames(1, true);
 				}
+
+				// Freezing time to glacial
+				SetTimeScale(GGTimescale);
+
+				// Award winner with a star ;P
+				FString DecoratedName = FString(Shooter->GetCharacterName().Append(" *"));
+				Shooter->SetCharacterName(DecoratedName);
 
 				// Erase Bots
 				if (Reciever->ActorHasTag("Bot"))
 				{
-					Reciever->NullifyAttack();
-					Reciever->NullifySecondary();
-					Reciever->ClearFlash();
-
-					Reciever->Destroy();
-					if (Reciever == LocalPlayer)
-					{
-						LocalPlayer = nullptr;
-					}
-					else if (Reciever == OpponentPlayer)
-					{
-						OpponentPlayer = nullptr;
-					}
-					Reciever = nullptr;
+					Reciever->Tags.Add("Doomed");
 				}
 			}
 			//else

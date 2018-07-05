@@ -294,7 +294,7 @@ void AGammaAIController::Tactical(FVector Target)
 						{
 							MyCharacter->CheckAttackOn();
 						}
-						else
+						else if (MyCharacter->GetActiveFlash() != nullptr)
 						{
 							MyCharacter->CheckAttackOff(); /// will trigger an attack if prefire-timer > 0
 						}

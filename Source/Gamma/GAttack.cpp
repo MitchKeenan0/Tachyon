@@ -115,8 +115,9 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 			FVector LocalForward = GetActorForwardVector();
 			FRotator FireRotation = LocalForward.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
 
+			// Correct rotation -> Character may be spinning
 			float YawAbs = FMath::Abs(FireRotation.Yaw);
-			GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("FireRotation.Yaw:  %f"), YawAbs));
+			GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("YawAbs:  %f"), YawAbs));
 			if ((YawAbs < 90.0f) || (YawAbs > 270.0f))
 			{
 				FireRotation.Yaw = 0.0f;
@@ -126,6 +127,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 				FireRotation.Yaw = 180.0f;
 			}
 			SetActorRotation(FireRotation);
+			GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("FireRotation.Yaw:  %f"), FireRotation.Yaw));
 		}
 
 
@@ -190,6 +192,11 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 // Called every frame
 void AGAttack::Tick(float DeltaTime)
 {
+	if (bHit)
+	{
+		AttackParticles->CustomTimeDilation *= 0.21f;
+	}
+
 	if (HasAuthority())
 	{
 		Super::Tick(DeltaTime);
@@ -255,7 +262,7 @@ void AGAttack::UpdateAttack(float DeltaTime)
 	{
 		bool bTime = (HitTimer >= (1.0f / HitsPerSecond));
 		float TimeSc = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
-		if (bTime && !bHit && (TimeSc > 0.5f))
+		if (bTime && (TimeSc > 0.5f))
 		{
 			DetectHit(GetActorForwardVector());
 		}
@@ -278,7 +285,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		TArray<AActor*> IgnoredActors;
 		IgnoredActors.Add(OwningShooter);
 
-		FVector Start = GetActorLocation() + GetActorForwardVector();
+		FVector Start = GetActorLocation() + (GetActorForwardVector() * -10.0f);
 		Start.Y = 0.0f;
 		FVector End = Start + (RaycastVector * RaycastHitRange);
 		End.Y = 0.0f; /// strange y-axis drift
@@ -290,7 +297,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		{
 			float SpriteLength = (AttackSprite->Bounds.BoxExtent.X) * (1.0f + AttackMagnitude);
 			float AttackBodyLength = SpriteLength * RaycastHitRange;
-			Start = AttackSprite->GetComponentLocation() + (GetActorForwardVector() * (-SpriteLength / 2.0f));
+			Start = AttackSprite->GetComponentLocation() + (GetActorForwardVector() * (-SpriteLength / 2.1f));
 			Start.Y = 0.0f;
 			End = Start + (RaycastVector * AttackBodyLength);
 			End.Y = 0.0f;
@@ -309,7 +316,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 			true,
 			FLinearColor::White, FLinearColor::Red, 5.0f);
 
-		if (!bHit && HitResult)
+		if (HitResult)
 		{
 			//FVector ClosestHit = Hit.Component.Get()->GetClosestPointOnCollision(Hit.ImpactPoint, Hit.ImpactPoint);
 			HitActor = Hit.Actor.Get();
@@ -454,7 +461,8 @@ void AGAttack::ReportHit(AActor* HitActor)
 
 void AGAttack::Nullify(int AttackType)
 {
-	if (OwningShooter != nullptr)
+	if ((OwningShooter != nullptr)
+		&& (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.5f))
 	{
 		AGammaCharacter* PossibleCharacter = Cast<AGammaCharacter>(OwningShooter);
 		if (PossibleCharacter != nullptr)
@@ -519,7 +527,6 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 				ApplyKnockback(OtherAttack, HitPoint);
 
 				bLethal = false;
-				bHit = true;
 			}
 			
 			// Locked weapons' wielders are pushed away
@@ -586,9 +593,11 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 			}
 		}
 
-		bool AttackType = bSecondary; // Nullify takes 0 or 1 for attack or seco
-		Nullify(AttackType);
+		//bool AttackType = bSecondary; // Nullify takes 0 or 1 for attack or seco
+		//Nullify(AttackType);
 	}
+
+	bHit = true;
 }
 
 
