@@ -29,7 +29,7 @@ void AGFlash::BeginPlay()
 	Super::BeginPlay();
 
 	// Init scale for rapid growth
-	FlashParticles->SetRelativeScale3D(FVector(InitialScale, InitialScale, InitialScale));
+	FlashParticles->SetWorldScale3D(FVector(InitialScale, InitialScale, InitialScale));
 	
 	// Init sound
 	float InitialPitch = FlashSound->PitchMultiplier;
@@ -60,12 +60,12 @@ void AGFlash::UpdateFlash(float DeltaTime)
 	{
 		FVector FScale = FMath::VInterpConstantTo(FlashParticles->GetComponentScale(), MaxV, DeltaTime, FlashGrowthIntensity);
 		FScale = FScale.GetClampedToMaxSize(MaxSize);
-		FlashParticles->SetRelativeScale3D(FScale);
+		FlashParticles->SetWorldScale3D(FScale);
 	}
 	
 	if (FlashSound != nullptr)
 	{
-		float FPitch = FMath::FInterpConstantTo(FlashSound->PitchMultiplier, FlashMaxPitch, DeltaTime, FlashGrowthIntensity);
+		float FPitch = FMath::FInterpConstantTo(FlashSound->PitchMultiplier, FlashMaxPitch, DeltaTime, FlashGrowthIntensity * 0.6666f);
 		float FVolum = FMath::FInterpConstantTo(FlashSound->VolumeMultiplier, FlashMaxVolume, DeltaTime, FlashGrowthIntensity);
 		FlashSound->SetPitchMultiplier(FPitch);
 		FlashSound->SetVolumeMultiplier(FVolum);

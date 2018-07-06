@@ -331,7 +331,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 		float VelocityScalar = FMath::Clamp((1 / (1 / MyVelocity)), 1.0f, MoveRange);
 		float DynamicMoveRange = MoveRange + VelocityScalar; /// usually 100 :P
 		FVector PlayerVelocity = Player->GetCharacterMovement()->Velocity;
-		PlayerVelocity.Z *= 0.55f;
+		PlayerVelocity *= 0.55f;
 		FVector PlayerAtSpeed = PlayerLocation + (PlayerVelocity * 0.5f * Aggression);
 		
 		// Randomness in movement

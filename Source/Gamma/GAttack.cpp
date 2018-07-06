@@ -47,7 +47,7 @@ void AGAttack::BeginPlay()
 {
 	Super::BeginPlay();
 	bHit = false;
-	bLethal = false;
+	//bLethal = false;
 	SetLifeSpan(DurationTime);
 
 	// Add natural deviancy to sound
@@ -61,7 +61,6 @@ void AGAttack::BeginPlay()
 	if (ActorHasTag("Obstacle"))
 	{
 		InitAttack(this, 1.0f, 0.0f);
-		numHits = 10;
 	}
 }
 
@@ -335,6 +334,8 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 	{
 		/// Spawning damage fx
 		FActorSpawnParameters SpawnParams;
+		FVector ToHit = HitActor->GetActorLocation() - HitPoint;
+		FRotator ToHitRotation = ToHit.Rotation();
 		FRotator Forward = GetActorForwardVector().Rotation(); //HitActor->GetActorRotation();
 
 		/// Get closest point on bounds of HitActor
@@ -360,8 +361,12 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 		
 
 		/// Spawn!
-		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, SpawnLocation, Forward, SpawnParams)); /// HitPoint
-		DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
+		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, SpawnLocation, ToHitRotation, SpawnParams)); /// HitPoint
+		
+		if (!ActorHasTag("Obstacle"))
+		{
+			DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
+		}
 
 		ForceNetUpdate();
 	}
@@ -372,6 +377,11 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 {
 	/// The knock itself
 	FVector AwayFromShooter = (HitPoint - GetActorLocation()).GetSafeNormal();
+	if (ActorHasTag("Obstacle"))
+	{
+		AwayFromShooter = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+	}
+
 	//FVector AwayFromShooter = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	//float TimeDilat = //UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 	//TimeDilat = FMath::Clamp(TimeDilat, 0.01f, 0.15f);
@@ -494,19 +504,20 @@ void AGAttack::Nullify(int AttackType)
 void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 {
 	HitTimer = 0.0f;
+	bool bSpawnBlock = false;
 
 	// Hit another attack?
 	AGAttack* OtherAttack = Cast<AGAttack>(HitActor);
 	if (OtherAttack != nullptr)
 	{
-		
 		// Qualify that it's not one of ours
 		if ((OwningShooter != nullptr)
 			&& (OtherAttack->OwningShooter != nullptr))
 		{
 			
 			// Return if we hit another of us
-			if (OwningShooter == OtherAttack->OwningShooter)
+			if ((OwningShooter == OtherAttack->OwningShooter)
+				&& !(ActorHasTag("Obstacle")))
 			{
 				///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Green, FString::Printf(TEXT("Hit A Mirror:  %f"), 1.0f));
 				return;
@@ -526,7 +537,10 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 
 				ApplyKnockback(OtherAttack, HitPoint);
 
-				bLethal = false;
+				if (!ActorHasTag("Obstacle"))
+				{
+					bLethal = false;
+				}
 			}
 			
 			// Locked weapons' wielders are pushed away
@@ -552,7 +566,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	else // 'Locked' attacks ie. sword
 	{
 		float Rando = FMath::FRand();
-		if (Rando >= 0.5f)
+		if ((Rando >= 0.5f) || ActorHasTag("Obstacle"))
 		{
 			SpawnDamage(HitActor, HitPoint);
 		}
@@ -568,14 +582,10 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	{
 		ApplyKnockback(HitActor, HitPoint);
 
-		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+		if (!ActorHasTag("Obstacle") && (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f))
 		{
 			ReportHit(HitActor);
 		}
-	}
-	else
-	{
-		// Hit another attack..
 	}
 
 	if (HitActor->ActorHasTag("Wall")
@@ -593,8 +603,8 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 			}
 		}
 
-		//bool AttackType = bSecondary; // Nullify takes 0 or 1 for attack or seco
-		//Nullify(AttackType);
+		bool AttackType = bSecondary; // Nullify takes 0 or 1 for attack or seco
+		Nullify(AttackType);
 	}
 
 	bHit = true;
@@ -609,7 +619,7 @@ void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 		bool bTime = (HitTimer >= (1 / HitsPerSecond));
 		bool bActors = (OwningShooter != nullptr) && (OtherActor != nullptr);
 		float TimeSc = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
-		if (bTime && bActors && !bHit && bLethal && (OtherActor != OwningShooter) && (TimeSc > 0.5f))
+		if (bTime && bActors && bLethal && (OtherActor != OwningShooter) && (TimeSc > 0.5f))
 		{
 			FVector DamageLocation = GetActorLocation() + (OwningShooter->GetActorForwardVector() * RaycastHitRange);
 
