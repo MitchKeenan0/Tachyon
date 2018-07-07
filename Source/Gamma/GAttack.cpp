@@ -334,9 +334,15 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 	{
 		/// Spawning damage fx
 		FActorSpawnParameters SpawnParams;
-		FVector ToHit = HitActor->GetActorLocation() - HitPoint;
+		FVector ToHit = (HitActor->GetActorLocation() - HitPoint).GetSafeNormal();
 		FRotator ToHitRotation = ToHit.Rotation();
-		FRotator Forward = GetActorForwardVector().Rotation(); //HitActor->GetActorRotation();
+
+		//if (ActorHasTag("Obstacle"))
+		//{
+		//	ToHit = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+		//	//ToHitRotation = ToHit.Rotation();
+		//	ToHitRotation = ToHit.ToOrientationRotator();
+		//}
 
 		/// Get closest point on bounds of HitActor
 		FVector SpawnLocation = FVector::ZeroVector;
@@ -362,7 +368,6 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 
 		/// Spawn!
 		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, SpawnLocation, ToHitRotation, SpawnParams)); /// HitPoint
-		
 		if (!ActorHasTag("Obstacle"))
 		{
 			DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
@@ -622,6 +627,10 @@ void AGAttack::OnAttackBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 		if (bTime && bActors && bLethal && (OtherActor != OwningShooter) && (TimeSc > 0.5f))
 		{
 			FVector DamageLocation = GetActorLocation() + (OwningShooter->GetActorForwardVector() * RaycastHitRange);
+			if (ActorHasTag("Obstacle"))
+			{
+				DamageLocation = GetActorLocation() + SweepResult.ImpactPoint;
+			}
 
 			// Got'em
 			HitEffects(OtherActor, DamageLocation);
