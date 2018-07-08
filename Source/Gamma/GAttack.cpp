@@ -193,7 +193,7 @@ void AGAttack::Tick(float DeltaTime)
 {
 	if (bHit)
 	{
-		AttackParticles->CustomTimeDilation *= 0.21f;
+		AttackParticles->CustomTimeDilation *= 0.9f; // Interp this with deltatime
 	}
 
 	if (HasAuthority())
