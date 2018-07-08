@@ -1238,7 +1238,6 @@ bool AGammaCharacter::ServerReleaseAttack_Validate()
 void AGammaCharacter::FireSecondary()
 {
 	if (SecondaryClass && (ActiveSecondary == nullptr)
-		&& (GetActiveBoost() == nullptr)
 		&& (ActiveAttack == nullptr)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
 	{
