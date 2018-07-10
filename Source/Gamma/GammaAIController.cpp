@@ -191,6 +191,16 @@ void AGammaAIController::Tactical(FVector Target)
 	float SecoVal = 70.0f;
 
 
+	// CRITICAL TIME - point blank, etc
+	FVector LocalForward = MyCharacter->GetAttackScene()->GetForwardVector();
+	FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
+	float DistToPlayer = ToPlayer.Size();
+	if (DistToPlayer < 1000.0f)
+	{
+		MyCharacter->CheckAttackOn();
+	}
+
+
 	// HANDBRAKE
 	if (RandomDc <= HandBrakeVal)
 	{
@@ -243,14 +253,10 @@ void AGammaAIController::Tactical(FVector Target)
 	{
 		bShootingSoon = true; /// trivial?
 		
-		// Attack and Secondary
-		FVector LocalForward = MyCharacter->GetAttackScene()->GetForwardVector();
-		FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
-		float VerticalNorm = FMath::FloorToFloat(FMath::Clamp((ToPlayer.GetSafeNormal()).Z, -1.0f, 1.0f));
-
 		// Aim - leads to attacks and secondaries
 		FVector ForwardNorm = LocalForward.GetSafeNormal();
 		FVector ToPlayerNorm = ToPlayer.GetSafeNormal();
+		float VerticalNorm = FMath::FloorToFloat(FMath::Clamp((ToPlayer.GetSafeNormal()).Z, -1.0f, 1.0f));
 		float DotToPlayer = FVector::DotProduct(ForwardNorm, ToPlayerNorm);
 		float RangeToPlayer = ToPlayer.Size();
 		if (RangeToPlayer <= PrimaryRange)

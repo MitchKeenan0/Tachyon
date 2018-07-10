@@ -220,15 +220,15 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 
 		// Set rotation so character faces direction of travel
-		float TravelDirection = FMath::Clamp(InputX, -1.0f, 1.0f);
+		float TravelDirection = FMath::Clamp(x, -1.0f, 1.0f);
 		if (TravelDirection < 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 11.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 15.0f);
 			Controller->SetControlRotation(Fint);
 		}
 		else if (TravelDirection > 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 11.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 15.0f);
 			Controller->SetControlRotation(Fint);
 		}
 		else
@@ -236,12 +236,12 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			// No Input - finish rotation
 			if (Controller->GetControlRotation().Yaw > 90.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 11.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 15.0f);
 				Controller->SetControlRotation(Fint);
 			}
 			else
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 11.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 15.0f);
 				Controller->SetControlRotation(Fint);
 			}
 		}
@@ -649,12 +649,9 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		}
 
 		// Update charge to catch lost input
-		if (bCharging &&
-			((ActiveAttack == nullptr) || (!IsValid(ActiveAttack)) || (ActiveAttack->IsPendingKillOrUnreachable())))
+		if (bCharging)
 		{
 			RaiseCharge();
-			//bCharging = false;
-			///GEngine->AddOnScreenDebugMessage(-1, 2.1f, FColor::White, FString::Printf(TEXT("Caught a lost Charge, firing %f"), 1.0f));
 		}
 
 		// Update player pitch
@@ -694,9 +691,10 @@ void AGammaCharacter::MoveRight(float Value)
 
 			// Effect Move
 			float TurnScalar = MoveSpeed + FMath::Square(TurnSpeed * AngleToInput);
+			float DeltaTime = GetWorld()->DeltaTimeSeconds;
 			MoveByDot = MoveSpeed * TurnScalar;
 			//AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * MoveByDot, true);
-			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX);
+			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * DeltaTime * MoveSpeed);
 		}
 	}
 
@@ -728,9 +726,10 @@ void AGammaCharacter::MoveUp(float Value)
 
 			// Effect move
 			float TurnScalar = MoveSpeed + FMath::Square(TurnSpeed * AngleToInput);
+			float DeltaTime = GetWorld()->DeltaTimeSeconds;
 			MoveByDot = MoveSpeed * TurnScalar;
 			//AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot, true);
-			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ);
+			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * DeltaTime * MoveSpeed);
 		}
 	}
 
@@ -746,7 +745,10 @@ void AGammaCharacter::SetX(float Value, float MoveScalar)
 	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 	{
 		InputX = Value;
-		x = Value;
+		if (Value != 0.0f)
+		{
+			x = Value;
+		}
 		
 		/*if (GetCharacterMovement() != nullptr)
 		{
@@ -781,7 +783,11 @@ void AGammaCharacter::SetZ(float Value, float MoveScalar)
 	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 	{
 		InputZ = Value;
-		z = Value;
+		if (Value != 0.0f)
+		{
+			z = Value;
+		}
+		
 		
 		/*if (GetCharacterMovement() != nullptr)
 		{
@@ -843,7 +849,7 @@ void AGammaCharacter::DisengageKick()
 	// Clear existing boost object
 	if (GetActiveBoost() != nullptr)
 	{
-		if (GetActiveBoost()->GetGameTimeSinceCreation() >= 0.33f)
+		if (GetActiveBoost()->GetGameTimeSinceCreation() >= 0.5f)
 		{
 			ActiveBoost->Destroy();
 			ActiveBoost = nullptr;
@@ -859,6 +865,8 @@ void AGammaCharacter::DisengageKick()
 
 	bBoosting = false;
 	bCharging = false;
+
+	PlayerSound->Stop();
 }
 void AGammaCharacter::ServerDisengageKick_Implementation()
 {
@@ -878,9 +886,9 @@ void AGammaCharacter::KickPropulsion()
 	FVector KickVector = FVector::ZeroVector;
 	
 	// Algo scaling for timescale & max velocity
-	float PropulsiveMax = MaxMoveSpeed * MoveFreshMultiplier;
+	float PropulsiveMax = MaxMoveSpeed * 1.15f;
 	float Relativity = PropulsiveMax - CurrentVelocity.Size();
-	float RelativityToMaxSpeed = FMath::Clamp(Relativity, 0.001f, 100.0f);
+	float RelativityToMaxSpeed = FMath::Clamp(Relativity, 0.001f, 1000.0f);
 	///float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
 
 	// Force, clamp, & effect chara movement
@@ -891,10 +899,11 @@ void AGammaCharacter::KickPropulsion()
 		* RelativityToMaxSpeed
 		* DeltaTime;
 
+	// Skating effect
 	FVector VelNorm = CurrentVelocity.GetSafeNormal();
 	float DotToVelocity = FVector::DotProduct(MoveInputVector, VelNorm);
 	float RotatorAngle = FMath::RadiansToDegrees(FMath::Acos(DotToVelocity));
-	KickVector = KickVector.RotateAngleAxis(RotatorAngle, FVector::ForwardVector);
+	KickVector = KickVector.RotateAngleAxis(RotatorAngle * DeltaTime, GetActorForwardVector());
 
 	// Trimming
 	KickVector.Z *= 0.9f;
@@ -926,7 +935,7 @@ void AGammaCharacter::KickPropulsion()
 		//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("MoveInputVector  %f"), MoveInputVector.Size()));
 		//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
 		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
-		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("vel  %f"), (GetCharacterMovement()->Velocity.Size())));
+		///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("RelativityToMaxSpeed  %f"), RelativityToMaxSpeed));
 		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("kick   %f"), KickVector.Size()));
 	}
 
@@ -994,9 +1003,10 @@ void AGammaCharacter::RaiseCharge()
 			}
 
 			// Charge growth
-			if (Charge <= (ChargeMax - ChargeGain))
+			if (Charge <= (ChargeMax))
 			{
-				Charge += ChargeGain;
+				Charge += (Charge / 100.0f) + (ChargeGain * GetWorld()->DeltaTimeSeconds);
+				bCharging = true;
 			}
 
 			// Sprite Scaling
@@ -1004,13 +1014,6 @@ void AGammaCharacter::RaiseCharge()
 			float SCharge = FMath::Sqrt(ClampedCharge);
 			FVector ChargeSize = FVector(SCharge, SCharge, SCharge);
 			GetCapsuleComponent()->SetWorldScale3D(ChargeSize);
-
-			// Sound fx
-			if (PlayerSound != nullptr)
-			{
-				//PlayerSound->SetPitchMultiplier(Charge * 0.3f);
-				PlayerSound->Play();
-			}
 
 			// visual charge vfx
 			if (HasAuthority() && (ChargeParticles != nullptr) && (ActiveChargeParticles == nullptr))
@@ -1028,6 +1031,14 @@ void AGammaCharacter::RaiseCharge()
 			if (FVector(InputX, 0.0f, InputZ) != FVector::ZeroVector)
 			{
 				NewMoveKick();
+			}
+
+			// Sound fx
+			if ((PlayerSound != nullptr)
+				&& !PlayerSound->IsPlaying())
+			{
+				//PlayerSound->SetPitchMultiplier(Charge * 0.3f);
+				PlayerSound->Play();
 			}
 		}
 
@@ -1057,7 +1068,7 @@ void AGammaCharacter::InitAttack()
 	else
 	{
 		// If we're shooting dry, trigger ChargeBar warning by going sub-zero
-		if (Charge < ChargeGain)
+		if (Charge <= 0.0f)
 		{
 			Charge = (-1.0f);
 			return;

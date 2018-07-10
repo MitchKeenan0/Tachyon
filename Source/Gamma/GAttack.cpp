@@ -540,7 +540,8 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 						BlockedClass, GetActorLocation(), GetActorRotation(), SpawnParams);
 				}
 
-				ApplyKnockback(OtherAttack, HitPoint);
+				//ApplyKnockback(OtherAttack, HitPoint);
+				ApplyKnockback(OwningShooter, GetActorLocation());
 
 				if (!ActorHasTag("Obstacle"))
 				{
