@@ -368,10 +368,12 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 
 		/// Spawn!
 		AGDamage* DmgObj = Cast<AGDamage>(GetWorld()->SpawnActor<AGDamage>(DamageClass, SpawnLocation, ToHitRotation, SpawnParams)); /// HitPoint
-		if (!ActorHasTag("Obstacle"))
+		DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
+																																	 
+		/*if (!ActorHasTag("Obstacle"))
 		{
 			DmgObj->AttachToActor(HitActor, FAttachmentTransformRules::KeepWorldTransform);
-		}
+		}*/
 
 		ForceNetUpdate();
 	}

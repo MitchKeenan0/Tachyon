@@ -1503,6 +1503,13 @@ void AGammaCharacter::CheckAttackOn()
 	{
 		ArmAttack();
 	}
+
+	// ATTACK CANCEL
+	else if (ActiveAttack != nullptr)
+	{
+		ActiveAttack->Destroy();
+		ActiveAttack = nullptr;
+	}
 }
 void AGammaCharacter::CheckAttackOff()
 {
@@ -1654,14 +1661,14 @@ void AGammaCharacter::PowerSlideEngage()
 		
 		// Neutralizing charge
 		// Armed player goes to -1, triggering a warning
-		if (Charge > 0.0f)
+		/*if (Charge > 0.0f)
 		{
 			Charge = -1.0f;
 		}
 		else
 		{
 			Charge = 0.0f;
-		}
+		}*/
 
 		//// Attack cancel
 		//if (GetActiveFlash() != nullptr)
