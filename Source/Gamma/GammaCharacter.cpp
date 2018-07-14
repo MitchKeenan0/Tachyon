@@ -1241,6 +1241,12 @@ void AGammaCharacter::ReleaseAttack()
 							ActiveFlash->Destroy();
 							ActiveFlash = nullptr;
 						}
+
+						// Slowing the character on fire
+						if (GetCharacterMovement() != nullptr)
+						{
+							GetCharacterMovement()->Velocity *= 0.21f;
+						}
 					}
 				}
 				else
