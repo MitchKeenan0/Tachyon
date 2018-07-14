@@ -49,7 +49,7 @@ void AGAttack::BeginPlay()
 	bHit = false;
 	//bLethal = false;
 	SetLifeSpan(DurationTime);
-	AttackDamage = 2.0f;
+	AttackDamage = 3.0f;
 
 	// Add natural deviancy to sound
 	if (AttackSound != nullptr)
@@ -117,7 +117,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 
 			// Correct rotation -> Character may be spinning
 			float YawAbs = FMath::Abs(FireRotation.Yaw);
-			GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("YawAbs:  %f"), YawAbs));
+			///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("YawAbs:  %f"), YawAbs));
 			if ((YawAbs < 90.0f) || (YawAbs > 270.0f))
 			{
 				FireRotation.Yaw = 0.0f;
@@ -127,7 +127,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 				FireRotation.Yaw = 180.0f;
 			}
 			SetActorRotation(FireRotation);
-			GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("FireRotation.Yaw:  %f"), FireRotation.Yaw));
+			///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("FireRotation.Yaw:  %f"), FireRotation.Yaw));
 		}
 
 
