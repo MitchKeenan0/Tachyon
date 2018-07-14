@@ -49,6 +49,7 @@ void AGAttack::BeginPlay()
 	bHit = false;
 	//bLethal = false;
 	SetLifeSpan(DurationTime);
+	AttackDamage = 2.0f;
 
 	// Add natural deviancy to sound
 	if (AttackSound != nullptr)
@@ -169,7 +170,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 			ACharacter* Chara = Cast<ACharacter>(OwningShooter);
 			if (Chara != nullptr)
 			{
-				float RecoilScalar = KineticForce * FMath::Clamp((10.0f * AttackMagnitude), 0.5f, 2.1f);
+				float RecoilScalar = FMath::Abs(KineticForce) * FMath::Clamp((10.0f * AttackMagnitude), 0.5f, 2.1f);
 				FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
 				FRotator RecoilRotator = LocalForward.Rotation() + FRotator(ShotDirection * ShootingAngle, 0.0f, 0.0f);
 				Chara->GetCharacterMovement()->AddImpulse(RecoilRotator.Vector() * RecoilScalar);
@@ -396,6 +397,10 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 	float MagnitudeScalar = FMath::Square(1.0f + AttackMagnitude);
 	float KnockScalar = FMath::Abs(KineticForce) * HitsScalar * MagnitudeScalar;
 
+	/// Trim the vector to favor widescreen
+	AwayFromShooter.Z *= 0.25f;
+	AwayFromShooter.X *= 1.25f;
+
 	/// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
 	if (Chara != nullptr)
@@ -596,6 +601,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 		}
 	}
 
+	// Stick-in for 'solid' attacks
 	if (HitActor->ActorHasTag("Wall")
 		&& this->ActorHasTag("Solid"))
 	{
@@ -611,8 +617,14 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 			}
 		}
 
-		bool AttackType = bSecondary; // Nullify takes 0 or 1 for attack or seco
-		Nullify(AttackType);
+		bLethal = false;
+		if (ProjectileComponent != nullptr)
+		{
+			ProjectileComponent->Velocity *= 0.95f;
+			ProjectileSpeed = 1.0f;
+			ProjectileMaxSpeed = 1.0f;
+		}
+
 	}
 
 	bHit = true;

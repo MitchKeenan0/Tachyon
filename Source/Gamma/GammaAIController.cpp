@@ -181,6 +181,53 @@ bool AGammaAIController::ReactionTiming(float DeltaTime)
 }
 
 
+void AGammaAIController::AimAtTarget(AActor* TargetActor)
+{
+	FVector LocalForward = MyCharacter->GetAttackScene()->GetForwardVector();
+	FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
+	
+	// AIM
+	// X
+	float LateralDistance = ToPlayer.X;
+	if (LateralDistance < 0.0f) {
+		MyCharacter->SetX(-1.0f, 1.0f);
+	} else {
+		MyCharacter->SetX(1.0f, 1.0f);
+	}
+
+	// Z
+	float VerticalDistance = ToPlayer.Z;
+	if (VerticalDistance > 0.0f) {
+		MyCharacter->SetZ(1.0f, 1.0f);
+	} else {
+		MyCharacter->SetZ(-1.0f, 1.0f);
+	}
+
+	// LOS
+	FVector ForwardNorm = LocalForward.GetSafeNormal();
+	FVector ToPlayerNorm = ToPlayer.GetSafeNormal();
+	float DotToPlayer = FVector::DotProduct(ForwardNorm, ToPlayerNorm);
+	float RangeToPlayer = ToPlayer.Size();
+	if (RangeToPlayer <= PrimaryRange)
+	{
+
+		float AngleToPlayer = FMath::RadiansToDegrees(FMath::Acos(DotToPlayer));
+		float AbsAngle = FMath::Abs(AngleToPlayer);
+		if (AbsAngle <= ShootingAngle) {
+			bViewToTarget = true;
+		} else {
+			bViewToTarget = false;
+		}
+	}
+}
+
+
+bool AGammaAIController::HasViewToTarget()
+{
+	return bViewToTarget;
+}
+
+
 // TACTICAL ///////////////////////////////////////////////////////
 void AGammaAIController::Tactical(FVector Target)
 {
@@ -191,13 +238,32 @@ void AGammaAIController::Tactical(FVector Target)
 	float SecoVal = 70.0f;
 
 
-	// CRITICAL TIME - point blank, etc
+	// POINT-BLANK stunts
 	FVector LocalForward = MyCharacter->GetAttackScene()->GetForwardVector();
 	FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
 	float DistToPlayer = ToPlayer.Size();
 	if (DistToPlayer < 1000.0f)
 	{
-		MyCharacter->CheckAttackOn();
+		if (HasViewToTarget())
+		{
+			if (MyCharacter->GetActiveFlash() != nullptr)
+			{
+				float Prefire = MyCharacter->GetPrefireTime();
+				float MagnitudePreference = 0.2f + FMath::FRand();
+				if (Prefire >= MagnitudePreference)
+				{
+					MyCharacter->CheckAttackOff();
+				}
+			}
+			else
+			{
+				MyCharacter->CheckAttackOn();
+			}
+		}
+		else
+		{
+			AimAtTarget(Player);
+		}
 	}
 
 
@@ -208,7 +274,7 @@ void AGammaAIController::Tactical(FVector Target)
 		FVector CurrentHeading = MyCharacter->GetCharacterMovement()->Velocity.GetSafeNormal();
 		FVector TargetHeading = (LocationTarget - MyPawn->GetActorLocation()).GetSafeNormal();
 		float DotToTarget = FVector::DotProduct(CurrentHeading, TargetHeading);
-		if (DotToTarget < -0.15f)
+		if (DotToTarget < -0.15f) /// or, just over 90 degrees away
 		{
 			MyCharacter->CheckPowerSlideOn();
 		}
@@ -300,12 +366,12 @@ void AGammaAIController::Tactical(FVector Target)
 						{
 							MyCharacter->CheckAttackOn();
 						}
-						else if (MyCharacter->GetActiveFlash() != nullptr)
+						else if ((MyCharacter->GetActiveFlash() != nullptr) && (MyCharacter->GetPrefireTime() >= 0.1f))
 						{
 							MyCharacter->CheckAttackOff(); /// will trigger an attack if prefire-timer > 0
 						}
 					}
-					else
+					else if (MyCharacter->GetPrefireTime() >= 0.1f)
 					{
 						MyCharacter->CheckAttackOff();
 					}

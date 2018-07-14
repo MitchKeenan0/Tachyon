@@ -645,7 +645,10 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		}
 		else if (GetActiveBoost() != nullptr)
 		{
-			DisengageKick();
+			if (GetActiveBoost()->GetGameTimeSinceCreation() > 3.0f)
+			{
+				DisengageKick();
+			}
 		}
 
 		// Update charge to catch lost input
@@ -694,7 +697,7 @@ void AGammaCharacter::MoveRight(float Value)
 			float DeltaTime = GetWorld()->DeltaTimeSeconds;
 			MoveByDot = MoveSpeed * TurnScalar;
 			//AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * MoveByDot, true);
-			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * DeltaTime * MoveSpeed);
+			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), InputX * DeltaTime * MoveSpeed * MoveByDot);
 		}
 	}
 
@@ -729,7 +732,7 @@ void AGammaCharacter::MoveUp(float Value)
 			float DeltaTime = GetWorld()->DeltaTimeSeconds;
 			MoveByDot = MoveSpeed * TurnScalar;
 			//AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * MoveByDot, true);
-			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * DeltaTime * MoveSpeed);
+			AddMovementInput(FVector(0.0f, 0.0f, 1.0f), InputZ * DeltaTime * MoveSpeed * MoveByDot);
 		}
 	}
 
@@ -854,6 +857,13 @@ void AGammaCharacter::DisengageKick()
 			ActiveBoost->Destroy();
 			ActiveBoost = nullptr;
 
+			bBoosting = false;
+			bCharging = false;
+
+			GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed;
+
+			PlayerSound->Stop();
+
 			// Clear existing charge object
 			if (ActiveChargeParticles != nullptr)
 			{
@@ -862,11 +872,14 @@ void AGammaCharacter::DisengageKick()
 			}
 		}
 	}
-
-	bBoosting = false;
-	bCharging = false;
-
-	PlayerSound->Stop();
+	if (ActiveChargeParticles != nullptr)
+	{
+		if (ActiveChargeParticles->GetGameTimeSinceCreation() >= 0.5f)
+		{
+			ActiveChargeParticles->Destroy();
+			ActiveChargeParticles = nullptr;
+		}
+	}
 }
 void AGammaCharacter::ServerDisengageKick_Implementation()
 {
@@ -888,15 +901,17 @@ void AGammaCharacter::KickPropulsion()
 	// Algo scaling for timescale & max velocity
 	float PropulsiveMax = MaxMoveSpeed * 1.15f;
 	float Relativity = PropulsiveMax - CurrentVelocity.Size();
-	float RelativityToMaxSpeed = FMath::Clamp(Relativity, 0.001f, 1000.0f);
+	float RelativityToMaxSpeed = FMath::Clamp(Relativity, 0.001f, 10000.0f);
 	///float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
+
+	GetCharacterMovement()->MaxFlySpeed = CurrentVelocity.Size() * 1.09f;
 
 	// Force, clamp, & effect chara movement
 	float ChargeScalar = FMath::Sqrt(FMath::Clamp(Charge, 0.1f, 1.0f));
 	float DeltaTime = GetWorld()->DeltaTimeSeconds;
 	KickVector = MoveInputVector
 		* MoveFreshMultiplier
-		* RelativityToMaxSpeed
+		//* RelativityToMaxSpeed
 		* DeltaTime;
 
 	// Skating effect
@@ -930,7 +945,7 @@ void AGammaCharacter::KickPropulsion()
 	if (GetWorld() && (ActiveChargeParticles != nullptr)
 		&& (GetCharacterMovement() != nullptr))
 	{
-		GetCharacterMovement()->AddImpulse(KickVector, false);
+		GetCharacterMovement()->AddImpulse(KickVector);
 
 		//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("MoveInputVector  %f"), MoveInputVector.Size()));
 		//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
@@ -939,7 +954,32 @@ void AGammaCharacter::KickPropulsion()
 		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("kick   %f"), KickVector.Size()));
 	}
 
-	//ForceNetUpdate();
+	if (GetActiveBoost() != nullptr)
+	{
+		if (GetActiveBoost()->GetGameTimeSinceCreation() > 0.5f)
+		{
+			DisengageKick();
+			/*ActiveBoost->Destroy();
+			ActiveBoost = nullptr;
+			bCharging = false;
+			bBoosting = false;*/
+		}
+	}
+	if (ActiveChargeParticles != nullptr)
+	{
+		if (ActiveChargeParticles->GetGameTimeSinceCreation() > 0.5f)
+		{
+			ActiveChargeParticles->Destroy();
+			ActiveChargeParticles = nullptr;
+			bCharging = false;
+			bBoosting = false;
+			/*ActiveChargeParticles->Destroy();
+			ActiveChargeParticles = nullptr;
+			bCharging = false;
+			bBoosting = false;*/
+		}
+	}
+	
 
 	if (Role < ROLE_Authority)
 	{
@@ -1028,7 +1068,8 @@ void AGammaCharacter::RaiseCharge()
 			}
 
 			// Move boost o.o
-			if (FVector(InputX, 0.0f, InputZ) != FVector::ZeroVector)
+			if ((FVector(InputX, 0.0f, InputZ) != FVector::ZeroVector)
+				&& (GetActiveBoost() == nullptr))
 			{
 				NewMoveKick();
 			}
@@ -1043,10 +1084,10 @@ void AGammaCharacter::RaiseCharge()
 		}
 
 		// Catch misfire - if we were shooting, etc
-		if ((ActiveChargeParticles == nullptr) || (!IsValid(ActiveChargeParticles)))
+		/*if ((ActiveChargeParticles == nullptr) || (!IsValid(ActiveChargeParticles)))
 		{
 			bCharging = true;
-		}
+		}*/
 	}
 }
 void AGammaCharacter::ServerRaiseCharge_Implementation()
@@ -1249,14 +1290,18 @@ bool AGammaCharacter::ServerReleaseAttack_Validate()
 void AGammaCharacter::FireSecondary()
 {
 	if (SecondaryClass && (ActiveSecondary == nullptr)
-		&& (ActiveAttack == nullptr)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
 	{
-		// Cancel the Flash if there is one
+		// Cancel the Flash and Attack
 		if (GetActiveFlash() != nullptr)
 		{
 			ActiveFlash->Destroy();
 			ActiveFlash = nullptr;
+		}
+		if (ActiveAttack != nullptr)
+		{
+			ActiveAttack->Destroy();
+			ActiveAttack = nullptr;
 		}
 
 		// Direction & setting up
@@ -1511,6 +1556,7 @@ void AGammaCharacter::CheckAttackOn()
 		ActiveAttack = nullptr;
 	}
 }
+
 void AGammaCharacter::CheckAttackOff()
 {
 	if ((PrefireTimer > 0.0f) || (GetActiveFlash() != nullptr))

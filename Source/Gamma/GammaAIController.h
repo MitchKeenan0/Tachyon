@@ -41,6 +41,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetReactionTime() { return ReactionTime; }
 
+	UFUNCTION(BlueprintCallable)
+	void AimAtTarget(AActor* TargetActor);
+
+	UFUNCTION(BlueprintCallable)
+	bool HasViewToTarget();
+
 	/*UFUNCTION(BlueprintCallable)
 	void InitAttack();
 
@@ -105,6 +111,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	FVector MoveInput = FVector::ZeroVector;
+
+	UPROPERTY(EditDefaultsOnly)
+	bool bViewToTarget = false;
 
 private:
 	UPROPERTY()
