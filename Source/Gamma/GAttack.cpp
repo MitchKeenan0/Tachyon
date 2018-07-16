@@ -620,9 +620,9 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 		bLethal = false;
 		if (ProjectileComponent != nullptr)
 		{
-			ProjectileComponent->Velocity *= 0.95f;
-			ProjectileSpeed = 1.0f;
-			ProjectileMaxSpeed = 1.0f;
+			ProjectileComponent->Velocity *= 0.01f;
+			ProjectileSpeed = 0.0f;
+			ProjectileMaxSpeed = 0.0f;
 		}
 
 	}

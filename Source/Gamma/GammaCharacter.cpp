@@ -899,7 +899,7 @@ void AGammaCharacter::KickPropulsion()
 	FVector KickVector = FVector::ZeroVector;
 	
 	// Algo scaling for timescale & max velocity
-	float PropulsiveMax = MaxMoveSpeed * 1.15f;
+	float PropulsiveMax = MaxMoveSpeed * 2.1f;
 	float Relativity = PropulsiveMax - CurrentVelocity.Size();
 	float RelativityToMaxSpeed = FMath::Clamp(Relativity, 0.001f, 10000.0f);
 	///float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
