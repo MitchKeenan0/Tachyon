@@ -398,7 +398,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 	float KnockScalar = FMath::Abs(KineticForce) * HitsScalar * MagnitudeScalar;
 
 	/// Trim the vector to favor widescreen
-	AwayFromShooter.Z *= 0.25f;
+	AwayFromShooter.Z *= 0.55f;
 	AwayFromShooter.X *= 1.25f;
 
 	/// Get character movement to kick on

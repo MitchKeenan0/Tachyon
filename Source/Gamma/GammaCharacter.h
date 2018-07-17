@@ -226,6 +226,10 @@ protected:
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerDisarmSecondary();
 
+	void ReceiveDamage(float Dmg);
+	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
+	void ServerReceiveDamage(float Dmg);
+
 	void KickPropulsion();
 	UFUNCTION(Server, BlueprintCallable, reliable, WithValidation)
 	void ServerKickPropulsion();

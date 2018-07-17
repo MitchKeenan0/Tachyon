@@ -996,6 +996,26 @@ bool AGammaCharacter::ServerKickPropulsion_Validate()
 }
 
 
+// RECEIVING DAMAGE
+void AGammaCharacter::ReceiveDamage(float Dmg)
+{
+	// stuff ie Health <= 0.0f -> KilledFX
+
+	if (Role < ROLE_Authority)
+	{
+		ServerReceiveDamage(Dmg);
+	}
+}
+void AGammaCharacter::ServerReceiveDamage_Implementation(float Dmg)
+{
+	ReceiveDamage(Dmg);
+}
+bool AGammaCharacter::ServerReceiveDamage_Validate(float Dmg)
+{
+	return true;
+}
+
+
 // BOOST PARTICLES
 void AGammaCharacter::UpdateMoveParticles(FVector Move)
 {
