@@ -240,8 +240,8 @@ void AGammaSoloSequence::SpawnDenizen()
 				GetWorld()->SpawnActor<AActor>(
 					AIControllerClass, FVector::ZeroVector, GetActorRotation(), SpawnParams));
 
-			if (NewDenizen != nullptr
-				&& DenizenController != nullptr)
+			if ((NewDenizen != nullptr)
+				&& (DenizenController != nullptr))
 			{
 				// Install AI Controller
 				NewDenizen->Controller = DenizenController;
@@ -249,6 +249,7 @@ void AGammaSoloSequence::SpawnDenizen()
 
 				// "Alert the media"
 				NewDenizen->Tags.Add("Bot");
+				DenizenArray.Add(NewDenizen);
 
 				++Spawns;
 				PreviousSpawn = Rando;
@@ -269,12 +270,13 @@ int AGammaSoloSequence::NumDenizens()
 		AActor* Act = DenizenArray[i];
 		if (Act != nullptr)
 		{
-			if (Act != Cast<AActor>(KaraokeClass->GetOwnerClass())
+			Result += 1;
+			/*if (Act != Cast<AActor>(KaraokeClass->GetOwnerClass())
 				&& Act != Cast<AActor>(PeaceGiantClass->GetOwnerClass())
 				&& Act != Cast<AActor>(BaetylusClass->GetOwnerClass()))
 			{
 				Result += 1;
-			}
+			}*/
 		}
 	}
 

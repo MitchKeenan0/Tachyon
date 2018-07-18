@@ -194,7 +194,7 @@ void AGAttack::Tick(float DeltaTime)
 {
 	if (bHit)
 	{
-		AttackParticles->CustomTimeDilation *= 0.9f; // Interp this with deltatime
+		AttackParticles->CustomTimeDilation *= 0.905f; // Interp this with deltatime
 	}
 
 	if (HasAuthority())
@@ -320,7 +320,8 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		{
 			//FVector ClosestHit = Hit.Component.Get()->GetClosestPointOnCollision(Hit.ImpactPoint, Hit.ImpactPoint);
 			HitActor = Hit.Actor.Get();
-			if (HitActor != nullptr)
+			if ((HitActor != nullptr)
+				&& (HitActor != OwningShooter))
 			{
 				HitEffects(HitActor, Hit.ImpactPoint);
 			}
@@ -399,7 +400,6 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 
 	/// Trim the vector to favor widescreen
 	AwayFromShooter.Z *= 0.55f;
-	AwayFromShooter.X *= 1.25f;
 
 	/// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
@@ -515,8 +515,7 @@ void AGAttack::Nullify(int AttackType)
 
 void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 {
-	HitTimer = 0.0f;
-	bool bSpawnBlock = false;
+	bool bSuccessfulHit = false;
 
 	// Hit another attack?
 	AGAttack* OtherAttack = Cast<AGAttack>(HitActor);
@@ -570,64 +569,71 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 		}
 	}
 
-	// Spawn the basic damage smoke
-	// 'Freefire' attacks always attach to the hitactor
-	if (!LockedEmitPoint)
-	{
-		SpawnDamage(HitActor, HitPoint);
-	}
-	else // 'Locked' attacks ie. sword
-	{
-		float Rando = FMath::FRand();
-		if ((Rando >= 0.5f) || ActorHasTag("Obstacle"))
-		{
-			SpawnDamage(HitActor, HitPoint);
-		}
-		else
-		{
-			SpawnDamage(this, HitPoint);
-		}
-	}
+	// All's good if we got here
+	bSuccessfulHit = true;
 
-	// Real hit Consequences
-	if (bLethal && !HitActor->ActorHasTag("Attack")
-		&& !HitActor->ActorHasTag("Doomed")) /// && (HitTimer >= (1.0f / HitsPerSecond)))
+	if (bSuccessfulHit)
 	{
-		ApplyKnockback(HitActor, HitPoint);
+		bHit = true;
+		HitTimer = 0.0f;
 
-		if (!ActorHasTag("Obstacle") && (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f))
+		// Real hit Consequences
+		if (bLethal && !HitActor->ActorHasTag("Attack")
+			&& !HitActor->ActorHasTag("Doomed")) /// && (HitTimer >= (1.0f / HitsPerSecond)))
 		{
-			ReportHit(HitActor);
-		}
-	}
+			ApplyKnockback(HitActor, HitPoint);
 
-	// Stick-in for 'solid' attacks
-	if (HitActor->ActorHasTag("Wall")
-		&& this->ActorHasTag("Solid"))
-	{
-		// Spawn blocked fx
-		if (BlockedClass != nullptr)
-		{
-			FActorSpawnParameters SpawnParams;
-			AActor* BlockedFX = GetWorld()->SpawnActor<AActor>(
-				BlockedClass, GetActorLocation(), GetActorRotation(), SpawnParams);
-			if (BlockedFX != nullptr)
+			if (!ActorHasTag("Obstacle") && (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f))
 			{
-				BlockedFX->SetLifeSpan(0.221f);
+				ReportHit(HitActor);
 			}
 		}
 
-		bLethal = false;
-		if (ProjectileComponent != nullptr)
+		// Spawn the basic damage smoke
+		// 'Freefire' attacks always attach to the hitactor
+		if (!LockedEmitPoint)
 		{
-			ProjectileComponent->Velocity *= 0.01f;
-			ProjectileSpeed = 0.0f;
-			ProjectileMaxSpeed = 0.0f;
+			SpawnDamage(HitActor, HitPoint);
+		}
+		else // 'Locked' attacks ie. sword
+		{
+			float Rando = FMath::FRand();
+			if ((Rando >= 0.5f) || ActorHasTag("Obstacle"))
+			{
+				SpawnDamage(HitActor, HitPoint);
+			}
+			else
+			{
+				SpawnDamage(this, HitPoint);
+			}
 		}
 
-	}
+		// Stick-in for 'solid' attacks
+		if (HitActor->ActorHasTag("Wall")
+			&& this->ActorHasTag("Solid"))
+		{
+			// Spawn blocked fx
+			if (BlockedClass != nullptr)
+			{
+				FActorSpawnParameters SpawnParams;
+				AActor* BlockedFX = GetWorld()->SpawnActor<AActor>(
+					BlockedClass, GetActorLocation(), GetActorRotation(), SpawnParams);
+				if (BlockedFX != nullptr)
+				{
+					BlockedFX->SetLifeSpan(0.221f);
+				}
+			}
 
-	bHit = true;
+			bLethal = false;
+			if (ProjectileComponent != nullptr)
+			{
+				ProjectileComponent->Velocity *= 0.01f;
+				ProjectileSpeed = 0.0f;
+				ProjectileMaxSpeed = 0.0f;
+			}
+
+		}
+	}
 }
 
 

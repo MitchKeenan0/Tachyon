@@ -1052,10 +1052,7 @@ void AGammaCharacter::RaiseCharge()
 	}
 	else
 	{
-		if ((UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
-			&& (((ActiveAttack == nullptr) && !IsValid(ActiveAttack) || ActiveAttack->IsPendingKillOrUnreachable())
-				|| bMultipleAttacks)
-			)
+		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
 		{
 			// Noobish recovery from empty-case -1 charge
 			if (Charge < 0.0f) {
@@ -1063,7 +1060,8 @@ void AGammaCharacter::RaiseCharge()
 			}
 
 			// Charge growth
-			if (Charge <= (ChargeMax))
+			if ((Charge <= (ChargeMax))
+				&& (ActiveAttack == nullptr))
 			{
 				Charge += (Charge / 100.0f) + (ChargeGain * GetWorld()->DeltaTimeSeconds);
 				bCharging = true;
@@ -1570,17 +1568,7 @@ bool AGammaCharacter::ServerPrefireTiming_Validate()
 // ATTACK PRIMING
 void AGammaCharacter::CheckAttackOn()
 {
-	if (!bShooting && (ActiveAttack == nullptr))
-	{
-		ArmAttack();
-	}
-
-	// ATTACK CANCEL
-	else if (ActiveAttack != nullptr)
-	{
-		ActiveAttack->Destroy();
-		ActiveAttack = nullptr;
-	}
+	ArmAttack();
 }
 
 void AGammaCharacter::CheckAttackOff()
