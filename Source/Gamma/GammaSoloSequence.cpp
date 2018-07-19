@@ -141,14 +141,16 @@ void AGammaSoloSequence::SpawnDenizen()
 		}
 		if (ObstacleSpawning != nullptr)
 		{
-
 			// Position and Rotation
+			SpawnLoc += (FMath::VRand() * 1000.0f);
+			SpawnLoc.Y = 0.0f;
+			
 			float RandF = FMath::FRandRange(-1.0f, 1.0f);
 			float RandG = FMath::FRandRange(-1.0f, 1.0f);
 			float RandH = FMath::FRandRange(-1.0f, 1.0f);
 			FRotator SpawnRotation = FRotator(RandF * 45.0f, RandG * 45.0f, RandH * 45.0f);
 
-			AActor* NewObstacle = GetWorld()->SpawnActor<AActor>(ObstacleSpawning, SpawnLoc, SpawnRotation, SpawnParams);
+			AActor* NewObstacle = GetWorld()->SpawnActor<AActor>(ObstacleSpawning, SpawnLoc * 5.5f, SpawnRotation, SpawnParams);
 			
 			if (NewObstacle != nullptr)
 			{

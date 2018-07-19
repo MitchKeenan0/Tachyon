@@ -467,11 +467,11 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Last modifier for global time dilation
 				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld()) * 2.1f;
-				float RefinedGScalar = FMath::Clamp(GlobalTimeScale, 0.11f, 1.0f);
+				float RefinedGScalar = FMath::Clamp(GlobalTimeScale, 0.5f, 1.0f);
 				TargetLength *= RefinedGScalar;
 
 				// Clamp useable distance
-				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 200.0f) * ConsideredDistanceScalar,
+				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 150.0f) * ConsideredDistanceScalar,
 					CameraMinimumDistance * RefinedGScalar,
 					CameraMaxDistance);
 
@@ -503,6 +503,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				CameraBoom->SetWorldLocation(Midpoint);
 				CameraBoom->TargetArmLength = DesiredCameraDistance * FMath::Clamp(GTimeScale, 0.999f, 1.0f);
 				SideViewCameraComponent->SetRelativeRotation(FTarget);
+				SideViewCameraComponent->OrthoWidth = (DesiredCameraDistance);
 
 				/// debug Velocity size
 				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,
@@ -852,7 +853,7 @@ void AGammaCharacter::DisengageKick()
 	// Clear existing boost object
 	if (GetActiveBoost() != nullptr)
 	{
-		if (GetActiveBoost()->GetGameTimeSinceCreation() >= 0.5f)
+		if (GetActiveBoost()->GetGameTimeSinceCreation() >= 1.0f)
 		{
 			ActiveBoost->Destroy();
 			ActiveBoost = nullptr;
@@ -874,7 +875,7 @@ void AGammaCharacter::DisengageKick()
 	}
 	if (ActiveChargeParticles != nullptr)
 	{
-		if (ActiveChargeParticles->GetGameTimeSinceCreation() >= 0.5f)
+		if (ActiveChargeParticles->GetGameTimeSinceCreation() >= 1.0f)
 		{
 			ActiveChargeParticles->Destroy();
 			ActiveChargeParticles = nullptr;
@@ -956,7 +957,7 @@ void AGammaCharacter::KickPropulsion()
 
 	if (GetActiveBoost() != nullptr)
 	{
-		if (GetActiveBoost()->GetGameTimeSinceCreation() > 0.5f)
+		if (GetActiveBoost()->GetGameTimeSinceCreation() > 1.0f)
 		{
 			DisengageKick();
 			/*ActiveBoost->Destroy();
@@ -967,7 +968,7 @@ void AGammaCharacter::KickPropulsion()
 	}
 	if (ActiveChargeParticles != nullptr)
 	{
-		if (ActiveChargeParticles->GetGameTimeSinceCreation() > 0.5f)
+		if (ActiveChargeParticles->GetGameTimeSinceCreation() > 1.0f)
 		{
 			ActiveChargeParticles->Destroy();
 			ActiveChargeParticles = nullptr;
@@ -1263,7 +1264,7 @@ void AGammaCharacter::ReleaseAttack()
 						// Slowing the character on fire
 						if (GetCharacterMovement() != nullptr)
 						{
-							GetCharacterMovement()->Velocity *= 0.21f;
+							GetCharacterMovement()->Velocity *= 0.5f;
 						}
 					}
 				}

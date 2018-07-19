@@ -88,26 +88,17 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		// Lifespan
 		if (MagnitudeTimeScalar != 1.0f)
 		{
-			DurationTime = (DurationTime + AttackMagnitude) * MagnitudeTimeScalar;
-			LethalTime = DurationTime * 0.5f;
+			DurationTime = DurationTime + (AttackMagnitude * MagnitudeTimeScalar);
+			LethalTime = DurationTime * 0.99f;
 		}
-		else
-		{
-			DynamicLifetime = DurationTime;
-		}
+		DynamicLifetime = DurationTime;
 		SetLifeSpan(DurationTime);
 
 		// Scale HitsPerSecond by Magnitude
 		HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 1.0f, 100.0f);
 
-		// Adjust lethal time by magnitude
-		if (DurationTime < 1.0f)
-		{
-			float NewLethalTime = LethalTime * AttackMagnitude;
-			LethalTime = NewLethalTime;
-		}
 
-		// Last-second update to direction after fire
+		// Update to direction after fire
 		if (AngleSweep != 0.0f)
 		{
 			float DirRecalc = ShotDirection * ShootingAngle;
@@ -627,11 +618,16 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 			bLethal = false;
 			if (ProjectileComponent != nullptr)
 			{
+				
 				ProjectileComponent->Velocity *= 0.01f;
 				ProjectileSpeed = 0.0f;
 				ProjectileMaxSpeed = 0.0f;
+
+				ProjectileComponent->Deactivate();
 			}
 
+			//AttachToActor(HitActor, FAttachmentTransformRules::KeepRelativeTransform);
+			AttachToComponent(HitActor->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
 		}
 	}
 }
