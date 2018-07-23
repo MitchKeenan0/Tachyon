@@ -351,7 +351,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Framing up first actor with their own velocity
 			FVector Actor1Velocity = (Actor1->GetVelocity()) * CustomTimeDilation;
-			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size(), 350.0f, MaxMoveSpeed);
+			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size(), 1.0f, MaxMoveSpeed); // Prev. 350
 			VelocityCameraSpeed = CameraMoveSpeed * (FMath::Sqrt(SafeVelocitySize)) * DeltaTime;
 			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 1.0f, CameraMaxSpeed);
 
@@ -895,6 +895,18 @@ bool AGammaCharacter::ServerDisengageKick_Validate()
 // LE KICK PROPULSION
 void AGammaCharacter::KickPropulsion()
 {
+	// Attack cancel
+	if (ActiveAttack != nullptr)
+	{
+		float AttackLiveTime = ActiveAttack->GetGameTimeSinceCreation();
+		if (AttackLiveTime >= 0.2f)
+		{
+			ActiveAttack->Destroy();
+			ActiveAttack = nullptr;
+		}
+	}
+
+	// Basic propulsive ingredients
 	FVector CurrentVelocity = GetCharacterMovement()->Velocity;
 	FVector MoveInputVector = FVector(InputX, 0.0f, InputZ * 0.75f).GetSafeNormal();
 	FVector KickVector = FVector::ZeroVector;
@@ -1062,10 +1074,19 @@ void AGammaCharacter::RaiseCharge()
 
 			// Charge growth
 			if ((Charge <= (ChargeMax))
-				&& (ActiveAttack == nullptr))
+				&& ((ActiveAttack == nullptr) || ActiveAttack->IsPendingKillOrUnreachable()))
 			{
 				Charge += (Charge / 100.0f) + (ChargeGain * GetWorld()->DeltaTimeSeconds);
-				bCharging = true;
+
+				if (Charge < ChargeMax)
+				{
+					bCharging = true;
+				}
+				else
+				{
+					bCharging = false;
+					Charge = ChargeMax;
+				}
 			}
 
 			// Sprite Scaling
@@ -1086,9 +1107,8 @@ void AGammaCharacter::RaiseCharge()
 				}
 			}
 
-			// Move boost o.o
-			if ((FVector(InputX, 0.0f, InputZ) != FVector::ZeroVector)
-				&& (GetActiveBoost() == nullptr))
+			// Move boost - activate if no boost yet
+			if ((GetActiveBoost() == nullptr)) // (FVector(InputX, 0.0f, InputZ) != FVector::ZeroVector) &&
 			{
 				NewMoveKick();
 			}
@@ -1323,6 +1343,7 @@ void AGammaCharacter::FireSecondary()
 			ActiveFlash->Destroy();
 			ActiveFlash = nullptr;
 		}
+		// Attack cancel is prohibitve
 		if (ActiveAttack != nullptr)
 		{
 			ActiveAttack->Destroy();

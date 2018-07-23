@@ -55,7 +55,7 @@ void AGAttack::BeginPlay()
 	if (AttackSound != nullptr)
 	{
 		float Current = AttackSound->PitchMultiplier;
-		float Spinoff = Current + FMath::FRandRange(-0.3f, 0.0f);
+		float Spinoff = Current + FMath::FRandRange(-0.3f, 0.3f);
 		AttackSound->SetPitchMultiplier(Spinoff);
 	}
 
@@ -205,8 +205,9 @@ void AGAttack::Tick(float DeltaTime)
 		float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 		if (GlobalTimeScale > 0.3f)
 		{
-			float CloseEnough = DurationTime * 0.97f;
-			if (LifeTimer >= CloseEnough)
+			float CloseEnough = GetLifeSpan() * 0.97f;
+			if ((LifeTimer >= CloseEnough)
+				&& (GetGameTimeSinceCreation() >= DurationTime))
 			{
 				AttackParticles->bSuppressSpawning = true;
 
@@ -429,7 +430,7 @@ void AGAttack::ReportHit(AActor* HitActor)
 	if (HasAuthority())
 	{
 		/// Track hitscale curvature for increasing knockback and damage
-		numHits = FMath::Clamp((numHits += 1), 1, 10); /// (numHits += (numHits - 1)), 2, 9
+		numHits = FMath::Clamp((numHits + 1), 1, 11); /// (numHits += (numHits - 1)), 2, 9
 
 		/// Damage
 		AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
@@ -568,6 +569,17 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 		bHit = true;
 		HitTimer = 0.0f;
 
+		// Extend lifetime
+		if (GetLifeSpan() < 2.1f)
+		{
+			float CurrentLifespan = GetLifeSpan();
+			float LifeAddition = (1.0f / AttackMagnitude) * 0.2f;
+			LifeAddition = FMath::Clamp(LifeAddition, 0.15f, 0.5f);
+			float NewLifespan = CurrentLifespan + LifeAddition;
+			SetLifeSpan(NewLifespan);
+			LethalTime += (NewLifespan * 0.99f);
+		}
+		
 		// Real hit Consequences
 		if (bLethal && !HitActor->ActorHasTag("Attack")
 			&& !HitActor->ActorHasTag("Doomed")) /// && (HitTimer >= (1.0f / HitsPerSecond)))
