@@ -201,60 +201,63 @@ void AGammaSoloSequence::SpawnDenizen()
 				GetWorld()->SpawnActor<AActor>(
 					PlayerSpawning, SpawnLoc, GetActorRotation(), SpawnParams));
 
-			// Rename the character to avoid duplicate bois
-			FString FreshName = NewDenizen->GetCharacterName();
-			TArray<AActor*> Players;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), PlayerSpawning, Players);
-			if (Players.Num() > 0)
+			if (NewDenizen != nullptr)
 			{
-				int NumPlayers = Players.Num();
-				for (int i = 0; i < NumPlayers; ++i)
+				// Rename the character to avoid duplicate bois
+				FString FreshName = NewDenizen->GetCharacterName();
+				TArray<AActor*> Players;
+				UGameplayStatics::GetAllActorsOfClass(GetWorld(), PlayerSpawning, Players);
+				if (Players.Num() > 0)
 				{
-					AActor* CurrentActor = Players[i];
-					if ((CurrentActor != nullptr) && (CurrentActor != NewDenizen))
+					int NumPlayers = Players.Num();
+					for (int i = 0; i < NumPlayers; ++i)
 					{
-						AGammaCharacter* CurrentCharacter = Cast<AGammaCharacter>(CurrentActor);
-						if (CurrentCharacter != nullptr)
+						AActor* CurrentActor = Players[i];
+						if ((CurrentActor != nullptr) && (CurrentActor != NewDenizen))
 						{
-							FString CurrentName = CurrentCharacter->GetCharacterName();
-							FString DenizenName = NewDenizen->GetCharacterName();
-							if (CurrentName.Equals(DenizenName))
+							AGammaCharacter* CurrentCharacter = Cast<AGammaCharacter>(CurrentActor);
+							if (CurrentCharacter != nullptr)
 							{
-								switch (CharacterID)
+								FString CurrentName = CurrentCharacter->GetCharacterName();
+								FString DenizenName = NewDenizen->GetCharacterName();
+								if (CurrentName.Equals(DenizenName))
 								{
+									switch (CharacterID)
+									{
 									case 0: FreshName = "AJIEL";
 										break;
 									case 1: FreshName = "ELTIGAL";
 										break;
 									case 2: FreshName = "CASSIS";
 										break;
+									}
 								}
 							}
 						}
 					}
 				}
-			}
 
-			NewDenizen->SetCharacterName(FreshName);
-			
-			// Spawn AI Controller for body
-			AGammaAIController* DenizenController = Cast<AGammaAIController>(
-				GetWorld()->SpawnActor<AActor>(
-					AIControllerClass, FVector::ZeroVector, GetActorRotation(), SpawnParams));
+				NewDenizen->SetCharacterName(FreshName);
 
-			if ((NewDenizen != nullptr)
-				&& (DenizenController != nullptr))
-			{
-				// Install AI Controller
-				NewDenizen->Controller = DenizenController;
-				DenizenController->Possess(NewDenizen);
+				// Spawn AI Controller for body
+				AGammaAIController* DenizenController = Cast<AGammaAIController>(
+					GetWorld()->SpawnActor<AActor>(
+						AIControllerClass, FVector::ZeroVector, GetActorRotation(), SpawnParams));
 
-				// "Alert the media"
-				NewDenizen->Tags.Add("Bot");
-				DenizenArray.Add(NewDenizen);
+				if ((NewDenizen != nullptr)
+					&& (DenizenController != nullptr))
+				{
+					// Install AI Controller
+					NewDenizen->Controller = DenizenController;
+					DenizenController->Possess(NewDenizen);
 
-				++Spawns;
-				PreviousSpawn = Rando;
+					// "Alert the media"
+					NewDenizen->Tags.Add("Bot");
+					DenizenArray.Add(NewDenizen);
+
+					++Spawns;
+					PreviousSpawn = Rando;
+				}
 			}
 		}
 	}

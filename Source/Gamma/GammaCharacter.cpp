@@ -608,6 +608,24 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		{
 			RecoverTimescale(DeltaSeconds);
 		}*/
+		// experimental hotness -- bigger characters are slower
+		//float SizeBasedTimescale = 1.0f / GetChargePercentage();
+		//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("SizeBasedTimescale  %f"), SizeBasedTimescale));
+		
+		// Inner lighting representing charge
+		TArray<UPointLightComponent*> PointLights;
+		GetComponents<UPointLightComponent>(PointLights);
+		int LightsNum = PointLights.Num();
+		if (LightsNum > 0)
+		{
+			for (int i = 0; i < LightsNum; ++i)
+			{
+				UPointLightComponent* CurrentLight = PointLights[i];
+				float NewLightIntensity = (1000.0f * Charge) + 100.0f;
+				CurrentLight->Intensity = NewLightIntensity;
+				///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("NewLightIntensity  %f"), NewLightIntensity));
+			}
+		}
 		
 
 		if (bShooting)

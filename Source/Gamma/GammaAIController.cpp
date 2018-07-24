@@ -469,13 +469,12 @@ void AGammaAIController::NavigateTo(FVector Target)
 		//bool bMoved = false;
 
 		// Simulating decision between vertical and lateral
-		if (LateralDistance != 0.0f)
+		if (FMath::Rand() >= 0.3f)
 		{
 			ValueX = FMath::Clamp((ToTarget.X * 0.01f), -1.0f, 1.0f);
 			MyCharacter->SetX(ValueX, 1.0f);
 		}
-		if (VerticalDistance != 0.0f
-			|| LongitudeDistance != 0.0f)
+		if (FMath::Rand() >= 0.33f)
 		{
 			ValueZ = FMath::Clamp((ToTarget.Z * 0.01f), -1.0f, 1.0f);
 
