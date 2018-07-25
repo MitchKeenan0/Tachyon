@@ -574,7 +574,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 		{
 			float CurrentLifespan = GetLifeSpan();
 			float LifeAddition = (1.0f / AttackMagnitude) * 0.2f;
-			LifeAddition = FMath::Clamp(LifeAddition, 0.15f, 0.5f);
+			LifeAddition = FMath::Clamp(LifeAddition, 0.05f, 0.15f);
 			float NewLifespan = CurrentLifespan + LifeAddition;
 			SetLifeSpan(NewLifespan);
 			LethalTime += (NewLifespan * 0.99f);

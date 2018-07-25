@@ -917,7 +917,7 @@ void AGammaCharacter::KickPropulsion()
 	if (ActiveAttack != nullptr)
 	{
 		float AttackLiveTime = ActiveAttack->GetGameTimeSinceCreation();
-		if (AttackLiveTime >= 0.2f)
+		if (AttackLiveTime >= 0.33f)
 		{
 			ActiveAttack->Destroy();
 			ActiveAttack = nullptr;
