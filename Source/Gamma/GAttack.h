@@ -46,9 +46,6 @@ public:
 	bool LockedEmitPoint = true;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float LethalTime = 0.2f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float DurationTime = 0.3f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
@@ -199,6 +196,9 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Replicated, BlueprintReadWrite)
 	float AttackDamage = 1.0f;
+
+	UPROPERTY(BlueprintReadWrite, Replicated, BlueprintReadWrite)
+	float LethalTime = 0.2f;
 
 
 	

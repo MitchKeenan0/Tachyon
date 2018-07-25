@@ -220,15 +220,17 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 
 		// Set rotation so character faces direction of travel
-		float TravelDirection = FMath::Clamp(x, -1.0f, 1.0f);
+		float TravelDirection = FMath::Clamp(InputX, -1.0f, 1.0f);
+		float ClimbDirection = FMath::Clamp(InputZ, -1.0f, 1.0f) * 5.0f;
+		float Roll = FMath::Clamp(InputZ, -1.0f, 1.0f) * 15.0f;
 		if (TravelDirection < 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 15.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 180.0f, Roll), DeltaTime, 15.0f);
 			Controller->SetControlRotation(Fint);
 		}
 		else if (TravelDirection > 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 15.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 0.0f, -Roll), DeltaTime, 15.0f);
 			Controller->SetControlRotation(Fint);
 		}
 		else
@@ -236,12 +238,12 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			// No Input - finish rotation
 			if (Controller->GetControlRotation().Yaw > 90.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), DeltaTime, 15.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 180.0f, -Roll), DeltaTime, 15.0f);
 				Controller->SetControlRotation(Fint);
 			}
 			else
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), DeltaTime, 15.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 0.0f, Roll), DeltaTime, 15.0f);
 				Controller->SetControlRotation(Fint);
 			}
 		}
@@ -917,7 +919,7 @@ void AGammaCharacter::KickPropulsion()
 	if (ActiveAttack != nullptr)
 	{
 		float AttackLiveTime = ActiveAttack->GetGameTimeSinceCreation();
-		if (AttackLiveTime >= 0.33f)
+		if (AttackLiveTime >= 0.5f)
 		{
 			ActiveAttack->Destroy();
 			ActiveAttack = nullptr;
@@ -1771,11 +1773,12 @@ void AGammaCharacter::PowerSlideEngage()
 		}*/
 
 		//// Attack cancel
-		//if (GetActiveFlash() != nullptr)
-		//{
-		//	ClearFlash();
-		//	PrefireTimer = 0.0f;
-		//}
+		if (GetActiveFlash() != nullptr)
+		{
+			ClearFlash();
+			PrefireTimer = 0.0f;
+			bShooting = false;
+		}
 
 		// Sprite Scaling
 		float ClampedCharge = FMath::Clamp(Charge * 0.7f, 1.0f, ChargeMax);

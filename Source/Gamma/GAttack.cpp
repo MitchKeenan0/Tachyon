@@ -153,7 +153,17 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		/*FlashMesh->SetMaterial(0, MainMaterial);
 		AttackMesh->SetMaterial(0, MainMaterial);*/
 
+		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("Magnitude:  %f"), AttackMagnitude));
+	}
+}
 
+
+// Called every frame
+void AGAttack::Tick(float DeltaTime)
+{
+	if (!bLethal && (GetGameTimeSinceCreation() > 0.1f)
+		&& (GetGameTimeSinceCreation() < 0.2f)) /// for attacks being blocked later
+	{
 		// Recoil &
 		// Init Success
 		if ((OwningShooter != nullptr) && (CurrentMatch != nullptr))
@@ -174,15 +184,8 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 				///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("LethalTime:  %f"), LethalTime));
 			}
 		}
-
-		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("Magnitude:  %f"), AttackMagnitude));
 	}
-}
 
-
-// Called every frame
-void AGAttack::Tick(float DeltaTime)
-{
 	if (bHit)
 	{
 		AttackParticles->CustomTimeDilation *= 0.905f; // Interp this with deltatime
@@ -377,13 +380,15 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 {
 	/// The knock itself
-	FVector AwayFromShooter = (HitPoint - GetActorLocation()).GetSafeNormal();
+	FVector AwayFromAttack = (HitPoint - GetActorLocation()).GetSafeNormal();
+	FVector AttackForward = GetActorForwardVector().GetSafeNormal();
 	if (ActorHasTag("Obstacle"))
 	{
-		AwayFromShooter = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+		AwayFromAttack = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	}
+	FVector KnockVector = (AwayFromAttack + AttackForward);
 
-	//FVector AwayFromShooter = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+	//FVector AwayFromAttack = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	//float TimeDilat = //UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 	//TimeDilat = FMath::Clamp(TimeDilat, 0.01f, 0.15f);
 	float HitsScalar = 1.0f + (2.0f / numHits);
@@ -391,13 +396,13 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 	float KnockScalar = FMath::Abs(KineticForce) * HitsScalar * MagnitudeScalar;
 
 	/// Trim the vector to favor widescreen
-	AwayFromShooter.Z *= 0.55f;
+	KnockVector.Z *= 0.55f;
 
 	/// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
 	if (Chara != nullptr)
 	{
-		Chara->GetCharacterMovement()->AddImpulse(AwayFromShooter * KnockScalar);
+		Chara->GetCharacterMovement()->AddImpulse(KnockVector * KnockScalar);
 	}
 	else
 	{
@@ -419,7 +424,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 		if ((HitMeshComponent != nullptr)
 			&& HitMeshComponent->IsSimulatingPhysics())
 		{
-			HitMeshComponent->AddImpulseAtLocation(AwayFromShooter * KnockScalar * 1000.0f, HitPoint);
+			HitMeshComponent->AddImpulseAtLocation(KnockVector * KnockScalar * 1000.0f, HitPoint);
 		}
 	}
 }
@@ -570,7 +575,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 		HitTimer = 0.0f;
 
 		// Extend lifetime
-		if (GetLifeSpan() < 2.1f)
+		if (GetLifeSpan() < 1.0f)
 		{
 			float CurrentLifespan = GetLifeSpan();
 			float LifeAddition = (1.0f / AttackMagnitude) * 0.2f;
@@ -628,6 +633,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 			}
 
 			bLethal = false;
+			
 			if (ProjectileComponent != nullptr)
 			{
 				
@@ -682,4 +688,5 @@ void AGAttack::GetLifetimeReplicatedProps(TArray <FLifetimeProperty> & OutLifeti
 	DOREPLIFETIME(AGAttack, AttackMagnitude);
 	DOREPLIFETIME(AGAttack, ShotDirection);
 	DOREPLIFETIME(AGAttack, AttackDamage);
+	DOREPLIFETIME(AGAttack, LethalTime);
 }
