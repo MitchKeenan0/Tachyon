@@ -302,7 +302,7 @@ FText AGMatch::GetOpponentCharacterName()
 	}
 	else
 	{
-		return FText::FromString("-");
+		return FText::FromString("NO TARGET");
 	}
 }
 

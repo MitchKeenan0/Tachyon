@@ -160,6 +160,9 @@ protected:
 	class UPaperSpriteComponent* AttackSprite = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TSubclassOf<AActor> BurstClass = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AGDamage> DamageClass = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)

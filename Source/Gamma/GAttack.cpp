@@ -49,7 +49,7 @@ void AGAttack::BeginPlay()
 	bHit = false;
 	//bLethal = false;
 	SetLifeSpan(DurationTime);
-	AttackDamage = 3.0f;
+	AttackDamage = 2.0f;
 
 	// Add natural deviancy to sound
 	if (AttackSound != nullptr)
@@ -146,6 +146,17 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		if (Actors.Num() >= 1)
 		{
 			CurrentMatch = Cast<AGMatch>(Actors[0]);
+		}
+
+		// Burst visual
+		if (BurstClass != nullptr)
+		{
+			FActorSpawnParameters SpawnParams;
+			AActor* NewBurst = GetWorld()->SpawnActor<AActor>(BurstClass, GetActorLocation(), GetActorRotation(), SpawnParams);
+			if (NewBurst != nullptr)
+			{
+				NewBurst->AttachToActor(OwningShooter, FAttachmentTransformRules::KeepWorldTransform);
+			}
 		}
 
 
@@ -380,13 +391,14 @@ void AGAttack::SpawnDamage(AActor* HitActor, FVector HitPoint)
 void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 {
 	/// The knock itself
-	FVector AwayFromAttack = (HitPoint - GetActorLocation()).GetSafeNormal();
+	FVector AwayFromAttack = (HitPoint - OwningShooter->GetActorLocation()).GetSafeNormal(); // previously this actor's location
 	FVector AttackForward = GetActorForwardVector().GetSafeNormal();
 	if (ActorHasTag("Obstacle"))
 	{
+		AttackForward = FVector::ZeroVector;
 		AwayFromAttack = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	}
-	FVector KnockVector = (AwayFromAttack + AttackForward);
+	FVector KnockVector = (AwayFromAttack + (AttackForward * 0.5f));
 
 	//FVector AwayFromAttack = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	//float TimeDilat = //UGameplayStatics::GetGlobalTimeDilation(GetWorld());
@@ -435,7 +447,7 @@ void AGAttack::ReportHit(AActor* HitActor)
 	if (HasAuthority())
 	{
 		/// Track hitscale curvature for increasing knockback and damage
-		numHits = FMath::Clamp((numHits + 1), 1, 11); /// (numHits += (numHits - 1)), 2, 9
+		numHits = FMath::Clamp((numHits * 2), 1, 21); /// (numHits += (numHits - 1)), 2, 9
 
 		/// Damage
 		AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);

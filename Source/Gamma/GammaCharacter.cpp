@@ -223,6 +223,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		float TravelDirection = FMath::Clamp(InputX, -1.0f, 1.0f);
 		float ClimbDirection = FMath::Clamp(InputZ, -1.0f, 1.0f) * 5.0f;
 		float Roll = FMath::Clamp(InputZ, -1.0f, 1.0f) * 15.0f;
+
 		if (TravelDirection < 0.0f)
 		{
 			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 180.0f, Roll), DeltaTime, 15.0f);
@@ -233,17 +234,22 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 0.0f, -Roll), DeltaTime, 15.0f);
 			Controller->SetControlRotation(Fint);
 		}
+
+		// No lateral Input - finish rotation
 		else
 		{
-			// No Input - finish rotation
+			//// Incorporate velocity into rotation
+			//FVector PlayerVelocity = GetCharacterMovement()->Velocity * GetActorForwardVector();
+			//ClimbDirection = (PlayerVelocity.X * DeltaTime);
+
 			if (Controller->GetControlRotation().Yaw > 90.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 180.0f, -Roll), DeltaTime, 15.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 180.0f, -Roll), DeltaTime, 5.0f);
 				Controller->SetControlRotation(Fint);
 			}
 			else
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 0.0f, Roll), DeltaTime, 15.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 0.0f, Roll), DeltaTime, 5.0f);
 				Controller->SetControlRotation(Fint);
 			}
 		}
@@ -487,7 +493,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				{
 					//float TimeSensitiveTiltValue = CameraTiltValue * CustomTimeDilation;
 					float TiltDistanceScalar = FMath::Clamp((1.0f / DistBetweenActors) * 99.9f, 0.1f, 0.3f);
-					float DistScalar = (TargetLengthClamped * 0.0001f);
+					float DistScalar = (TargetLengthClamped * 0.1f);
 					float ClampedTargetTiltX = FMath::Clamp((InputZ*CameraTiltValue*DistScalar), -CameraTiltClamp, CameraTiltClamp);
 					float ClampedTargetTiltZ = FMath::Clamp((InputX*CameraTiltValue*DistScalar) * (PrefireTimer + 0.1f), -CameraTiltClamp, CameraTiltClamp * 2.0f);
 					CameraTiltX = FMath::FInterpTo(CameraTiltX, ClampedTargetTiltX, DeltaTime, CameraTiltSpeed * TiltDistanceScalar); // pitch
@@ -1304,7 +1310,7 @@ void AGammaCharacter::ReleaseAttack()
 						// Slowing the character on fire
 						if (GetCharacterMovement() != nullptr)
 						{
-							GetCharacterMovement()->Velocity *= 0.5f;
+							GetCharacterMovement()->Velocity *= 0.2f;
 						}
 					}
 				}
@@ -1776,15 +1782,24 @@ void AGammaCharacter::PowerSlideEngage()
 		if (GetActiveFlash() != nullptr)
 		{
 			ClearFlash();
-			PrefireTimer = 0.0f;
-			bShooting = false;
 		}
+		if (ActiveAttack != nullptr)
+		{
+			ActiveAttack->Destroy();
+			ActiveAttack = nullptr;
+		}
+		PrefireTimer = 0.0f;
+		bShooting = false;
 
 		// Sprite Scaling
 		float ClampedCharge = FMath::Clamp(Charge * 0.7f, 1.0f, ChargeMax);
 		float SCharge = FMath::Sqrt(ClampedCharge);
 		FVector ChargeSize = FVector(SCharge, SCharge, SCharge);
 		GetCapsuleComponent()->SetWorldScale3D(ChargeSize);
+
+		// Zoom camera
+		// Disengage resets to 5x to restore
+		CameraMoveSpeed *= 0.2f;
 
 		// Netcode emissary
 		if (Role < ROLE_Authority)
@@ -1808,6 +1823,9 @@ void AGammaCharacter::PowerSlideDisengage()
 	{
 		GetCharacterMovement()->BrakingFrictionFactor = DecelerationSpeed;
 		bSliding = false;
+
+		// Engage sets to 0.2, so we restore
+		CameraMoveSpeed *= 5.0f;
 
 		if (Role < ROLE_Authority)
 		{
