@@ -39,10 +39,10 @@ public:
 	FText GetOpponentCharacterName();
 
 	UFUNCTION(BlueprintCallable)
-	AGammaCharacter* GetLocalPlayer() { return LocalPlayer; }
+	AGammaCharacter* GetLocalPlayer() { if ((LocalPlayer != nullptr) && LocalPlayer->IsValidLowLevel()) return LocalPlayer; else return nullptr; }
 
 	UFUNCTION(BlueprintCallable)
-	AGammaCharacter* GetOpponentPlayer() { return OpponentPlayer; }
+	AGammaCharacter* GetOpponentPlayer() { if ((OpponentPlayer != nullptr) && OpponentPlayer->IsValidLowLevel()) return OpponentPlayer; else return nullptr; }
 
 	UFUNCTION(BlueprintCallable)
 	void ClearPlayers() { LocalPlayer = OpponentPlayer = nullptr; }

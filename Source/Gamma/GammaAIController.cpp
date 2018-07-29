@@ -242,7 +242,8 @@ void AGammaAIController::Tactical(FVector Target)
 	FVector LocalForward = MyCharacter->GetAttackScene()->GetForwardVector();
 	FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
 	float DistToPlayer = ToPlayer.Size();
-	if (DistToPlayer < 1000.0f)
+	if ((DistToPlayer < 1000.0f)
+		&& (MyCharacter->GetCharge() > 0.1f))
 	{
 		if (HasViewToTarget())
 		{
@@ -285,7 +286,7 @@ void AGammaAIController::Tactical(FVector Target)
 	}
 	
 	// CHARGE
-	else if (RandomDc <= ChargeVal)
+	else if ((RandomDc <= ChargeVal) || (MyCharacter->GetCharge() <= 0.1f))
 	{
 		if ((MyCharacter != nullptr) && IsValid(MyCharacter))
 		{
@@ -468,19 +469,11 @@ void AGammaAIController::NavigateTo(FVector Target)
 
 		//bool bMoved = false;
 
-		// Simulating decision between vertical and lateral
-		if (FMath::Rand() >= 0.1f)
-		{
-			ValueX = FMath::Clamp((ToTarget.X * 0.01f), -1.0f, 1.0f);
-			MyCharacter->SetX(ValueX, 1.0f);
-		}
-		if (FMath::Rand() >= 0.11f)
-		{
-			ValueZ = FMath::Clamp((ToTarget.Z * 0.01f), -1.0f, 1.0f);
-
-			MyCharacter->SetZ(ValueZ, 1.0f);
-		}
-
+		// Simulating movement
+		ValueX = FMath::Clamp((ToTarget.X * 0.01f), -1.0f, 1.0f);
+		MyCharacter->SetX(ValueX, 1.0f);
+		ValueZ = FMath::Clamp((ToTarget.Z * 0.01f), -1.0f, 1.0f);
+		MyCharacter->SetZ(ValueZ, 1.0f);
 
 		//MoveInput = FVector(ValueX, 0.0f, ValueZ).GetSafeNormal();
 		//FVector CurrentV = MyCharacter->GetMovementComponent()->Velocity.GetSafeNormal();
@@ -501,16 +494,21 @@ void AGammaAIController::NavigateTo(FVector Target)
 
 
 		// Sprite flipping
+		// Set rotation so character faces direction of travel
+		float TravelDirection = FMath::Clamp(ValueX, -1.0f, 1.0f);
+		float ClimbDirection = FMath::Clamp(ValueZ, -1.0f, 1.0f) * 5.0f;
+		float Roll = FMath::Clamp(ValueZ, -1.0f, 1.0f) * 15.0f;
+
 		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.25f)
 		{
 			if (ValueX < 0.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
+				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(ClimbDirection, 180.0f, Roll), GetWorld()->DeltaTimeSeconds, 15.0f);
 				SetControlRotation(Fint);
 			}
 			else if (ValueX > 0.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 15.0f);
+				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(ClimbDirection, 0.0f, -Roll), GetWorld()->DeltaTimeSeconds, 15.0f);
 				SetControlRotation(Fint);
 			}
 			else
@@ -518,12 +516,12 @@ void AGammaAIController::NavigateTo(FVector Target)
 				// No Input - finish rotation
 				if (GetControlRotation().Yaw > 90.0f)
 				{
-					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0, 180.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 5.0f);
+					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(ClimbDirection, 180.0f, -Roll), GetWorld()->DeltaTimeSeconds, 5.0f);
 					SetControlRotation(Fint);
 				}
 				else
 				{
-					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(0.0f, 0.0f, 0.0f), GetWorld()->DeltaTimeSeconds, 5.0f);
+					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(ClimbDirection, 0.0f, Roll), GetWorld()->DeltaTimeSeconds, 5.0f);
 					SetControlRotation(Fint);
 				}
 			}

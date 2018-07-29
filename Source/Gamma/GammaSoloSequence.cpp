@@ -123,43 +123,6 @@ void AGammaSoloSequence::SpawnDenizen()
 	FVector SpawnLoc = PlayerWiseLocation + RandomOffset;
 
 
-	// OBSTACLE SPAWNING ////////////////////////////////////////////////
-	if (bSpawnObstacles && ObstacleArray.Num() < MaxLiveUnits)
-	{
-
-		// Random spawning object
-		int Rando = FMath::FloorToInt(FMath::FRand() * 2); /// filthy hard-coded value!
-		TSubclassOf<AActor> ObstacleSpawning = nullptr;
-		switch (Rando)
-		{
-			case 0: ObstacleSpawning = ObstacleClass1;
-				break;
-			case 1: ObstacleSpawning = ObstacleClass2;
-				break;
-			default:
-				break;
-		}
-		if (ObstacleSpawning != nullptr)
-		{
-			// Position and Rotation
-			SpawnLoc += (FMath::VRand() * 1000.0f);
-			SpawnLoc.Y = 0.0f;
-			
-			float RandF = FMath::FRandRange(-1.0f, 1.0f);
-			float RandG = FMath::FRandRange(-1.0f, 1.0f);
-			float RandH = FMath::FRandRange(-1.0f, 1.0f);
-			FRotator SpawnRotation = FRotator(RandF * 45.0f, RandG * 45.0f, RandH * 45.0f);
-
-			AActor* NewObstacle = GetWorld()->SpawnActor<AActor>(ObstacleSpawning, SpawnLoc * 5.5f, SpawnRotation, SpawnParams);
-			
-			if (NewObstacle != nullptr)
-			{
-				ObstacleArray.Add(NewObstacle);
-			}
-		}
-	}
-
-
 	// CHARACTER SPAWNING ///////////////////////////////////////////////
 	if (bSpawnCharacters && (NumDenizens() < MaxLiveUnits))
 	{
@@ -258,6 +221,42 @@ void AGammaSoloSequence::SpawnDenizen()
 					++Spawns;
 					PreviousSpawn = Rando;
 				}
+			}
+		}
+	}
+
+	// OBSTACLE SPAWNING ////////////////////////////////////////////////
+	if (bSpawnObstacles && ObstacleArray.Num() < MaxLiveUnits)
+	{
+
+		// Random spawning object
+		int Rando = FMath::FloorToInt(FMath::FRand() * 2); /// filthy hard-coded value!
+		TSubclassOf<AActor> ObstacleSpawning = nullptr;
+		switch (Rando)
+		{
+		case 0: ObstacleSpawning = ObstacleClass1;
+			break;
+		case 1: ObstacleSpawning = ObstacleClass2;
+			break;
+		default:
+			break;
+		}
+		if (ObstacleSpawning != nullptr)
+		{
+			// Position and Rotation
+			SpawnLoc = (FMath::VRand() * 3000.0f);
+			SpawnLoc.Y = 0.0f;
+
+			float RandF = FMath::FRandRange(-1.0f, 1.0f);
+			float RandG = FMath::FRandRange(-1.0f, 1.0f);
+			float RandH = FMath::FRandRange(-1.0f, 1.0f);
+			FRotator SpawnRotation = FRotator(RandF * 45.0f, RandG * 45.0f, RandH * 45.0f);
+
+			AActor* NewObstacle = GetWorld()->SpawnActor<AActor>(ObstacleSpawning, SpawnLoc, SpawnRotation, SpawnParams);
+
+			if (NewObstacle != nullptr)
+			{
+				ObstacleArray.Add(NewObstacle);
 			}
 		}
 	}

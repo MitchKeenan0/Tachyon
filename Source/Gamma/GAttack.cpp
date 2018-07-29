@@ -63,6 +63,16 @@ void AGAttack::BeginPlay()
 	{
 		InitAttack(this, 1.0f, 0.0f);
 	}
+
+	// Visual trim
+	if (AttackParticles != nullptr)
+	{
+		AttackParticles->DeactivateSystem();
+	}
+	if (AttackSprite != nullptr)
+	{
+		AttackSprite->bHiddenInGame = true;
+	}
 }
 
 
@@ -156,6 +166,9 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 			if (NewBurst != nullptr)
 			{
 				NewBurst->AttachToActor(OwningShooter, FAttachmentTransformRules::KeepWorldTransform);
+				float MagnitudeScalar = FMath::Clamp(AttackMagnitude * 2.1f, 0.3f, 1.1f);
+				FVector NewBurstScale = NewBurst->GetActorRelativeScale3D() * AttackMagnitude;
+				NewBurst->SetActorRelativeScale3D(NewBurstScale);
 			}
 		}
 
@@ -191,6 +204,16 @@ void AGAttack::Tick(float DeltaTime)
 				HitTimer = (1.0f / HitsPerSecond);
 				bLethal = true;
 				DetectHit(GetActorForwardVector());
+
+				// Visual trim
+				if (AttackParticles != nullptr)
+				{
+					AttackParticles->ActivateSystem();
+				}
+				if (AttackSprite != nullptr)
+				{
+					AttackSprite->bHiddenInGame = false;
+				}
 
 				///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("LethalTime:  %f"), LethalTime));
 			}
@@ -287,6 +310,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
 		TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
 		TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_PhysicsBody));
+		TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_Destructible));
 
 		TArray<AActor*> IgnoredActors;
 		IgnoredActors.Add(OwningShooter);
@@ -555,8 +579,11 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 						BlockedClass, GetActorLocation(), GetActorRotation(), SpawnParams);
 				}
 
-				//ApplyKnockback(OtherAttack, HitPoint);
-				ApplyKnockback(OwningShooter, GetActorLocation());
+				// ApplyKnockback(OtherAttack, HitPoint);
+				//ApplyKnockback(OwningShooter, GetActorLocation());
+
+				// Nerf the attack
+				HitsPerSecond *= 0.68f;
 
 				if (!ActorHasTag("Obstacle"))
 				{
@@ -576,6 +603,13 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 				}
 			}
 		}
+	}
+
+	// Hit-slow
+	AGammaCharacter* HitCharacter = Cast<AGammaCharacter>(HitActor);
+	if (HitCharacter != nullptr)
+	{
+		HitCharacter->GetMovementComponent()->Velocity *= FireDelay;
 	}
 
 	// All's good if we got here

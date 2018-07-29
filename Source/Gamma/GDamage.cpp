@@ -29,6 +29,8 @@ void AGDamage::BeginPlay()
 		DamageParticles->RegisterComponent();
 	}
 	SetLifeSpan(Lifetime);
+
+	this->Tags.Add("FramingActor");
 }
 
 // Called every frame

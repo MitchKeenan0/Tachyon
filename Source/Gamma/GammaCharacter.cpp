@@ -169,7 +169,7 @@ void AGammaCharacter::BeginPlay()
 	CameraBoom->SetRelativeLocation(PlayerLocation);
 	PositionOne = PlayerLocation;
 	PositionTwo = PlayerLocation;
-	CameraBoom->TargetArmLength = 30000.0f;
+	CameraBoom->TargetArmLength = 9000.0f;
 
 	// Sprite Scaling
 	float ClampedCharge = FMath::Clamp(Charge * 0.7f, 1.0f, ChargeMax);
@@ -371,7 +371,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			float ChargeScalar = FMath::Clamp((FMath::Sqrt(Charge - 0.9f)), 0.1f, ChargeMax);
 			float SizeScalar = 1.0f; /// GetCapsuleComponent()->GetComponentScale().Size()
 			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.5f;
-			float CameraMinimumDistance = 500.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * CameraDistanceScalar;
+			float CameraMinimumDistance = 1100.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * CameraDistanceScalar;
 			float CameraMaxDistance = 1551000.0f;
 
 
@@ -434,7 +434,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, (VelocityCameraSpeed * 0.5f)); // UnDilatedDeltaTime
 				
 				// Distance controls
-				ConsideredDistanceScalar *= 1.1f;
+				ConsideredDistanceScalar *= 1.5f;
 				CameraMaxDistance = 150000.0f;
 
 				Actor2 = nullptr;
@@ -444,8 +444,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			// Positions done
 			// Find the midpoint, leaning to actor one
 			FVector TargetMidpoint = PositionOne + ((PositionTwo - PositionOne) * 0.5f);
-			//Midpoint = TargetMidpoint;
-			Midpoint = FMath::VInterpTo(Midpoint, TargetMidpoint, DeltaTime, VelocityCameraSpeed);
+			float DistanceToTargetScalar = FVector::Dist(TargetMidpoint, CameraBoom->GetComponentLocation()) * 0.1f;
+			
+			Midpoint = FMath::VInterpTo(Midpoint, TargetMidpoint, DeltaTime, DistanceToTargetScalar);
 			if (Midpoint.Size() > 0.0f)
 			{
 
@@ -672,7 +673,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		}
 		else if (GetActiveBoost() != nullptr)
 		{
-			if (GetActiveBoost()->GetGameTimeSinceCreation() > 3.0f)
+			if (GetActiveBoost()->GetGameTimeSinceCreation() > MoveFreshMultiplier)
 			{
 				DisengageKick();
 			}
@@ -879,7 +880,7 @@ void AGammaCharacter::DisengageKick()
 	// Clear existing boost object
 	if (GetActiveBoost() != nullptr)
 	{
-		if (GetActiveBoost()->GetGameTimeSinceCreation() >= 1.0f)
+		if (bSliding || (GetActiveBoost()->GetGameTimeSinceCreation() >= MoveFreshMultiplier))
 		{
 			ActiveBoost->Destroy();
 			ActiveBoost = nullptr;
@@ -901,7 +902,7 @@ void AGammaCharacter::DisengageKick()
 	}
 	if (ActiveChargeParticles != nullptr)
 	{
-		if (ActiveChargeParticles->GetGameTimeSinceCreation() >= 1.0f)
+		if (bSliding || (ActiveChargeParticles->GetGameTimeSinceCreation() >= MoveFreshMultiplier))
 		{
 			ActiveChargeParticles->Destroy();
 			ActiveChargeParticles = nullptr;
@@ -925,7 +926,7 @@ void AGammaCharacter::KickPropulsion()
 	if (ActiveAttack != nullptr)
 	{
 		float AttackLiveTime = ActiveAttack->GetGameTimeSinceCreation();
-		if (AttackLiveTime >= 0.5f)
+		if (AttackLiveTime >= 1.0f)
 		{
 			ActiveAttack->Destroy();
 			ActiveAttack = nullptr;
@@ -943,7 +944,7 @@ void AGammaCharacter::KickPropulsion()
 	float RelativityToMaxSpeed = FMath::Clamp(Relativity, 0.001f, 10000.0f);
 	///float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
 
-	GetCharacterMovement()->MaxFlySpeed = CurrentVelocity.Size() * 1.09f;
+	GetCharacterMovement()->MaxFlySpeed = CurrentVelocity.Size() * 1.05f;
 
 	// Force, clamp, & effect chara movement
 	float ChargeScalar = FMath::Sqrt(FMath::Clamp(Charge, 0.1f, 1.0f));
@@ -995,31 +996,12 @@ void AGammaCharacter::KickPropulsion()
 
 	if (GetActiveBoost() != nullptr)
 	{
-		if (GetActiveBoost()->GetGameTimeSinceCreation() > 1.0f)
+		if (GetActiveBoost()->GetGameTimeSinceCreation() > MoveFreshMultiplier)
 		{
 			DisengageKick();
-			/*ActiveBoost->Destroy();
-			ActiveBoost = nullptr;
-			bCharging = false;
-			bBoosting = false;*/
-		}
-	}
-	if (ActiveChargeParticles != nullptr)
-	{
-		if (ActiveChargeParticles->GetGameTimeSinceCreation() > 1.0f)
-		{
-			ActiveChargeParticles->Destroy();
-			ActiveChargeParticles = nullptr;
-			bCharging = false;
-			bBoosting = false;
-			/*ActiveChargeParticles->Destroy();
-			ActiveChargeParticles = nullptr;
-			bCharging = false;
-			bBoosting = false;*/
 		}
 	}
 	
-
 	if (Role < ROLE_Authority)
 	{
 		ServerKickPropulsion();
@@ -1297,7 +1279,7 @@ void AGammaCharacter::ReleaseAttack()
 						// Position lock, or naw
 						if ((ActiveAttack != nullptr) && ActiveAttack->LockedEmitPoint)
 						{
-							ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform); // World
+							ActiveAttack->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
 						}
 
 						// Clean up previous flash
@@ -1310,7 +1292,7 @@ void AGammaCharacter::ReleaseAttack()
 						// Slowing the character on fire
 						if (GetCharacterMovement() != nullptr)
 						{
-							GetCharacterMovement()->Velocity *= 0.2f;
+							GetCharacterMovement()->Velocity *= SlowmoMoveBoost;
 						}
 					}
 				}
@@ -1766,6 +1748,7 @@ void AGammaCharacter::PowerSlideEngage()
 	{
 		GetCharacterMovement()->BrakingFrictionFactor = PowerSlideSpeed;
 		bSliding = true;
+		DisengageKick();
 		
 		// Neutralizing charge
 		// Armed player goes to -1, triggering a warning
@@ -1909,7 +1892,7 @@ void AGammaCharacter::ResetFlipbook()
 	CameraBoom->SetRelativeLocation(PlayerLocation);
 	PositionOne = PlayerLocation;
 	PositionTwo = PlayerLocation;
-	CameraBoom->TargetArmLength = 9000.0f;
+	CameraBoom->TargetArmLength = 2000.0f;
 }
 
 
