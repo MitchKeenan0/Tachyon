@@ -42,23 +42,39 @@ void AGammaSoloSequence::BeginPlay()
 void AGammaSoloSequence::AquirePlayer()
 {
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), PlayersArray);
-	if (PlayersArray.Num() > 0)
+	int NumPlayers = PlayersArray.Num();
+	if (NumPlayers > 0)
 	{
-		AActor* PlayerActor = PlayersArray[0];
-		if (PlayerActor != nullptr)
-		{
-			Player = Cast<AGammaCharacter>(PlayerActor);
-		}
-	}
-	if (Player == nullptr)
-	{
-		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), PlayersArray);
-		if (PlayersArray.Num() > 0)
+		for (int i = 0; i < NumPlayers; ++i)
 		{
 			AActor* PlayerActor = PlayersArray[0];
 			if (PlayerActor != nullptr)
 			{
 				Player = Cast<AGammaCharacter>(PlayerActor);
+				if (Player != nullptr)
+				{
+					return;
+				}
+			}
+		}
+	}
+	if (Player == nullptr)
+	{
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Spectator"), PlayersArray);
+		int NumSpectators = PlayersArray.Num();
+		if (NumSpectators > 0)
+		{
+			for (int i = 0; i < NumSpectators; ++i)
+			{
+				AActor* PlayerActor = PlayersArray[0];
+				if (PlayerActor != nullptr)
+				{
+					Player = Cast<AGammaCharacter>(PlayerActor);
+					if (Player != nullptr)
+					{
+						return;
+					}
+				}
 			}
 		}
 	}
@@ -72,11 +88,6 @@ void AGammaSoloSequence::Tick(float DeltaTime)
 	if (HasAuthority())
 	{
 		MainSequence(DeltaTime);
-
-		if (Player == nullptr)
-		{
-			AquirePlayer();
-		}
 	}
 }
 
@@ -88,6 +99,13 @@ void AGammaSoloSequence::MainSequence(float DeltaTime)
 	if (RunTimer >= FirstEncounterTime)
 	{
 		RunTimer = 0.0f;
+
+		if (Player == nullptr
+			|| Player->ActorHasTag("Bot"))
+		{
+			AquirePlayer();
+		}
+
 		if (NumDenizens() < MaxLiveUnits)
 		{
 			SpawnDenizen();
@@ -96,7 +114,7 @@ void AGammaSoloSequence::MainSequence(float DeltaTime)
 }
 
 
-// Spawn Denizen
+// Spawn Denizen handles whether to spawn or not & where
 void AGammaSoloSequence::SpawnDenizen()
 {
 	FActorSpawnParameters SpawnParams;
@@ -226,7 +244,7 @@ void AGammaSoloSequence::SpawnDenizen()
 	}
 
 	// OBSTACLE SPAWNING ////////////////////////////////////////////////
-	if (bSpawnObstacles && ObstacleArray.Num() < MaxLiveUnits)
+	if (bSpawnObstacles && ObstacleArray.Num() < MaxObstacles)
 	{
 
 		// Random spawning object
@@ -234,18 +252,20 @@ void AGammaSoloSequence::SpawnDenizen()
 		TSubclassOf<AActor> ObstacleSpawning = nullptr;
 		switch (Rando)
 		{
-		case 0: ObstacleSpawning = ObstacleClass1;
-			break;
-		case 1: ObstacleSpawning = ObstacleClass2;
-			break;
-		default:
-			break;
+			case 0: ObstacleSpawning = ObstacleClass1;
+				break;
+			case 1: ObstacleSpawning = ObstacleClass2;
+				break;
+			default:
+				break;
 		}
 		if (ObstacleSpawning != nullptr)
 		{
-			// Position and Rotation
-			SpawnLoc = (FMath::VRand() * 3000.0f);
-			SpawnLoc.Y = 0.0f;
+			// Re-Using SpawnLoc but get new position
+			FVector Offset = (FMath::VRand() * 3000.0f);
+			Offset.X *= 2.0f;
+			Offset.Y = 0.0f;
+			SpawnLoc = PlayerWiseLocation + Offset;
 
 			float RandF = FMath::FRandRange(-1.0f, 1.0f);
 			float RandG = FMath::FRandRange(-1.0f, 1.0f);
@@ -253,10 +273,10 @@ void AGammaSoloSequence::SpawnDenizen()
 			FRotator SpawnRotation = FRotator(RandF * 45.0f, RandG * 45.0f, RandH * 45.0f);
 
 			AActor* NewObstacle = GetWorld()->SpawnActor<AActor>(ObstacleSpawning, SpawnLoc, SpawnRotation, SpawnParams);
-
 			if (NewObstacle != nullptr)
 			{
-				ObstacleArray.Add(NewObstacle);
+				//ObstacleArray.Add(NewObstacle);
+				ObstacleArray.Emplace(NewObstacle);
 			}
 		}
 	}
@@ -275,6 +295,7 @@ int AGammaSoloSequence::NumDenizens()
 		if (Act != nullptr)
 		{
 			Result += 1;
+
 			/*if (Act != Cast<AActor>(KaraokeClass->GetOwnerClass())
 				&& Act != Cast<AActor>(PeaceGiantClass->GetOwnerClass())
 				&& Act != Cast<AActor>(BaetylusClass->GetOwnerClass()))
@@ -289,7 +310,36 @@ int AGammaSoloSequence::NumDenizens()
 	{
 		RunTimer = 0;
 	}
+
+	// Obstacle trimming based on dist
+	if (Player != nullptr)
+	{
+		int NumObstacles = ObstacleArray.Num();
+		if (NumObstacles > 0)
+		{
+
+			for (int i = NumObstacles - 1; i > 0; --i)
+			{
+				if (ObstacleArray[i] != nullptr)
+				{
+					AActor* ThisObs = ObstacleArray[i];
+					if (ThisObs != nullptr)
+					{
+						float DistToObs = FVector::Dist(ThisObs->GetActorLocation(), Player->GetActorLocation());
+						if (DistToObs >= 15000.0f)
+						{
+							ThisObs->Destroy();
+							ThisObs = nullptr;
+
+							ObstacleArray.RemoveAt(i);
+						}
+					}
+				}
+			}
+		}
+	}
 	
+	/// End of NumDenizen
 	return Result;
 }
 

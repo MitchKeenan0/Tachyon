@@ -29,35 +29,38 @@ protected:
 
 	void AquirePlayer();
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AActor> ObstacleClass1;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AActor> ObstacleClass2;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AGammaCharacter> KaraokeClass;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AGammaCharacter> PeaceGiantClass;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AGammaCharacter> BaetylusClass;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AGammaAIController> AIControllerClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float FirstEncounterTime = 3.0f;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bSpawnCharacters = true;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bSpawnObstacles = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int MaxLiveUnits = 10;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int MaxObstacles = 10;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector SpawnLocation = FVector::ZeroVector;

@@ -982,7 +982,7 @@ void AGammaCharacter::KickPropulsion()
 	}
 
 	// Sustained Propulsion
-	if (GetWorld() && (ActiveChargeParticles != nullptr)
+	if ((GetActiveBoost() != nullptr) && (ActiveChargeParticles != nullptr)
 		&& (GetCharacterMovement() != nullptr))
 	{
 		GetCharacterMovement()->AddImpulse(KickVector);

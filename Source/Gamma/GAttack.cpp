@@ -49,7 +49,7 @@ void AGAttack::BeginPlay()
 	bHit = false;
 	//bLethal = false;
 	SetLifeSpan(DurationTime);
-	AttackDamage = 2.0f;
+	AttackDamage = 5.0f;
 
 	// Add natural deviancy to sound
 	if (AttackSound != nullptr)
@@ -225,9 +225,18 @@ void AGAttack::Tick(float DeltaTime)
 		AttackParticles->CustomTimeDilation *= 0.905f; // Interp this with deltatime
 	}
 
+
+	// Main update
 	if (HasAuthority())
 	{
 		Super::Tick(DeltaTime);
+
+		// Check for end of game
+		float Timespeed = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+		if (Timespeed < 0.5f)
+		{
+			return;
+		}
 
 		LifeTimer += DeltaTime;
 		HitTimer += (DeltaTime * CustomTimeDilation);
@@ -471,7 +480,7 @@ void AGAttack::ReportHit(AActor* HitActor)
 	if (HasAuthority())
 	{
 		/// Track hitscale curvature for increasing knockback and damage
-		numHits = FMath::Clamp((numHits * 2), 1, 21); /// (numHits += (numHits - 1)), 2, 9
+		numHits = FMath::Clamp((numHits += 1), 1, 15); /// (numHits += (numHits - 1)), 2, 9
 
 		/// Damage
 		AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
