@@ -322,6 +322,7 @@ int AGammaSoloSequence::NumDenizens()
 			{
 				if (ObstacleArray[i] != nullptr)
 				{
+					
 					AActor* ThisObs = ObstacleArray[i];
 					if (ThisObs != nullptr)
 					{

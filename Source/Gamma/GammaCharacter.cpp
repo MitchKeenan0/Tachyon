@@ -334,25 +334,37 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			if (Actor2 == nullptr)
 			{
 
-				// Update target Actor by nominating closest
+				// Find Actor2 by nominating best actor
 				float DistToActor2 = 99999.0f;
 				int LoopCount = FramingActors.Num();
+				AActor* CurrentActor = nullptr;
+				AActor* BestCandidate = nullptr;
+				float BestDistance = 0.0f;
 				for (int i = 0; i < LoopCount; ++i)
 				{
-					AActor* Actorr = FramingActors[i];
-					if (Actorr != nullptr
-						&& Actorr != Actor1
-						&& !Actorr->ActorHasTag("Spectator")
-						&& !Actorr->ActorHasTag("Obstacle"))
+					CurrentActor = FramingActors[i];
+					if (CurrentActor != nullptr
+						&& CurrentActor != Actor1
+						&& !CurrentActor->ActorHasTag("Spectator")
+						&& !CurrentActor->ActorHasTag("Obstacle"))
 					{
-						float DistToTemp = FVector::Dist(Actorr->GetActorLocation(), GetActorLocation());
+						float DistToTemp = FVector::Dist(CurrentActor->GetActorLocation(), GetActorLocation());
 						if (DistToTemp < DistToActor2)
 						{
-							Actor2 = Actorr;
-							DistToActor2 = DistToTemp;
+							
+							// Players get veto importance
+							if ((BestCandidate == nullptr)
+								|| (!BestCandidate->ActorHasTag("Player")))
+							{
+								BestCandidate = CurrentActor;
+								DistToActor2 = DistToTemp;
+							}
 						}
 					}
 				}
+
+				// Got your boye
+				Actor2 = BestCandidate;
 			}
 
 			
@@ -420,7 +432,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				Actor1Velocity = (Actor1->GetVelocity()) * CustomTimeDilation;
 
 				// Clamp to max size
-				Actor1Velocity = Actor1Velocity.GetClampedToSize(300.0f, 1500.0f); // *CustomTimeDilation);
+				Actor1Velocity = Actor1Velocity.GetClampedToSize(105.0f, 1500.0f); // *CustomTimeDilation);
 				Actor1Velocity.Z *= 0.85f;
 
 				// Smooth-over low velocities with a standard framing
@@ -442,7 +454,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 
 			// Positions done
-			// Find the midpoint, leaning to actor one
+			// Find the midpoint
 			FVector TargetMidpoint = PositionOne + ((PositionTwo - PositionOne) * 0.5f);
 			float DistanceToTargetScalar = FVector::Dist(TargetMidpoint, CameraBoom->GetComponentLocation()) * 0.1f;
 			
@@ -1020,7 +1032,7 @@ bool AGammaCharacter::ServerKickPropulsion_Validate()
 // RECEIVING DAMAGE
 void AGammaCharacter::ReceiveDamage(float Dmg)
 {
-	// stuff ie Health <= 0.0f -> KilledFX
+	// damage flashout etc other fx
 
 	if (Role < ROLE_Authority)
 	{
@@ -1829,7 +1841,16 @@ bool AGammaCharacter::ServerPowerSlideDisengage_Validate()
 // MODIFY HEALTH
 void AGammaCharacter::ModifyHealth(float Value)
 {
+	// Taking damage
 	Health = FMath::Clamp(Health += Value, -1.0f, 100.0f);
+
+	// Player killed fx
+	if ((Health <= 0.0f)
+		&& (KilledFX != nullptr))
+	{
+		FActorSpawnParameters SpawnParams;
+		AActor* NewKilledFX = GetWorld()->SpawnActor<AActor>(KilledFX, GetActorLocation(), GetActorRotation(), SpawnParams);
+	}
 
 	if (Role < ROLE_Authority)
 	{
