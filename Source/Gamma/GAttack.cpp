@@ -47,9 +47,10 @@ void AGAttack::BeginPlay()
 {
 	Super::BeginPlay();
 	bHit = false;
-	//bLethal = false;
+	bLethal = false;
 	SetLifeSpan(DurationTime);
 	AttackDamage = 5.0f;
+	numHits = 0;
 
 	// Add natural deviancy to sound
 	if (AttackSound != nullptr)
@@ -59,11 +60,6 @@ void AGAttack::BeginPlay()
 		AttackSound->SetPitchMultiplier(Spinoff);
 	}
 
-	if (ActorHasTag("Obstacle"))
-	{
-		InitAttack(this, 1.0f, 0.0f);
-	}
-
 	// Visual trim
 	if (AttackParticles != nullptr)
 	{
@@ -71,7 +67,16 @@ void AGAttack::BeginPlay()
 	}
 	if (AttackSprite != nullptr)
 	{
+		AttackSprite->SetVisibility(false);
 		AttackSprite->bHiddenInGame = true;
+		AttackSprite->Deactivate();
+		//GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::White, FString::Printf(TEXT("Deactivated Sprite! %f"), 0.0f));
+	}
+
+	if (ActorHasTag("Obstacle") || ActorHasTag("Swarm"))
+	{
+		InitAttack(this, 1.0f, 0.0f);
+		AttackParticles->ActivateSystem();
 	}
 }
 
@@ -99,8 +104,8 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		if (MagnitudeTimeScalar != 1.0f)
 		{
 			DurationTime = DurationTime + (AttackMagnitude * MagnitudeTimeScalar);
-			LethalTime = DurationTime * 0.99f;
 		}
+		LethalTime = DurationTime * 0.99f;
 		DynamicLifetime = DurationTime;
 		SetLifeSpan(DurationTime);
 
@@ -185,8 +190,8 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 // Called every frame
 void AGAttack::Tick(float DeltaTime)
 {
-	if (!bLethal && (GetGameTimeSinceCreation() > 0.1f)
-		&& (GetGameTimeSinceCreation() < 0.2f)) /// for attacks being blocked later
+	if (!bLethal && (GetGameTimeSinceCreation() > RefireTime)
+		&& (GetGameTimeSinceCreation() < (RefireTime * 2.0f))) /// for attacks being blocked later
 	{
 		// Recoil &
 		// Init Success
@@ -213,14 +218,42 @@ void AGAttack::Tick(float DeltaTime)
 				if (AttackSprite != nullptr)
 				{
 					AttackSprite->bHiddenInGame = false;
+					AttackSprite->Activate();
+					AttackSprite->SetVisibility(true);
+					//GEngine->AddOnScreenDebugMessage(-1, 20.5f, FColor::White, FString::Printf(TEXT("Activated Sprite!  %f"), 1.0f));
 				}
-
-				///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("LethalTime:  %f"), LethalTime));
 			}
+			else if (ActorHasTag("Obstacle") || ActorHasTag("Swarm"))
+			{
+				// Take the first shot
+				HitTimer = (1.0f / HitsPerSecond);
+				bLethal = true;
+				DetectHit(GetActorForwardVector());
+
+				// Visual trim
+				if (AttackParticles != nullptr)
+				{
+					AttackParticles->ActivateSystem();
+				}
+				if (AttackSprite != nullptr)
+				{
+					AttackSprite->bHiddenInGame = false;
+					AttackSprite->Activate();
+					AttackSprite->SetVisibility(true);
+					//GEngine->AddOnScreenDebugMessage(-1, 20.5f, FColor::White, FString::Printf(TEXT("Activated Sprite!  %f"), 1.0f));
+				}
+			}
+
+			// Last-second redirection
+			float ShooterYaw = OwningShooter->GetActorRotation().Yaw;
+			float Pitch = GetActorRotation().Pitch;
+			float Roll = GetActorRotation().Roll;
+			FRotator NewRotation = FRotator(Pitch, ShooterYaw, Roll);
+			SetActorRotation(NewRotation);
 		}
 	}
 
-	if (bHit)
+	if (bHit && (!ActorHasTag("Swarm")))
 	{
 		AttackParticles->CustomTimeDilation *= 0.905f; // Interp this with deltatime
 	}
@@ -436,7 +469,8 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 	//FVector AwayFromAttack = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	//float TimeDilat = //UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 	//TimeDilat = FMath::Clamp(TimeDilat, 0.01f, 0.15f);
-	float HitsScalar = 1.0f + (2.0f / numHits);
+	float SafeHits = FMath::Clamp(numHits, 1, 15);
+	float HitsScalar = 1.0f + (2.0f / SafeHits);
 	float MagnitudeScalar = FMath::Square(1.0f + AttackMagnitude);
 	float KnockScalar = FMath::Abs(KineticForce) * HitsScalar * MagnitudeScalar;
 
@@ -486,7 +520,9 @@ void AGAttack::ReportHit(AActor* HitActor)
 		AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
 		if (PotentialPlayer != nullptr)
 		{
-			PotentialPlayer->ModifyHealth((-AttackDamage) * numHits);
+			float Dmg = -1 * FMath::Clamp((AttackDamage) * numHits, 1.0f, 99.0f);
+			PotentialPlayer->ModifyHealth(Dmg);
+			///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("Hit for %f!"), Dmg));
 
 			/// Marked killed AI for the reset sweep
 			if (PotentialPlayer->GetHealth() <= 0.0f
@@ -572,7 +608,11 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 			if ((OwningShooter == OtherAttack->OwningShooter)
 				&& !(ActorHasTag("Obstacle")))
 			{
-				///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Green, FString::Printf(TEXT("Hit A Mirror:  %f"), 1.0f));
+				return;
+			}
+
+			if (ActorHasTag("Swarm") && HitActor->ActorHasTag("Swarm"))
+			{
 				return;
 			}
 
@@ -592,7 +632,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 				//ApplyKnockback(OwningShooter, GetActorLocation());
 
 				// Nerf the attack
-				HitsPerSecond *= 0.68f;
+				HitsPerSecond *= 0.2f;
 
 				if (!ActorHasTag("Obstacle"))
 				{
@@ -619,6 +659,13 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	if (HitCharacter != nullptr)
 	{
 		HitCharacter->GetMovementComponent()->Velocity *= FireDelay;
+
+		if ((ProjectileSpeed != 0.0f)
+			&& (ActorHasTag("Solid")))
+		{
+			float HitSpeedScalarSafe = FMath::Clamp(FireDelay, 0.21f, 1.0f);
+			ProjectileComponent->Velocity *= HitSpeedScalarSafe;
+		}
 	}
 
 	// All's good if we got here

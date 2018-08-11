@@ -458,7 +458,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			FVector TargetMidpoint = PositionOne + ((PositionTwo - PositionOne) * 0.5f);
 			float DistanceToTargetScalar = FVector::Dist(TargetMidpoint, CameraBoom->GetComponentLocation()) * 0.1f;
 			
-			Midpoint = FMath::VInterpTo(Midpoint, TargetMidpoint, DeltaTime, DistanceToTargetScalar);
+			Midpoint = TargetMidpoint;
+				///FMath::VInterpTo(Midpoint, TargetMidpoint, DeltaTime, DistanceToTargetScalar);
 			if (Midpoint.Size() > 0.0f)
 			{
 
@@ -695,6 +696,44 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		if (bCharging)
 		{
 			RaiseCharge();
+		}
+
+		// Update smooth health value
+		if (MaxHealth < Health)
+		{
+			float InterpSpeed = FMath::Abs(Health - MaxHealth) * 5.1f;
+			Health = FMath::FInterpConstantTo(Health, MaxHealth, UGameplayStatics::GetWorldDeltaSeconds(GetWorld()), InterpSpeed);
+			///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("InterpSpeed: %f"), InterpSpeed));
+
+			// Player killed fx
+			if ((KilledFX != nullptr)
+				&& (ActiveKilledFX == nullptr)
+				&& (Health <= 1.0f))
+			{
+				FActorSpawnParameters SpawnParams;
+				ActiveKilledFX = GetWorld()->SpawnActor<AActor>(KilledFX, GetActorLocation(), GetActorRotation(), SpawnParams);
+				if (ActiveKilledFX != nullptr)
+				{
+					ActiveKilledFX->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
+				}
+				
+				// Particle coloring (for later)
+				/*if (ActiveKilledFX != nullptr)
+				{
+					TArray<UParticleSystemComponent*> ParticleComps;
+					ActiveKilledFX->GetComponents<UParticleSystemComponent>(ParticleComps);
+					float NumParticles = ParticleComps.Num();
+					if (NumParticles > 0)
+					{
+						UParticleSystemComponent* Parti = ParticleComps[0];
+						if (Parti != nullptr)
+						{
+							FLinearColor PlayerColor = GetCharacterColor().ReinterpretAsLinear();
+							Parti->SetColorParameter(FName("InitialColor"), PlayerColor);
+						}
+					}
+				}*/
+			}
 		}
 
 		// Update player pitch
@@ -949,11 +988,19 @@ void AGammaCharacter::KickPropulsion()
 	FVector CurrentVelocity = GetCharacterMovement()->Velocity;
 	FVector MoveInputVector = FVector(InputX, 0.0f, InputZ * 0.75f).GetSafeNormal();
 	FVector KickVector = FVector::ZeroVector;
+
+	// Basic thrust if no input
+	if ((MoveInputVector == FVector::ZeroVector)
+		|| (MoveInputVector.X == 0.0f))
+	{
+		MoveInputVector.X = GetActorForwardVector().X;
+		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("Wild boosting  %f"), 1.0f));
+	}
 	
 	// Algo scaling for timescale & max velocity
-	float PropulsiveMax = MaxMoveSpeed * 2.1f;
-	float Relativity = PropulsiveMax - CurrentVelocity.Size();
-	float RelativityToMaxSpeed = FMath::Clamp(Relativity, 0.001f, 10000.0f);
+	///float PropulsiveMax = MaxMoveSpeed * 2.1f;
+	///float Relativity = PropulsiveMax - CurrentVelocity.Size();
+	///float RelativityToMaxSpeed = FMath::Clamp(Relativity, 0.001f, 10000.0f);
 	///float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
 
 	GetCharacterMovement()->MaxFlySpeed = CurrentVelocity.Size() * 1.05f;
@@ -961,16 +1008,20 @@ void AGammaCharacter::KickPropulsion()
 	// Force, clamp, & effect chara movement
 	float ChargeScalar = FMath::Sqrt(FMath::Clamp(Charge, 0.1f, 1.0f));
 	float DeltaTime = GetWorld()->DeltaTimeSeconds;
+	float FreshKickSpeed = MoveFreshMultiplier * 50000.0f;
 	KickVector = MoveInputVector
-		* MoveFreshMultiplier
+		* FreshKickSpeed
 		//* RelativityToMaxSpeed
 		* DeltaTime;
 
 	// Skating effect
-	FVector VelNorm = CurrentVelocity.GetSafeNormal();
-	float DotToVelocity = FVector::DotProduct(MoveInputVector, VelNorm);
-	float RotatorAngle = FMath::RadiansToDegrees(FMath::Acos(DotToVelocity));
-	KickVector = KickVector.RotateAngleAxis(RotatorAngle * DeltaTime, GetActorForwardVector());
+	if (MoveInputVector != FVector::ZeroVector)
+	{
+		FVector VelNorm = CurrentVelocity.GetSafeNormal();
+		float DotToVelocity = FVector::DotProduct(MoveInputVector, VelNorm);
+		float RotatorAngle = FMath::RadiansToDegrees(FMath::Acos(DotToVelocity));
+		KickVector = KickVector.RotateAngleAxis(RotatorAngle * DeltaTime, GetActorForwardVector());
+	}
 
 	// Trimming
 	KickVector.Z *= 0.9f;
@@ -1171,7 +1222,6 @@ void AGammaCharacter::InitAttack()
 		if (Charge <= 0.0f)
 		{
 			Charge = (-1.0f);
-			return;
 		}
 
 		bool bCancelling = false;
@@ -1188,7 +1238,6 @@ void AGammaCharacter::InitAttack()
 			&& (ActiveSecondary == nullptr);
 		bool bFireAllowed = bWeaponAllowed 
 			&& (GetActiveFlash() == nullptr)
-			&& (Charge > 0.0f) 
 			&& (FlashClass != nullptr);
 		/// Extra bools for action heirarchy, currently moving away from this...
 		/// (GetActiveBoost() == nullptr) &&  && (!IsValid(GetActiveFlash()))
@@ -1244,7 +1293,6 @@ void AGammaCharacter::ReleaseAttack()
 			&& (AttackClass != nullptr)
 			&& ((ActiveAttack == nullptr) || bMultipleAttacks)
 			&& (GetActiveSecondary() == nullptr)
-			&& (Charge > 0.0f)
 			&& (PrefireTimer > 0.0f)
 			&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
 		{
@@ -1267,10 +1315,10 @@ void AGammaCharacter::ReleaseAttack()
 
 			// Scale prefire output's minimum by missing HP
 			float MissingLife = FMath::Clamp((MaxHealth - Health), 0.1f, MaxHealth);
-			float PrefireVal = FMath::Square(PrefireTimer);
-			float PrefireMin = (MissingLife / 100.0f);
+			float PrefireVal = PrefireTimer * (GetChargePercentage() + 0.05f);
+			float PrefireMin = (MissingLife / 100.0f) + 0.1f;
 			PrefireVal = FMath::Clamp(PrefireVal, PrefireMin, 1.0f);
-			///GEngine->AddOnScreenDebugMessage(-1, 5.5f, FColor::White, FString::Printf(TEXT("PrefireVal: %f"), PrefireVal));
+			///GEngine->AddOnScreenDebugMessage(-1, 5.5f, FColor::White, FString::Printf(TEXT("PrefireMin: %f"), PrefireMin));
 
 			// Spawning
 			if (HasAuthority() && (ActiveAttack == nullptr))
@@ -1842,15 +1890,46 @@ bool AGammaCharacter::ServerPowerSlideDisengage_Validate()
 void AGammaCharacter::ModifyHealth(float Value)
 {
 	// Taking damage
-	Health = FMath::Clamp(Health += Value, -1.0f, 100.0f);
+	//Health = FMath::Clamp(Health += Value, -1.0f, 100.0f);
 
-	// Player killed fx
-	if ((Health <= 0.0f)
-		&& (KilledFX != nullptr))
+	if (Value >= 100.0f)
 	{
-		FActorSpawnParameters SpawnParams;
-		AActor* NewKilledFX = GetWorld()->SpawnActor<AActor>(KilledFX, GetActorLocation(), GetActorRotation(), SpawnParams);
+		Health = 100.0f;
+		MaxHealth = 100.0f;
 	}
+	else
+	{
+		MaxHealth = FMath::Clamp(Health + Value, -1.0f, 100.0f);
+	}
+
+	
+	///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Red, FString::Printf(TEXT("MaxHealth: %f"), MaxHealth));
+
+	//float InterpSpeed = FMath::Abs(Value);
+	//Health = FMath::FInterpTo(Health, -1.0f, UGameplayStatics::GetWorldDeltaSeconds(GetWorld()), InterpSpeed);
+
+	//// Player killed fx
+	//if ((Health <= 0.0f)
+	//	&& (KilledFX != nullptr))
+	//{
+	//	FActorSpawnParameters SpawnParams;
+	//	AActor* NewKilledFX = GetWorld()->SpawnActor<AActor>(KilledFX, GetActorLocation(), GetActorRotation(), SpawnParams);
+	//	if (NewKilledFX != nullptr)
+	//	{
+	//		TArray<UParticleSystemComponent*> ParticleComps;
+	//		NewKilledFX->GetComponents<UParticleSystemComponent>(ParticleComps);
+	//		float NumParticles = ParticleComps.Num();
+	//		if (NumParticles > 0)
+	//		{
+	//			UParticleSystemComponent* Parti = ParticleComps[0];
+	//			if (Parti != nullptr)
+	//			{
+	//				FLinearColor PlayerColor = GetCharacterColor().ReinterpretAsLinear();
+	//				Parti->SetColorParameter(FName("InitialColor"), PlayerColor);
+	//			}
+	//		}
+	//	}
+	//}
 
 	if (Role < ROLE_Authority)
 	{

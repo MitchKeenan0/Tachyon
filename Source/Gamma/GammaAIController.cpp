@@ -184,11 +184,10 @@ bool AGammaAIController::ReactionTiming(float DeltaTime)
 void AGammaAIController::AimAtTarget(AActor* TargetActor)
 {
 	FVector LocalForward = MyCharacter->GetAttackScene()->GetForwardVector();
-	FVector ToPlayer = Player->GetActorLocation() - MyCharacter->GetActorLocation();
+	FVector ToTarget = TargetActor->GetActorLocation() - MyCharacter->GetActorLocation();
 	
-	// AIM
 	// X
-	float LateralDistance = ToPlayer.X;
+	float LateralDistance = ToTarget.X;
 	if (LateralDistance < 0.0f) {
 		MyCharacter->SetX(-1.0f, 1.0f);
 	} else {
@@ -196,7 +195,7 @@ void AGammaAIController::AimAtTarget(AActor* TargetActor)
 	}
 
 	// Z
-	float VerticalDistance = ToPlayer.Z;
+	float VerticalDistance = ToTarget.Z;
 	if (VerticalDistance > 0.0f) {
 		MyCharacter->SetZ(1.0f, 1.0f);
 	} else {
@@ -205,14 +204,14 @@ void AGammaAIController::AimAtTarget(AActor* TargetActor)
 
 	// LOS
 	FVector ForwardNorm = LocalForward.GetSafeNormal();
-	FVector ToPlayerNorm = ToPlayer.GetSafeNormal();
-	float DotToPlayer = FVector::DotProduct(ForwardNorm, ToPlayerNorm);
-	float RangeToPlayer = ToPlayer.Size();
-	if (RangeToPlayer <= PrimaryRange)
+	FVector ToTargetNorm = ToTarget.GetSafeNormal();
+	float DotToPlayer = FVector::DotProduct(ForwardNorm, ToTargetNorm);
+	float RangeToTarget = ToTarget.Size();
+	if (RangeToTarget <= PrimaryRange)
 	{
 
-		float AngleToPlayer = FMath::RadiansToDegrees(FMath::Acos(DotToPlayer));
-		float AbsAngle = FMath::Abs(AngleToPlayer);
+		float AngleToTarget = FMath::RadiansToDegrees(FMath::Acos(DotToPlayer));
+		float AbsAngle = FMath::Abs(AngleToTarget);
 		if (AbsAngle <= ShootingAngle) {
 			bViewToTarget = true;
 		} else {
@@ -236,6 +235,41 @@ void AGammaAIController::Tactical(FVector Target)
 	float HandBrakeVal = 2.0f;
 	float ChargeVal = 50.0f;
 	float SecoVal = 70.0f;
+
+
+	// DETECT THREATS & blocking
+	TArray<AActor*> AttackActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGAttack::StaticClass(), AttackActors);
+	int AtkActorsNum = AttackActors.Num();
+	float ReactionThreshold = FMath::FRand();
+	if ((AtkActorsNum > 0) && (ReactionThreshold >= 0.5f))
+	{
+		for (int i = 0; i < AtkActorsNum; ++i)
+		{
+
+			AGAttack* CurrentAttack = Cast<AGAttack>(AttackActors[i]);
+			if (CurrentAttack != nullptr)
+			{
+
+				FVector AttackLocation = CurrentAttack->GetActorLocation();
+				FVector AttackForward = CurrentAttack->GetActorForwardVector();
+				float DistToAttack = FVector::Dist(MyPawn->GetActorLocation(), AttackLocation);
+				if ((DistToAttack > 100.0f)
+					&& (DistToAttack < 2000.0f))
+				{
+					AimAtTarget(CurrentAttack);
+
+					FVector ToAttackNorm = (AttackLocation - MyPawn->GetActorLocation()).GetSafeNormal();
+					FVector LocalNorm = MyCharacter->GetAttackScene()->GetForwardVector().GetSafeNormal();
+					float DotToAttack = FVector::DotProduct(LocalNorm, ToAttackNorm);
+					if (DotToAttack > 0.0f)
+					{
+						MyCharacter->CheckSecondaryOn();
+					}
+				}
+			}
+		}
+	}
 
 
 	// POINT-BLANK stunts

@@ -71,7 +71,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 		if ((Reciever != nullptr) && (Shooter != nullptr))
 		{
 			// End of game?
-			if (Reciever->GetHealth() <= 0.0f)
+			if (Reciever->GetHealth() <= 1.0f)
 			{
 				bGG = true;
 
@@ -116,6 +116,19 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			Shooter->ForceNetUpdate();
 			Reciever->ForceNetUpdate();*/
 		}
+
+		// Basic GG to catch enviro kills
+		if ((Reciever != nullptr) 
+			&& (!Reciever->ActorHasTag("Swarm")) 
+			&& (Reciever->GetHealth() <= 0.0f))
+		{
+			bGG = true;
+			SetTimeScale(GGTimescale);
+			if (Reciever->ActorHasTag("Bot"))
+			{
+				Reciever->Tags.Add("Doomed");
+			}
+		}
 	}
 }
 
@@ -157,7 +170,7 @@ void AGMatch::HandleTimeScale(float Delta)
 	//SetTimeScale(TimeToSet);
 
 	
-	// OLD SYSTEM
+	// OLD HIT-TIMESCALE SYSTEM
 	//// Handle gameover scenario - timing and score handouts
 	//if ( (bGG && (GGDelayTimer >= GGDelayTime) )
 	//	|| bMinorGG)
