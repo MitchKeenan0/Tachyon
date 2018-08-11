@@ -1354,6 +1354,9 @@ void AGammaCharacter::ReleaseAttack()
 						{
 							GetCharacterMovement()->Velocity *= SlowmoMoveBoost;
 						}
+
+						// Break handbrake
+						CheckPowerSlideOff();
 					}
 				}
 				else
