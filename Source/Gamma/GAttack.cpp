@@ -171,8 +171,8 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 			if (NewBurst != nullptr)
 			{
 				NewBurst->AttachToActor(OwningShooter, FAttachmentTransformRules::KeepWorldTransform);
-				float MagnitudeScalar = FMath::Clamp(AttackMagnitude * 2.1f, 0.3f, 1.1f);
-				FVector NewBurstScale = NewBurst->GetActorRelativeScale3D() * AttackMagnitude;
+				float MagnitudeScalar = FMath::Clamp(AttackMagnitude * 2.1f, 0.5f, 1.1f);
+				FVector NewBurstScale = NewBurst->GetActorRelativeScale3D() * MagnitudeScalar;
 				NewBurst->SetActorRelativeScale3D(NewBurstScale);
 			}
 		}
@@ -200,7 +200,7 @@ void AGAttack::Tick(float DeltaTime)
 			ACharacter* Chara = Cast<ACharacter>(OwningShooter);
 			if (Chara != nullptr)
 			{
-				float RecoilScalar = FMath::Abs(KineticForce) * FMath::Clamp((10.0f * AttackMagnitude), 0.5f, 2.1f);
+				float RecoilScalar = -15.0f * (FMath::Abs(KineticForce) * FMath::Clamp(AttackMagnitude, 0.2f, 1.0f));
 				FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
 				FRotator RecoilRotator = LocalForward.Rotation() + FRotator(ShotDirection * ShootingAngle, 0.0f, 0.0f);
 				Chara->GetCharacterMovement()->AddImpulse(RecoilRotator.Vector() * RecoilScalar);

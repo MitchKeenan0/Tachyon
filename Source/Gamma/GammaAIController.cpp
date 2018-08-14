@@ -257,6 +257,7 @@ void AGammaAIController::Tactical(FVector Target)
 				if ((DistToAttack > 100.0f)
 					&& (DistToAttack < 2000.0f))
 				{
+					
 					AimAtTarget(CurrentAttack);
 
 					FVector ToAttackNorm = (AttackLocation - MyPawn->GetActorLocation()).GetSafeNormal();

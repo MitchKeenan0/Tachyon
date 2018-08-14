@@ -88,7 +88,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 				SetTimeScale(GGTimescale);
 
 				// Award winner with a star ;P
-				FString DecoratedName = FString(Shooter->GetCharacterName().Append(" *"));
+				FString DecoratedName = FString(Shooter->GetCharacterName().Append("*"));
 				Shooter->SetCharacterName(DecoratedName);
 
 				// Erase Bots

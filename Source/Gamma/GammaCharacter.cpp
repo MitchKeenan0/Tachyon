@@ -987,7 +987,7 @@ void AGammaCharacter::KickPropulsion()
 	// Basic propulsive ingredients
 	FVector CurrentVelocity = GetCharacterMovement()->Velocity;
 	FVector MoveInputVector = FVector(InputX, 0.0f, InputZ * 0.75f).GetSafeNormal();
-	FVector KickVector = FVector::ZeroVector;
+	FVector KickVector = MoveInputVector;
 
 	// Basic thrust if no input
 	if ((MoveInputVector == FVector::ZeroVector)
@@ -995,6 +995,16 @@ void AGammaCharacter::KickPropulsion()
 	{
 		MoveInputVector.X = GetActorForwardVector().X;
 		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("Wild boosting  %f"), 1.0f));
+	}
+
+	// Air-dodge if handbraking
+	if (bSliding)
+	{
+		GetCharacterMovement()->AddImpulse(KickVector * 500000.0f);
+		DisengageKick();
+		bBoosting = false;
+		bCharging = false;
+		return;
 	}
 	
 	// Algo scaling for timescale & max velocity
