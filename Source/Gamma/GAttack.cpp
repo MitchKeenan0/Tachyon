@@ -632,7 +632,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 				//ApplyKnockback(OwningShooter, GetActorLocation());
 
 				// Nerf the attack
-				HitsPerSecond *= 0.2f;
+				HitsPerSecond *= 0.1f;
 
 				if (!ActorHasTag("Obstacle"))
 				{
@@ -656,16 +656,16 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 
 	// Hit-slow
 	AGammaCharacter* HitCharacter = Cast<AGammaCharacter>(HitActor);
-	if (HitCharacter != nullptr)
+	if ((HitCharacter != nullptr))
 	{
 		HitCharacter->GetMovementComponent()->Velocity *= FireDelay;
-
-		if ((ProjectileSpeed != 0.0f)
-			&& (ActorHasTag("Solid")))
-		{
-			float HitSpeedScalarSafe = FMath::Clamp(FireDelay, 0.21f, 1.0f);
-			ProjectileComponent->Velocity *= HitSpeedScalarSafe;
-		}
+	}
+	//if (HitActor->ActorHasTag("Swarm")
+	if ((ProjectileSpeed != 0.0f)
+		&& (ActorHasTag("Solid")))
+	{
+		float HitSpeedScalarSafe = FMath::Clamp(FireDelay, 0.21f, 1.0f);
+		ProjectileComponent->Velocity *= HitSpeedScalarSafe;
 	}
 
 	// All's good if we got here

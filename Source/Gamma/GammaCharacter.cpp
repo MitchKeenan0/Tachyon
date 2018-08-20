@@ -208,7 +208,11 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 	if ((Controller != nullptr))
 	{
-		
+		float VelocitySize = GetCharacterMovement()->Velocity.Size();
+		float AccelSpeed = FMath::Clamp((100.0f / VelocitySize) * MaxMoveSpeed, 1.0f, MaxMoveSpeed * 100.0f);
+		GetCharacterMovement()->MaxFlySpeed = AccelSpeed;
+		//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("max fly speed: %f"), GetCharacterMovement()->MaxFlySpeed));
+
 		//float GlobalTimeDil = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 		//if (GlobalTimeDil > 0.3f)
 		//{
@@ -383,7 +387,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			float ChargeScalar = FMath::Clamp((FMath::Sqrt(Charge - 0.9f)), 0.1f, ChargeMax);
 			float SizeScalar = 1.0f; /// GetCapsuleComponent()->GetComponentScale().Size()
 			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.5f;
-			float CameraMinimumDistance = 1100.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * CameraDistanceScalar;
+			float PersonalScalar = (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * (FMath::Sqrt(SafeVelocitySize) * 0.06f);
+			float CameraMinimumDistance = (1100.0f + PersonalScalar) * CameraDistanceScalar;
 			float CameraMaxDistance = 1551000.0f;
 
 
@@ -409,12 +414,12 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 					// Framing up with second actor
 					FVector Actor2Velocity = (Actor2->GetVelocity()) * CustomTimeDilation;
-					float SafeVelocitySize = FMath::Clamp(Actor2Velocity.Size(), 350.0f, MaxMoveSpeed);
+					float SafeVelocitySize = FMath::Clamp(Actor2Velocity.Size(), 1.0f, MaxMoveSpeed);
 					VelocityCameraSpeed = CameraMoveSpeed * (FMath::Sqrt(SafeVelocitySize)) * DeltaTime;
 					VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 1.0f, CameraMaxSpeed);
 					
 					
-					Actor2Velocity = Actor2Velocity.GetClampedToSize(1.0f, 1500.0f); // *CustomTimeDilation);
+					Actor2Velocity = Actor2Velocity.GetClampedToSize(1.0f, 1500.0f) * 0.5f; // *CustomTimeDilation);
 					///Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(15000.0f * (CustomTimeDilation + 0.5f));
 					Actor2Velocity.Z *= 0.85f;
 
@@ -465,7 +470,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Distance
 				float DistBetweenActors = FVector::Dist(PositionOne, PositionTwo);
-				float ProcessedDist = DistBetweenActors + (FMath::Sqrt(DistBetweenActors) * 750.0f);
+				float ProcessedDist = (FMath::Sqrt(DistBetweenActors) * 1500.0f);
 				float VerticalDist = FMath::Abs((PositionTwo - PositionOne).Z);
 				// If paired, widescreen edges are vulnerable to overshoot
 				if (!bAlone)
@@ -499,7 +504,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Set Camera Distance
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength,
-					TargetLengthClamped, DeltaTime, (VelocityCameraSpeed * 1.15f));
+					TargetLengthClamped, DeltaTime, (VelocityCameraSpeed * 0.5f));
 					
 				// Camera tilt
 				FRotator FTarget = FRotator::ZeroRotator;
@@ -1007,40 +1012,24 @@ void AGammaCharacter::KickPropulsion()
 		return;
 	}
 	
-	// Algo scaling for timescale & max velocity
-	///float PropulsiveMax = MaxMoveSpeed * 2.1f;
-	///float Relativity = PropulsiveMax - CurrentVelocity.Size();
-	///float RelativityToMaxSpeed = FMath::Clamp(Relativity, 0.001f, 10000.0f);
-	///float DotScalar = 1 / FMath::Abs(FVector::DotProduct(CurrentVelocity.GetSafeNormal(), MoveInputVector));
-
-	GetCharacterMovement()->MaxFlySpeed = CurrentVelocity.Size() * 1.05f;
-
 	// Force, clamp, & effect chara movement
-	float ChargeScalar = FMath::Sqrt(FMath::Clamp(Charge, 0.1f, 1.0f));
 	float DeltaTime = GetWorld()->DeltaTimeSeconds;
-	float FreshKickSpeed = MoveFreshMultiplier * 50000.0f;
+	float FreshKickSpeed = 250000.0f;
 	KickVector = MoveInputVector
 		* FreshKickSpeed
-		//* RelativityToMaxSpeed
 		* DeltaTime;
-
-	// Skating effect
-	if (MoveInputVector != FVector::ZeroVector)
-	{
-		FVector VelNorm = CurrentVelocity.GetSafeNormal();
-		float DotToVelocity = FVector::DotProduct(MoveInputVector, VelNorm);
-		float RotatorAngle = FMath::RadiansToDegrees(FMath::Acos(DotToVelocity));
-		KickVector = KickVector.RotateAngleAxis(RotatorAngle * DeltaTime, GetActorForwardVector());
-	}
 
 	// Trimming
 	KickVector.Z *= 0.9f;
 	KickVector.Y = 0.0f;
+	KickVector -= (GetVelocity() * 0.5f);
+
+	///GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Cyan, FString::Printf(TEXT("kick   %f"), KickVector.Size()));
 
 	// Initial kick for good feels
 	if ((GetActiveBoost() == nullptr) && (BoostClass != nullptr))
 	{
-		GetCharacterMovement()->AddImpulse(KickVector * 3.33f);
+		GetCharacterMovement()->AddImpulse(KickVector * 50.0f);
 
 		if (HasAuthority())
 		{
@@ -1064,7 +1053,7 @@ void AGammaCharacter::KickPropulsion()
 		//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
 		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
 		///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("RelativityToMaxSpeed  %f"), RelativityToMaxSpeed));
-		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("kick   %f"), KickVector.Size()));
+		
 	}
 
 	if (GetActiveBoost() != nullptr)

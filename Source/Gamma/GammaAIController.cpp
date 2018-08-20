@@ -42,6 +42,11 @@ void AGammaAIController::Tick(float DeltaSeconds)
 		if (MyPawn != nullptr)
 		{
 			MyCharacter = Cast<AGammaCharacter>(MyPawn);
+			if (MyPawn->ActorHasTag("SwarmCentre"))
+			{
+				Aggression = 10.0f;
+				MoveRange = 1.0f;
+			}
 		}
 	}
 	else if ((MyCharacter != nullptr)
@@ -125,7 +130,7 @@ void AGammaAIController::Tick(float DeltaSeconds)
 							{
 								Player = PotentialPlayer;
 								bPlayerFound = true;
-								///GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::White, FString::Printf(TEXT("p %s   targeting %s"), *MyCharacter->GetName(), *Player->GetName()));
+								//GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::White, FString::Printf(TEXT("p %s   targeting %s"), *MyCharacter->GetName(), *Player->GetName()));
 								break;
 							}
 						}
@@ -321,7 +326,8 @@ void AGammaAIController::Tactical(FVector Target)
 	}
 	
 	// CHARGE
-	else if ((RandomDc <= ChargeVal) || (MyCharacter->GetCharge() <= 0.1f))
+	else if (((RandomDc <= ChargeVal) || (MyCharacter->GetCharge() <= 0.1f))
+		|| (DistToPlayer > 3500.0f))
 	{
 		if ((MyCharacter != nullptr) && IsValid(MyCharacter))
 		{
@@ -439,11 +445,18 @@ FVector AGammaAIController::GetNewLocationTarget()
 		float VelocityScalar = FMath::Clamp((1 / (1 / MyVelocity)), 1.0f, MoveRange);
 		float DynamicMoveRange = MoveRange + VelocityScalar; /// usually 100 :P
 		FVector PlayerVelocity = Player->GetCharacterMovement()->Velocity;
-		PlayerVelocity *= 0.55f;
-		FVector PlayerAtSpeed = PlayerLocation + (PlayerVelocity * 0.5f * Aggression);
+		FVector PlayerAtSpeed = PlayerVelocity;
+		if (PlayerAtSpeed.Size() > 100.0f)
+		{
+			PlayerAtSpeed = PlayerLocation + (PlayerVelocity * 0.5f) / Aggression;
+		}
+		else
+		{
+			PlayerAtSpeed = PlayerLocation;
+		}
 		
 		// Randomness in movement
-		FVector RandomOffset = (FMath::VRand() * DynamicMoveRange) * (1 / Aggression);
+		FVector RandomOffset = (FMath::VRand() * DynamicMoveRange) * (1 / Aggression) / Aggression;
 		RandomOffset.Y = 0.0f;
 		RandomOffset.Z *= 0.25f;
 
