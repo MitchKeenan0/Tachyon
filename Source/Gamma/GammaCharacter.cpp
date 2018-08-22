@@ -51,7 +51,7 @@ AGammaCharacter::AGammaCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
 	// Configure character movement
-	GetCharacterMovement()->GravityScale = 0.0f;
+	GetCharacterMovement()->GravityScale = 1.0f;
 	GetCharacterMovement()->AirControl = 0.80f;
 	GetCharacterMovement()->JumpZVelocity = 1000.f;
 	GetCharacterMovement()->GroundFriction = 3.0f;
@@ -213,6 +213,11 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		GetCharacterMovement()->MaxFlySpeed = AccelSpeed;
 		//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("max fly speed: %f"), GetCharacterMovement()->MaxFlySpeed));
 
+		// Surface place
+		/*FVector PlayerPosition = GetActorLocation();
+		PlayerPosition.Z = FMath::Clamp(PlayerPosition.Z, -3000.0f, 10000.0f);
+		SetActorLocation(PlayerPosition);*/
+
 		//float GlobalTimeDil = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 		//if (GlobalTimeDil > 0.3f)
 		//{
@@ -291,10 +296,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 	AActor* Actor1 = nullptr;
 	AActor* Actor2 = nullptr;
 
-	float VelocityCameraSpeed = CameraMoveSpeed;
-	float CameraMaxSpeed = 10000.0f;
-	float ConsideredDistanceScalar = CameraDistanceScalar;
-
 	// Poll for framing actors
 	if ((Actor1 == nullptr) && (Actor2 == nullptr))
 	{
@@ -331,6 +332,10 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 		// Let's go
 		if ((Actor1 != nullptr)) ///  && IsValid(Actor1) && !Actor1->IsUnreachable()
 		{
+
+			float VelocityCameraSpeed = CameraMoveSpeed;
+			float CameraMaxSpeed = 10000.0f;
+			float ConsideredDistanceScalar = CameraDistanceScalar;
 			
 			// Position by another actor
 			bool bAlone = true;
@@ -375,11 +380,12 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Framing up first actor with their own velocity
 			FVector Actor1Velocity = (Actor1->GetVelocity()) * CustomTimeDilation;
-			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size(), 1.0f, MaxMoveSpeed); // Prev. 350
-			VelocityCameraSpeed = CameraMoveSpeed * (FMath::Sqrt(SafeVelocitySize)) * DeltaTime;
-			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 1.0f, CameraMaxSpeed);
+			Actor1Velocity.Z *= 0.5f;
+			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size(), 0.01f, MaxMoveSpeed); // Prev. 350
+			VelocityCameraSpeed = CameraMoveSpeed * SafeVelocitySize * DeltaTime;
+			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 0.1f, CameraMaxSpeed);
 
-			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase); // *GTimeScale); // * TimeDilationScalarClamped
+			FVector LocalPos = Actor1->GetActorLocation(); // +(Actor1Velocity * CameraVelocityChase); // *GTimeScale); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 
 			// Setting up distance and speed dynamics
@@ -412,19 +418,19 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				{
 					bAlone = false;
 
-					// Framing up with second actor
-					FVector Actor2Velocity = (Actor2->GetVelocity()) * CustomTimeDilation;
-					float SafeVelocitySize = FMath::Clamp(Actor2Velocity.Size(), 1.0f, MaxMoveSpeed);
-					VelocityCameraSpeed = CameraMoveSpeed * (FMath::Sqrt(SafeVelocitySize)) * DeltaTime;
-					VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 1.0f, CameraMaxSpeed);
-					
-					
-					Actor2Velocity = Actor2Velocity.GetClampedToSize(1.0f, 1500.0f) * 0.5f; // *CustomTimeDilation);
-					///Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(15000.0f * (CustomTimeDilation + 0.5f));
-					Actor2Velocity.Z *= 0.85f;
+					//// Framing up with second actor
+					//FVector Actor2Velocity = (Actor2->GetVelocity()) * CustomTimeDilation;
+					//float SafeVelocitySize = FMath::Clamp(Actor2Velocity.Size(), 1.0f, MaxMoveSpeed);
+					//VelocityCameraSpeed = CameraMoveSpeed * (FMath::Sqrt(SafeVelocitySize)) * DeltaTime;
+					//VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 1.0f, CameraMaxSpeed);
+					//
+					//
+					//Actor2Velocity = Actor2Velocity.GetClampedToSize(1.0f, 1500.0f) * 0.5f; // *CustomTimeDilation);
+					/////Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(15000.0f * (CustomTimeDilation + 0.5f));
+					//Actor2Velocity.Z *= 0.85f;
 
 					// Declare Position Two
-					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase * CustomTimeDilation);
+					FVector PairFraming = Actor2->GetActorLocation(); //  +(Actor2Velocity * CameraVelocityChase * CustomTimeDilation);
 					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, VelocityCameraSpeed);
 				}
 			}
@@ -434,11 +440,11 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				
 				// Framing lone player by their velocity
-				Actor1Velocity = (Actor1->GetVelocity()) * CustomTimeDilation;
+				//Actor1Velocity = (Actor1->GetVelocity()) * CustomTimeDilation;
 
 				// Clamp to max size
-				Actor1Velocity = Actor1Velocity.GetClampedToSize(105.0f, 1500.0f); // *CustomTimeDilation);
-				Actor1Velocity.Z *= 0.85f;
+				//Actor1Velocity = Actor1Velocity.GetClampedToSize(105.0f, 1500.0f); // *CustomTimeDilation);
+				//Actor1Velocity.Z *= 0.85f;
 
 				// Smooth-over low velocities with a standard framing
 				/*if (Actor1Velocity.Size() < 300.0f)
@@ -447,7 +453,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}*/
 
 				// Declare Position Two
-				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity * CameraSoloVelocityChase);
+				FVector VelocityFraming = Actor1->GetActorLocation(); // +(Actor1Velocity * CameraSoloVelocityChase);
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, (VelocityCameraSpeed * 0.5f)); // UnDilatedDeltaTime
 				
 				// Distance controls

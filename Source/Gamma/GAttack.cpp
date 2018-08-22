@@ -77,6 +77,7 @@ void AGAttack::BeginPlay()
 	{
 		InitAttack(this, 1.0f, 0.0f);
 		AttackParticles->ActivateSystem();
+		numHits = 1;
 	}
 }
 
@@ -195,7 +196,7 @@ void AGAttack::Tick(float DeltaTime)
 	{
 		// Recoil &
 		// Init Success
-		if ((OwningShooter != nullptr) && (CurrentMatch != nullptr))
+		if (!bHit && (OwningShooter != nullptr) && (CurrentMatch != nullptr))
 		{
 			ACharacter* Chara = Cast<ACharacter>(OwningShooter);
 			if (Chara != nullptr)
@@ -228,7 +229,12 @@ void AGAttack::Tick(float DeltaTime)
 				// Take the first shot
 				HitTimer = (1.0f / HitsPerSecond);
 				bLethal = true;
-				DetectHit(GetActorForwardVector());
+				
+				
+				if (HitsPerSecond > 0.0f)
+				{
+					DetectHit(GetActorForwardVector());
+				}
 
 				// Visual trim
 				if (AttackParticles != nullptr)
@@ -357,7 +363,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		TArray<AActor*> IgnoredActors;
 		IgnoredActors.Add(OwningShooter);
 
-		FVector Start = GetActorLocation() + (GetActorForwardVector() * -10.0f);
+		FVector Start = GetActorLocation() + (GetActorForwardVector() * -150.0f);
 		Start.Y = 0.0f;
 		FVector End = Start + (RaycastVector * RaycastHitRange);
 		End.Y = 0.0f; /// strange y-axis drift
@@ -459,12 +465,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 	/// The knock itself
 	FVector AwayFromAttack = (HitPoint - OwningShooter->GetActorLocation()).GetSafeNormal(); // previously this actor's location
 	FVector AttackForward = GetActorForwardVector().GetSafeNormal();
-	if (ActorHasTag("Obstacle"))
-	{
-		AttackForward = FVector::ZeroVector;
-		AwayFromAttack = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-	}
-	FVector KnockVector = (AwayFromAttack + (AttackForward * 0.5f));
+	
 
 	//FVector AwayFromAttack = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	//float TimeDilat = //UGameplayStatics::GetGlobalTimeDilation(GetWorld());
@@ -474,14 +475,24 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 	float MagnitudeScalar = FMath::Square(1.0f + AttackMagnitude);
 	float KnockScalar = FMath::Abs(KineticForce) * HitsScalar * MagnitudeScalar;
 
-	/// Trim the vector to favor widescreen
+	// Special care for obstacles
+	if (ActorHasTag("Obstacle"))
+	{
+		AttackForward = FVector::UpVector;
+		AwayFromAttack = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+		KnockScalar = KineticForce;
+	}
+
+	// Got the knockback
+	FVector KnockVector = (AwayFromAttack + (AttackForward * 0.5f));
 	KnockVector.Z *= 0.55f;
 
 	/// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
 	if (Chara != nullptr)
 	{
-		Chara->GetCharacterMovement()->AddImpulse(KnockVector * KnockScalar);
+		bool bVelocityOverride = bHit;
+		Chara->GetCharacterMovement()->AddImpulse(KnockVector * KnockScalar, bVelocityOverride);
 	}
 	else
 	{
@@ -503,8 +514,11 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 		if ((HitMeshComponent != nullptr)
 			&& HitMeshComponent->IsSimulatingPhysics())
 		{
-			HitMeshComponent->AddImpulseAtLocation(KnockVector * KnockScalar * 1000.0f, HitPoint);
+			float MassScalar = 10000000.0f * HitMeshComponent->GetMass() * HitMeshComponent->GetMassScale();
+			HitMeshComponent->AddImpulseAtLocation(KnockVector * KnockScalar * MassScalar, HitPoint);
 		}
+
+		///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("Hit for %f!"), 0.1f));
 	}
 }
 
@@ -514,7 +528,10 @@ void AGAttack::ReportHit(AActor* HitActor)
 	if (HasAuthority())
 	{
 		/// Track hitscale curvature for increasing knockback and damage
-		numHits = FMath::Clamp((numHits += 1), 1, 15); /// (numHits += (numHits - 1)), 2, 9
+		if (!ActorHasTag("Obstacle"))
+		{
+			numHits += 1; /// (numHits += (numHits - 1)), 2, 9
+		}
 
 		/// Damage
 		AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
@@ -618,7 +635,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 
 			// Collide off shield
 			if (OtherAttack->ActorHasTag("Shield")
-				&& !OtherAttack->ActorHasTag("Obstacle"))
+				|| OtherAttack->ActorHasTag("Obstacle"))
 			{
 				// Spawn blocked fx
 				if (BlockedClass != nullptr)
@@ -632,11 +649,14 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 				//ApplyKnockback(OwningShooter, GetActorLocation());
 
 				// Nerf the attack
-				HitsPerSecond *= 0.1f;
+				
+				
 
 				if (!ActorHasTag("Obstacle"))
 				{
 					bLethal = false;
+					HitsPerSecond = 0.0f;
+					bHit = true;
 				}
 			}
 			
@@ -673,6 +693,41 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 
 	if (bSuccessfulHit)
 	{
+		// Real hit Consequences
+		if (bLethal && !HitActor->ActorHasTag("Attack")
+			&& !HitActor->ActorHasTag("Doomed")) /// && (HitTimer >= (1.0f / HitsPerSecond)))
+		{
+			// Spawn the basic damage smoke
+			// 'Freefire' attacks always attach to the hitactor
+			if (!LockedEmitPoint)
+			{
+				SpawnDamage(HitActor, HitPoint);
+			}
+			else // 'Locked' attacks ie. sword
+			{
+				float Rando = FMath::FRand();
+				if ((Rando >= 0.5f) || ActorHasTag("Obstacle"))
+				{
+					SpawnDamage(HitActor, HitPoint);
+				}
+				else
+				{
+					SpawnDamage(this, HitPoint);
+				}
+			}
+
+			ApplyKnockback(HitActor, HitPoint);
+
+			if (!ActorHasTag("Obstacle") && (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f))
+			{
+				ReportHit(HitActor);
+			}
+			else
+			{
+				return;
+			}
+		}
+
 		bHit = true;
 		HitTimer = 0.0f;
 
@@ -687,36 +742,9 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 			LethalTime += (NewLifespan * 0.99f);
 		}
 		
-		// Real hit Consequences
-		if (bLethal && !HitActor->ActorHasTag("Attack")
-			&& !HitActor->ActorHasTag("Doomed")) /// && (HitTimer >= (1.0f / HitsPerSecond)))
-		{
-			ApplyKnockback(HitActor, HitPoint);
+		
 
-			if (!ActorHasTag("Obstacle") && (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f))
-			{
-				ReportHit(HitActor);
-			}
-		}
-
-		// Spawn the basic damage smoke
-		// 'Freefire' attacks always attach to the hitactor
-		if (!LockedEmitPoint)
-		{
-			SpawnDamage(HitActor, HitPoint);
-		}
-		else // 'Locked' attacks ie. sword
-		{
-			float Rando = FMath::FRand();
-			if ((Rando >= 0.5f) || ActorHasTag("Obstacle"))
-			{
-				SpawnDamage(HitActor, HitPoint);
-			}
-			else
-			{
-				SpawnDamage(this, HitPoint);
-			}
-		}
+		
 
 		// Stick-in for 'solid' attacks
 		if (HitActor->ActorHasTag("Wall")
