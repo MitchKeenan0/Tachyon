@@ -35,14 +35,8 @@ void AGMatch::Tick(float DeltaTime)
 	if (!bGG)
 	{
 		GetPlayers();
-	}
-	
-
-	// Timescaling
-	/*if (Role == ROLE_Authority)
-	{
 		HandleTimeScale(DeltaTime);
-	}*/
+	}
 }
 
 
@@ -87,34 +81,24 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 				// Freezing time to glacial
 				SetTimeScale(GGTimescale);
 
-				// Award winner with a star ;P
-				FString DecoratedName = FString(Shooter->GetCharacterName().Append("*"));
-				Shooter->SetCharacterName(DecoratedName);
-
 				// Erase Bots
 				if (Reciever->ActorHasTag("Bot"))
 				{
 					Reciever->Tags.Add("Doomed");
 				}
 			}
-			//else
-			//{
-			//	// Hit-confirm timescaling
-			//	float CurrentTScale = Shooter->CustomTimeDilation;
-			//	float NewTScale = CurrentTScale * 0.11f;
-			//	NewTScale = FMath::Clamp(NewTScale, GGTimescale * 0.1f, 1.0f);
 
-			//	//Shooter->NewTimescale(NewTScale);
-			//	//Reciever->NewTimescale(NewTScale);
-
-			//	bMinorGG = true;
-			//}
-
-			// Warning
-			// Just above ^^ these may have been deleted
-			/*ForceNetUpdate();
-			Shooter->ForceNetUpdate();
-			Reciever->ForceNetUpdate();*/
+			// Just a hit?
+			else
+			{
+				// Timescale slowering
+				float GlobalTime = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+				float HitTime = GGTimescale * 10.0f;
+				if (GlobalTime != HitTime)
+				{
+					SetTimeScale(HitTime);
+				}
+			}
 		}
 
 		// Basic GG to catch enviro kills
@@ -135,10 +119,11 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 
 void AGMatch::HandleTimeScale(float Delta)
 {
-	float TimeToSet = 1.0f;
-	if (bGG && (GGDelayTimer >= GGDelayTime))
+	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+	if (TimeDilat < 1.0f)
 	{
-		SetTimeScale(GGTimescale);
+		float ReturnTime = FMath::FInterpConstantTo(TimeDilat, NaturalTimeScale, Delta, TimescaleRecoverySpeed);
+		SetTimeScale(ReturnTime);
 		//TimeToSet = GGTimescale;
 		GGDelayTimer = 0.0f;
 	}

@@ -265,7 +265,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 
 		// Locator scaling
-		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.01f)
 		{
 			LocatorScaling();
 		}
@@ -392,7 +392,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			float GTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 			float ChargeScalar = FMath::Clamp((FMath::Sqrt(Charge - 0.9f)), 0.1f, ChargeMax);
 			float SizeScalar = 1.0f; /// GetCapsuleComponent()->GetComponentScale().Size()
-			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.5f;
+			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.39f;
 			float PersonalScalar = (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * (FMath::Sqrt(SafeVelocitySize) * 0.06f);
 			float CameraMinimumDistance = (1100.0f + PersonalScalar) * CameraDistanceScalar;
 			float CameraMaxDistance = 1551000.0f;
@@ -403,7 +403,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				
 				// Distance check i.e pair bounds
-				float PairDistanceThreshold = 3200.0f;
+				float PairDistanceThreshold = Actor1->GetVelocity().Size(); /// formerly 3000.0f
 				if (this->ActorHasTag("Spectator"))
 				{
 					PairDistanceThreshold *= 3.3f;
@@ -413,8 +413,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float Vertical = FMath::Abs((Actor2->GetActorLocation() - Actor1->GetActorLocation()).Z);
 				bool bInRange = (FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= PairDistanceThreshold)
 					&& (Vertical <= (PairDistanceThreshold * 0.55f));
+				bool TargetVisible = Actor2->WasRecentlyRendered(0.2f);
 				
-				if (bInRange)
+				if (bInRange && TargetVisible)
 				{
 					bAlone = false;
 
@@ -510,7 +511,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Set Camera Distance
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength,
-					TargetLengthClamped, DeltaTime, (VelocityCameraSpeed * 0.5f));
+					TargetLengthClamped, DeltaTime, (VelocityCameraSpeed * 0.215f));
 					
 				// Camera tilt
 				FRotator FTarget = FRotator::ZeroRotator;
@@ -558,7 +559,7 @@ void AGammaCharacter::ResetLocator()
 void AGammaCharacter::LocatorScaling()
 {
 	// Player locator
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.01f)
 	{
 		// Scaling down
 		if (Locator->RelativeScale3D.Size() >= 0.01f)
@@ -835,7 +836,7 @@ void AGammaCharacter::MoveUp(float Value)
 // SET X & Z SERVERSIDE
 void AGammaCharacter::SetX(float Value, float MoveScalar)
 {
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.01f)
 	{
 		InputX = Value;
 		if (Value != 0.0f)
@@ -873,7 +874,7 @@ bool AGammaCharacter::ServerSetX_Validate(float Value, float MoveScalar)
 
 void AGammaCharacter::SetZ(float Value, float MoveScalar)
 {
-	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.01f)
 	{
 		InputZ = Value;
 		if (Value != 0.0f)
@@ -1020,22 +1021,19 @@ void AGammaCharacter::KickPropulsion()
 	
 	// Force, clamp, & effect chara movement
 	float DeltaTime = GetWorld()->DeltaTimeSeconds;
-	float FreshKickSpeed = 250000.0f;
-	KickVector = MoveInputVector
-		* FreshKickSpeed
-		* DeltaTime;
-
-	// Trimming
+	float FreshKickSpeed = 1250000.0f;
+	KickVector = MoveInputVector * FreshKickSpeed;
 	KickVector.Z *= 0.9f;
 	KickVector.Y = 0.0f;
-	KickVector -= (GetVelocity() * 0.5f);
+	KickVector -= (CurrentVelocity * 0.5f);
+	KickVector *= DeltaTime;
 
 	///GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Cyan, FString::Printf(TEXT("kick   %f"), KickVector.Size()));
 
 	// Initial kick for good feels
 	if ((GetActiveBoost() == nullptr) && (BoostClass != nullptr))
 	{
-		GetCharacterMovement()->AddImpulse(KickVector * 50.0f);
+		GetCharacterMovement()->AddImpulse(KickVector);
 
 		if (HasAuthority())
 		{
@@ -1053,7 +1051,7 @@ void AGammaCharacter::KickPropulsion()
 	if ((GetActiveBoost() != nullptr) && (ActiveChargeParticles != nullptr)
 		&& (GetCharacterMovement() != nullptr))
 	{
-		GetCharacterMovement()->AddImpulse(KickVector);
+		GetCharacterMovement()->AddImpulse(KickVector * 0.5f);
 
 		//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("MoveInputVector  %f"), MoveInputVector.Size()));
 		//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
@@ -1141,7 +1139,7 @@ void AGammaCharacter::RaiseCharge()
 	}
 	else
 	{
-		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.3f)
+		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.01f)
 		{
 			// Noobish recovery from empty-case -1 charge
 			if (Charge < 0.0f) {
@@ -1299,7 +1297,7 @@ void AGammaCharacter::ReleaseAttack()
 			&& ((ActiveAttack == nullptr) || bMultipleAttacks)
 			&& (GetActiveSecondary() == nullptr)
 			&& (PrefireTimer > 0.0f)
-			&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
+			&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.01f))
 		{
 
 			// Aim by InputY
@@ -1411,7 +1409,7 @@ bool AGammaCharacter::ServerReleaseAttack_Validate()
 void AGammaCharacter::FireSecondary()
 {
 	if (SecondaryClass && (ActiveSecondary == nullptr)
-		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.3f))
+		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.01f))
 	{
 		// Cancel the Flash and Attack
 		if (GetActiveFlash() != nullptr)

@@ -201,7 +201,7 @@ void AGAttack::Tick(float DeltaTime)
 			ACharacter* Chara = Cast<ACharacter>(OwningShooter);
 			if (Chara != nullptr)
 			{
-				float RecoilScalar = -15.0f * (FMath::Abs(KineticForce) * FMath::Clamp(AttackMagnitude, 0.2f, 1.0f));
+				float RecoilScalar = (FMath::Abs(KineticForce) * (-1000.0f * FMath::Clamp(AttackMagnitude, 0.2f, 1.0f)));
 				FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
 				FRotator RecoilRotator = LocalForward.Rotation() + FRotator(ShotDirection * ShootingAngle, 0.0f, 0.0f);
 				Chara->GetCharacterMovement()->AddImpulse(RecoilRotator.Vector() * RecoilScalar);
