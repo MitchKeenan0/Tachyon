@@ -253,24 +253,40 @@ void AGammaAIController::Tactical(FVector Target)
 		{
 
 			AGAttack* CurrentAttack = Cast<AGAttack>(AttackActors[i]);
-			if (CurrentAttack != nullptr)
+			if ((CurrentAttack != nullptr)
+				&& (!CurrentAttack->ActorHasTag("Obstacle")))
 			{
 
-				FVector AttackLocation = CurrentAttack->GetActorLocation();
-				FVector AttackForward = CurrentAttack->GetActorForwardVector();
-				float DistToAttack = FVector::Dist(MyPawn->GetActorLocation(), AttackLocation);
-				if ((DistToAttack > 100.0f)
-					&& (DistToAttack < 2000.0f))
+				if (LineOfSightTo(CurrentAttack, MyPawn->GetActorLocation()))
 				{
 					
-					AimAtTarget(CurrentAttack);
+					
 
-					FVector ToAttackNorm = (AttackLocation - MyPawn->GetActorLocation()).GetSafeNormal();
-					FVector LocalNorm = MyCharacter->GetAttackScene()->GetForwardVector().GetSafeNormal();
-					float DotToAttack = FVector::DotProduct(LocalNorm, ToAttackNorm);
-					if (DotToAttack > 0.0f)
+					FVector AttackLocation = CurrentAttack->GetActorLocation();
+					FVector IncomingVector = AttackLocation - MyPawn->GetActorLocation();
+					FVector AttackForward = CurrentAttack->GetActorForwardVector();
+
+					// Determine if it's ours by (pfft) dot product
+					FVector AttackNorm = AttackForward.GetSafeNormal();
+					FVector IncomNorm = IncomingVector.GetSafeNormal();
+					float AttackDot = FVector::DotProduct(AttackNorm, IncomNorm);
+					if (AttackDot < 0.0f)
 					{
-						MyCharacter->CheckSecondaryOn();
+						float DistToAttack = IncomingVector.Size();
+						if ((DistToAttack > 100.0f)
+							&& (DistToAttack < 2000.0f))
+						{
+
+							AimAtTarget(CurrentAttack);
+
+							FVector ToAttackNorm = (AttackLocation - MyPawn->GetActorLocation()).GetSafeNormal();
+							FVector LocalNorm = MyCharacter->GetAttackScene()->GetForwardVector().GetSafeNormal();
+							float DotToAttack = FVector::DotProduct(LocalNorm, ToAttackNorm);
+							if (DotToAttack > 0.0f)
+							{
+								MyCharacter->CheckSecondaryOn();
+							}
+						}
 					}
 				}
 			}
@@ -391,32 +407,21 @@ void AGammaAIController::Tactical(FVector Target)
 				float XTarget = FMath::Clamp(ToPlayer.X, -1.0f, 1.0f);
 				MyCharacter->SetX(XTarget, 1.0f);
 				
-				// Fire Secondary
-				if (RandomDc < SecoVal
-					&& (ToPlayer.Size() <= SecondaryRange)
-					&& !MyCharacter->GetActiveSecondary())
+				// Init Attack
+				if (ToPlayer.Size() <= PrimaryRange)
 				{
-					MyCharacter->CheckSecondaryOn();
+					if (MyCharacter->GetActiveFlash() == nullptr)
+					{
+						MyCharacter->CheckAttackOn();
+					}
+					else if ((MyCharacter->GetActiveFlash() != nullptr) && (MyCharacter->GetPrefireTime() >= 0.1f))
+					{
+						MyCharacter->CheckAttackOff(); /// will trigger an attack if prefire-timer > 0
+					}
 				}
-				else
+				else if (MyCharacter->GetPrefireTime() >= 0.1f)
 				{
-
-					// Init Attack
-					if (ToPlayer.Size() <= PrimaryRange)
-					{
-						if (MyCharacter->GetActiveFlash() == nullptr)
-						{
-							MyCharacter->CheckAttackOn();
-						}
-						else if ((MyCharacter->GetActiveFlash() != nullptr) && (MyCharacter->GetPrefireTime() >= 0.1f))
-						{
-							MyCharacter->CheckAttackOff(); /// will trigger an attack if prefire-timer > 0
-						}
-					}
-					else if (MyCharacter->GetPrefireTime() >= 0.1f)
-					{
-						MyCharacter->CheckAttackOff();
-					}
+					MyCharacter->CheckAttackOff();
 				}
 			}
 		}
