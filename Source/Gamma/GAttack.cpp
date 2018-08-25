@@ -630,6 +630,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 
 			if (ActorHasTag("Swarm") && HitActor->ActorHasTag("Swarm"))
 			{
+				HitActor->Destroy();
 				return;
 			}
 

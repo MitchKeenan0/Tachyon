@@ -403,7 +403,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				
 				// Distance check i.e pair bounds
-				float PairDistanceThreshold = FMath::Clamp(Actor1->GetVelocity().Size(), 1000.0f, 3000.0f); /// formerly 3000.0f
+				float PairDistanceThreshold = FMath::Clamp(Actor1->GetVelocity().Size(), 3000.0f, 15000.0f); /// formerly 3000.0f
 				if (this->ActorHasTag("Spectator"))
 				{
 					PairDistanceThreshold *= 3.3f;
