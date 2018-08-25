@@ -106,7 +106,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		{
 			DurationTime = DurationTime + (AttackMagnitude * MagnitudeTimeScalar);
 		}
-		LethalTime = DurationTime * 0.99f;
+		LethalTime = DurationTime * 0.88f;
 		DynamicLifetime = DurationTime;
 		SetLifeSpan(DurationTime);
 
@@ -192,7 +192,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 void AGAttack::Tick(float DeltaTime)
 {
 	if (!bLethal && (GetGameTimeSinceCreation() > RefireTime)
-		&& (GetGameTimeSinceCreation() < (RefireTime * 2.0f))) /// for attacks being blocked later
+		&& (GetGameTimeSinceCreation() < 0.215f)) /// for attacks being blocked later
 	{
 		// Recoil &
 		// Init Success
