@@ -514,7 +514,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 		if ((HitMeshComponent != nullptr)
 			&& HitMeshComponent->IsSimulatingPhysics())
 		{
-			float MassScalar = 10000000.0f * HitMeshComponent->GetMass() * HitMeshComponent->GetMassScale();
+			float MassScalar = (HitMeshComponent->GetMass() * HitMeshComponent->GetMassScale()) * 0.01f;
 			HitMeshComponent->AddImpulseAtLocation(KnockVector * KnockScalar * MassScalar, HitPoint);
 		}
 
