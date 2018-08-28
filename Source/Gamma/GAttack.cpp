@@ -56,7 +56,7 @@ void AGAttack::BeginPlay()
 	if (AttackSound != nullptr)
 	{
 		float Current = AttackSound->PitchMultiplier;
-		float Spinoff = Current + FMath::FRandRange(-0.3f, 0.3f);
+		float Spinoff = Current + FMath::FRandRange(0.2f, 0.3f);
 		AttackSound->SetPitchMultiplier(Spinoff);
 	}
 
@@ -106,7 +106,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		{
 			DurationTime = DurationTime + (AttackMagnitude * MagnitudeTimeScalar);
 		}
-		LethalTime = DurationTime * 0.88f;
+		LethalTime = DurationTime * 0.97f;
 		DynamicLifetime = DurationTime;
 		SetLifeSpan(DurationTime);
 
