@@ -719,7 +719,7 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 			// Player killed fx
 			if ((KilledFX != nullptr)
 				&& (ActiveKilledFX == nullptr)
-				&& (Health <= 1.0f))
+				&& (Health <= 5.0f))
 			{
 				FActorSpawnParameters SpawnParams;
 				ActiveKilledFX = GetWorld()->SpawnActor<AActor>(KilledFX, GetActorLocation(), GetActorRotation(), SpawnParams);
@@ -767,6 +767,11 @@ void AGammaCharacter::MoveRight(float Value)
 {
 	float MoveByDot = 0.0f;
 
+	if (!ActorHasTag("Bot"))
+	{
+		SetX(Value, MoveByDot);
+	}
+
 	if (!bSliding && (Timescale > 0.215f))
 	{
 		FVector MoveInput = FVector(InputX, 0.0f, InputZ).GetSafeNormal();
@@ -791,16 +796,18 @@ void AGammaCharacter::MoveRight(float Value)
 		}
 	}
 
-	if (!ActorHasTag("Bot"))
-	{
-		SetX(Value, MoveByDot);
-	}
+	
 }
 
 // MOVE UP / DOWN
 void AGammaCharacter::MoveUp(float Value)
 {
 	float MoveByDot = 0.0f;
+
+	if (!ActorHasTag("Bot"))
+	{
+		SetZ(Value, MoveByDot);
+	}
 
 	if (!bSliding && (Timescale > 0.215f))
 	{
@@ -826,10 +833,7 @@ void AGammaCharacter::MoveUp(float Value)
 		}
 	}
 
-	if (!ActorHasTag("Bot"))
-	{
-		SetZ(Value, MoveByDot);
-	}
+	
 }
 
 // SET X & Z SERVERSIDE
