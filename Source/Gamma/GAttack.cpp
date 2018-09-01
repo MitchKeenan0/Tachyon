@@ -201,7 +201,7 @@ void AGAttack::Tick(float DeltaTime)
 			ACharacter* Chara = Cast<ACharacter>(OwningShooter);
 			if (Chara != nullptr)
 			{
-				float RecoilScalar = (FMath::Abs(KineticForce) * (-1000.0f * FMath::Clamp(AttackMagnitude, 0.2f, 1.0f)));
+				float RecoilScalar = (FMath::Abs(KineticForce) * (-500.0f * FMath::Clamp(AttackMagnitude, 0.2f, 1.0f)));
 				FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
 				FRotator RecoilRotator = LocalForward.Rotation() + FRotator(ShotDirection * ShootingAngle, 0.0f, 0.0f);
 				Chara->GetCharacterMovement()->AddImpulse(RecoilRotator.Vector() * RecoilScalar);
@@ -470,8 +470,8 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 	//FVector AwayFromAttack = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	//float TimeDilat = //UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 	//TimeDilat = FMath::Clamp(TimeDilat, 0.01f, 0.15f);
-	float SafeHits = FMath::Clamp(numHits, 1, 15);
-	float HitsScalar = 1.0f + (2.0f / SafeHits);
+	float SafeHits = FMath::Clamp(numHits, 1, 3);
+	float HitsScalar = SafeHits; /// 1.0f + (2.0f / SafeHits);
 	float MagnitudeScalar = FMath::Square(1.0f + AttackMagnitude);
 	float KnockScalar = FMath::Abs(KineticForce) * HitsScalar * MagnitudeScalar;
 

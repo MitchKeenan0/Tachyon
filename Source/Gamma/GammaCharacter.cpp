@@ -403,7 +403,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				
 				// Distance check i.e pair bounds
-				float PairDistanceThreshold = FMath::Clamp(Actor1->GetVelocity().Size(), 3000.0f, 15000.0f); /// formerly 3000.0f
+				float PairDistanceThreshold = FMath::Clamp(Actor1->GetVelocity().Size(), 2100.0f, 15000.0f); /// formerly 3000.0f
 				if (this->ActorHasTag("Spectator"))
 				{
 					PairDistanceThreshold *= 3.3f;
@@ -538,9 +538,20 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				SideViewCameraComponent->SetRelativeRotation(FTarget);
 				SideViewCameraComponent->OrthoWidth = (DesiredCameraDistance);
 
+				// Narrowing for 'closeup'
+				float BetweenFighters = (PositionOne - PositionTwo).Size();
+				if (BetweenFighters <= 800.0f)
+				{
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 36.0f, DeltaTime, 25.0f);
+				}
+				else
+				{
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 50.0f, DeltaTime, 35.0f);
+				}
+
 				/// debug Velocity size
 				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,
-					FColor::White, FString::Printf(TEXT("DesiredCameraDistance: %f"), DesiredCameraDistance));*/
+					FColor::White, FString::Printf(TEXT("distance between fighters:  %f"), BetweenFighters));*/
 			}
 		}
 	}

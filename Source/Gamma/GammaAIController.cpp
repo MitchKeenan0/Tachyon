@@ -363,9 +363,12 @@ void AGammaAIController::Tactical(FVector Target)
 			else
 			{
 				// Charge
-				if (MyCharacter->GetCharge() <= 3.0f) /// dirty hardcode!
+				float MyVelocity = MyCharacter->GetCharacterMovement()->Velocity.Size();
+				bool FastEnough = (MyVelocity >= FMath::FRandRange(300.0f, 1000.0f));
+				bool ChargeRoomy = (MyCharacter->GetCharge() <= 3.0f); /// dirty hardcode!
+				if (!FastEnough && ChargeRoomy)
 				{
-					MyCharacter->CheckPowerSlideOff();
+					//MyCharacter->CheckPowerSlideOff();
 					MyCharacter->RaiseCharge();
 				}
 			}
