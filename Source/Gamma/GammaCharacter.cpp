@@ -383,7 +383,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			Actor1Velocity.Z *= 0.5f;
 			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size(), 0.01f, MaxMoveSpeed * 0.1f); // Prev. 350
 			VelocityCameraSpeed = CameraMoveSpeed * SafeVelocitySize * DeltaTime;
-			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 0.1f, CameraMaxSpeed);
+			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 0.01f, CameraMaxSpeed);
 
 			FVector LocalPos = Actor1->GetActorLocation(); // +(Actor1Velocity * CameraVelocityChase); // *GTimeScale); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
@@ -393,7 +393,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			float ChargeScalar = FMath::Clamp((FMath::Sqrt(Charge - 0.9f)), 0.1f, ChargeMax);
 			float SizeScalar = 1.0f; /// GetCapsuleComponent()->GetComponentScale().Size()
 			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.39f;
-			float PersonalScalar = 1.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * (FMath::Sqrt(SafeVelocitySize) * 0.06f);
+			float PersonalScalar = 1.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * (FMath::Sqrt(SafeVelocitySize) * DeltaTime);
 			float CameraMinimumDistance = PersonalScalar * CameraDistanceScalar; // (1100.0f + PersonalScalar)
 			float CameraMaxDistance = 11551000.0f;
 

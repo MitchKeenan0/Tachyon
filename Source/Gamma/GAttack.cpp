@@ -363,12 +363,12 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		TArray<AActor*> IgnoredActors;
 		IgnoredActors.Add(OwningShooter);
 
-		FVector Start = GetActorLocation() + (GetActorForwardVector() * -150.0f);
+		FVector Start = GetActorLocation() + (GetActorForwardVector() * -100.0f);
 		Start.Y = 0.0f;
 		FVector End = Start + (RaycastVector * RaycastHitRange);
 		End.Y = 0.0f; /// strange y-axis drift
 
-		FHitResult Hit;
+		
 
 		// Swords, etc, get tangible ray space
 		if (bRaycastOnMesh && (AttackSprite->GetSprite() != nullptr))
@@ -381,8 +381,10 @@ void AGAttack::DetectHit(FVector RaycastVector)
 			End.Y = 0.0f;
 		}
 
+		TArray<FHitResult> Hits;
+
 		// Pew pew
-		bool HitResult = UKismetSystemLibrary::LineTraceSingleForObjects(
+		bool HitResult = UKismetSystemLibrary::LineTraceMultiForObjects(
 			this,
 			Start,
 			End,
@@ -390,18 +392,22 @@ void AGAttack::DetectHit(FVector RaycastVector)
 			false,
 			IgnoredActors,
 			EDrawDebugTrace::None,
-			Hit,
+			Hits,
 			true,
 			FLinearColor::White, FLinearColor::Red, 5.0f);
 
 		if (HitResult)
 		{
-			//FVector ClosestHit = Hit.Component.Get()->GetClosestPointOnCollision(Hit.ImpactPoint, Hit.ImpactPoint);
-			HitActor = Hit.Actor.Get();
-			if ((HitActor != nullptr)
-				&& (HitActor != OwningShooter))
+			int NumHits = Hits.Num();
+			for (int i = 0; i < NumHits; ++i)
 			{
-				HitEffects(HitActor, Hit.ImpactPoint);
+				HitActor = Hits[i].Actor.Get();
+				if ((HitActor != nullptr)
+					&& (HitActor != OwningShooter)
+					&& (HitActor->WasRecentlyRendered(0.2f)))
+				{
+					HitEffects(HitActor, Hits[i].ImpactPoint);
+				}
 			}
 		}
 	}
@@ -610,6 +616,16 @@ void AGAttack::Nullify(int AttackType)
 
 void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 {
+	// Check for forwardness
+	FVector ShooterForward = OwningShooter->GetActorForwardVector().GetSafeNormal();
+	FVector ToHitPoint = (HitPoint - OwningShooter->GetActorLocation()).GetSafeNormal();
+	FVector AttackForward = GetActorForwardVector().GetSafeNormal();
+	float DotToHit = FVector::DotProduct(ShooterForward, ToHitPoint);
+	if (DotToHit < 0.0f)
+	{
+		return;
+	}
+
 	bool bSuccessfulHit = false;
 
 	// Hit another attack?
