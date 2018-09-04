@@ -380,10 +380,10 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Framing up first actor with their own velocity
 			FVector Actor1Velocity = (Actor1->GetVelocity()) * CustomTimeDilation;
-			Actor1Velocity.Z *= 0.5f;
-			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size(), 0.01f, MaxMoveSpeed * 0.1f); // Prev. 350
+			Actor1Velocity.Z *= 0.77f;
+			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size(), 1.0f, MaxMoveSpeed * 0.1f); // Prev. 350
 			VelocityCameraSpeed = CameraMoveSpeed * SafeVelocitySize * DeltaTime;
-			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 0.01f, CameraMaxSpeed);
+			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 1.0f, CameraMaxSpeed);
 
 			FVector LocalPos = Actor1->GetActorLocation(); // +(Actor1Velocity * CameraVelocityChase); // *GTimeScale); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
@@ -394,7 +394,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			float SizeScalar = 1.0f; /// GetCapsuleComponent()->GetComponentScale().Size()
 			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.39f;
 			float PersonalScalar = 1.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * (FMath::Sqrt(SafeVelocitySize) * DeltaTime);
-			float CameraMinimumDistance = PersonalScalar * CameraDistanceScalar; // (1100.0f + PersonalScalar)
+			float CameraMinimumDistance = 250.0f + PersonalScalar * CameraDistanceScalar; // (1100.0f + PersonalScalar)
 			float CameraMaxDistance = 11551000.0f;
 
 
@@ -403,7 +403,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				
 				// Distance check i.e pair bounds
-				float PairDistanceThreshold = FMath::Clamp(Actor1->GetVelocity().Size(), 2100.0f, 15000.0f); /// formerly 3000.0f
+				float PairDistanceThreshold = FMath::Clamp(Actor1->GetVelocity().Size(), 5000.0f, 15000.0f); /// formerly 3000.0f
 				if (this->ActorHasTag("Spectator"))
 				{
 					PairDistanceThreshold *= 3.3f;
@@ -532,12 +532,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				//Midpoint.X -= (CameraTiltZ * DesiredCameraDistance) * DeltaTime;
 				//Midpoint.Z -= (CameraTiltX * DesiredCameraDistance) * DeltaTime;
 
-				// Make it so
-				CameraBoom->SetWorldLocation(Midpoint);
-				CameraBoom->TargetArmLength = DesiredCameraDistance * FMath::Clamp(GTimeScale, 0.999f, 1.0f);
-				SideViewCameraComponent->SetRelativeRotation(FTarget);
-				SideViewCameraComponent->OrthoWidth = (DesiredCameraDistance);
-
 				// Narrowing for 'closeup'
 				float BetweenFighters = (PositionOne - PositionTwo).Size();
 				if (BetweenFighters <= 800.0f)
@@ -548,6 +542,14 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				{
 					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 50.0f, DeltaTime, 35.0f);
 				}
+
+				// Make it so
+				CameraBoom->SetWorldLocation(Midpoint);
+				CameraBoom->TargetArmLength = DesiredCameraDistance * FMath::Clamp(GTimeScale, 0.999f, 1.0f);
+				SideViewCameraComponent->SetRelativeRotation(FTarget);
+				SideViewCameraComponent->OrthoWidth = (DesiredCameraDistance);
+
+				
 
 				/// debug Velocity size
 				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,

@@ -621,7 +621,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	FVector ToHitPoint = (HitPoint - OwningShooter->GetActorLocation()).GetSafeNormal();
 	FVector AttackForward = GetActorForwardVector().GetSafeNormal();
 	float DotToHit = FVector::DotProduct(ShooterForward, ToHitPoint);
-	if (DotToHit < 0.0f)
+	if ((!ActorHasTag("Solid")) && (DotToHit < 0.0f))
 	{
 		return;
 	}
