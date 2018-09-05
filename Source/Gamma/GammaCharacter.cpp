@@ -235,12 +235,12 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 		if (TravelDirection < 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 180.0f, Roll), DeltaTime, 15.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 180.0f, Roll), DeltaTime, 21.0f);
 			Controller->SetControlRotation(Fint);
 		}
 		else if (TravelDirection > 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 0.0f, -Roll), DeltaTime, 15.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 0.0f, -Roll), DeltaTime, 21.0f);
 			Controller->SetControlRotation(Fint);
 		}
 
@@ -253,12 +253,12 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 			if (Controller->GetControlRotation().Yaw > 90.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 180.0f, -Roll), DeltaTime, 5.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 180.0f, -Roll), DeltaTime, 21.0f);
 				Controller->SetControlRotation(Fint);
 			}
 			else
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 0.0f, Roll), DeltaTime, 5.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 0.0f, Roll), DeltaTime, 21.0f);
 				Controller->SetControlRotation(Fint);
 			}
 		}
@@ -297,10 +297,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 	AActor* Actor2 = nullptr;
 
 	// Poll for framing actors
-	if ((Actor1 == nullptr) && (Actor2 == nullptr))
-	{
-		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
-	}
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
 	///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("FramingActors Num:  %i"), FramingActors.Num()));
 	/// TODO - add defense on running get?
 	
@@ -379,13 +376,13 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			
 
 			// Framing up first actor with their own velocity
-			FVector Actor1Velocity = (Actor1->GetVelocity()) * CustomTimeDilation;
+			FVector Actor1Velocity = (Actor1->GetVelocity()); // *CustomTimeDilation;
 			Actor1Velocity.Z *= 0.77f;
 			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size(), 1.0f, MaxMoveSpeed * 0.1f); // Prev. 350
 			VelocityCameraSpeed = CameraMoveSpeed * SafeVelocitySize * DeltaTime;
 			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 1.0f, CameraMaxSpeed);
 
-			FVector LocalPos = Actor1->GetActorLocation(); // +(Actor1Velocity * CameraVelocityChase); // *GTimeScale); // * TimeDilationScalarClamped
+			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase * DeltaTime); // *GTimeScale); // * TimeDilationScalarClamped
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 
 			// Setting up distance and speed dynamics
@@ -394,7 +391,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			float SizeScalar = 1.0f; /// GetCapsuleComponent()->GetComponentScale().Size()
 			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.39f;
 			float PersonalScalar = 1.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * (FMath::Sqrt(SafeVelocitySize) * DeltaTime);
-			float CameraMinimumDistance = 250.0f + PersonalScalar * CameraDistanceScalar; // (1100.0f + PersonalScalar)
+			float CameraMinimumDistance = 2500.0f + (PersonalScalar * CameraDistanceScalar); // (1100.0f + PersonalScalar)
 			float CameraMaxDistance = 11551000.0f;
 
 
@@ -413,14 +410,14 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float Vertical = FMath::Abs((Actor2->GetActorLocation() - Actor1->GetActorLocation()).Z);
 				bool bInRange = (FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= PairDistanceThreshold)
 					&& (Vertical <= (PairDistanceThreshold * 0.55f));
-				bool TargetVisible = Actor2->WasRecentlyRendered(0.2f);
+				bool TargetVisible = Actor2->WasRecentlyRendered(0.5f);
 				
 				if (bInRange && TargetVisible)
 				{
 					bAlone = false;
 
 					//// Framing up with second actor
-					//FVector Actor2Velocity = (Actor2->GetVelocity()) * CustomTimeDilation;
+					FVector Actor2Velocity = (Actor2->GetVelocity()); // *CustomTimeDilation;
 					//float SafeVelocitySize = FMath::Clamp(Actor2Velocity.Size(), 1.0f, MaxMoveSpeed);
 					//VelocityCameraSpeed = CameraMoveSpeed * (FMath::Sqrt(SafeVelocitySize)) * DeltaTime;
 					//VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 1.0f, CameraMaxSpeed);
@@ -431,7 +428,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					//Actor2Velocity.Z *= 0.85f;
 
 					// Declare Position Two
-					FVector PairFraming = Actor2->GetActorLocation(); //  +(Actor2Velocity * CameraVelocityChase * CustomTimeDilation);
+					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase * DeltaTime);
 					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, VelocityCameraSpeed);
 				}
 			}
@@ -454,7 +451,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}*/
 
 				// Declare Position Two
-				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity * CameraSoloVelocityChase * 0.5f);
+				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity * CameraSoloVelocityChase * DeltaTime);
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, VelocityCameraSpeed); // UnDilatedDeltaTime
 				
 				// Distance controls
@@ -534,13 +531,17 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Narrowing for 'closeup'
 				float BetweenFighters = (PositionOne - PositionTwo).Size();
-				if (BetweenFighters <= 800.0f)
+				if ((BetweenFighters <= 250.0f) && !bAlone)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 36.0f, DeltaTime, 25.0f);
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 30.0f, DeltaTime, 50.0f);
+				}
+				else if ((BetweenFighters <= 800.0f) && !bAlone)
+				{
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 36.0f, DeltaTime, 40.0f);
 				}
 				else
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 50.0f, DeltaTime, 35.0f);
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 51.0f, DeltaTime, 50.0f);
 				}
 
 				// Make it so
@@ -562,7 +563,11 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 void AGammaCharacter::ResetLocator()
 {
-	Locator->SetRelativeScale3D(FVector(25.0f, 25.0f, 25.0f));
+	FVector ResetSize = FVector(25.0f, 25.0f, 25.0f);
+	if (bSliding){
+		ResetSize *= 0.02f;
+	}
+	Locator->SetRelativeScale3D(ResetSize);
 	TextComponent->SetText(FText::FromString(CharacterName));
 	ClearFlash();
 }
@@ -1865,6 +1870,7 @@ void AGammaCharacter::PowerSlideEngage()
 		// Zoom camera
 		// Disengage resets to 5x to restore
 		CameraMoveSpeed *= 0.2f;
+		ResetLocator();
 
 		// Netcode emissary
 		if (Role < ROLE_Authority)

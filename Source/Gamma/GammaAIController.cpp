@@ -368,8 +368,8 @@ void AGammaAIController::Tactical(FVector Target)
 				bool ChargeRoomy = (MyCharacter->GetCharge() <= 3.0f); /// dirty hardcode!
 				if (!FastEnough && ChargeRoomy)
 				{
-					//MyCharacter->CheckPowerSlideOff();
 					MyCharacter->RaiseCharge();
+					MyCharacter->CheckPowerSlideOff();
 				}
 			}
 		}
