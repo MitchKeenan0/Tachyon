@@ -377,7 +377,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Framing up first actor with their own velocity
 			FVector Actor1Velocity = (Actor1->GetVelocity()); // *CustomTimeDilation;
-			Actor1Velocity.Z *= 0.77f;
+			Actor1Velocity.Z *= 0.9f;
 			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size(), 1.0f, MaxMoveSpeed * 0.1f); // Prev. 350
 			VelocityCameraSpeed = CameraMoveSpeed * SafeVelocitySize * DeltaTime;
 			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 1.0f, CameraMaxSpeed);
@@ -387,7 +387,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Setting up distance and speed dynamics
 			float GTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
-			float ChargeScalar = FMath::Clamp((FMath::Sqrt(Charge - 0.9f)), 0.1f, ChargeMax);
+			float ChargeScalar = FMath::Clamp((FMath::Sqrt(Charge - 0.9f)), 1.0f, ChargeMax);
 			float SizeScalar = 1.0f; /// GetCapsuleComponent()->GetComponentScale().Size()
 			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.39f;
 			float PersonalScalar = 1.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * (FMath::Sqrt(SafeVelocitySize) * DeltaTime);
@@ -533,15 +533,15 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float BetweenFighters = (PositionOne - PositionTwo).Size();
 				if ((BetweenFighters <= 250.0f) && !bAlone)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 30.0f, DeltaTime, 50.0f);
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 35.0f, DeltaTime, 20.0f);
 				}
 				else if ((BetweenFighters <= 800.0f) && !bAlone)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 36.0f, DeltaTime, 40.0f);
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 40.0f, DeltaTime, 25.0f);
 				}
 				else
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 51.0f, DeltaTime, 50.0f);
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 50.0f, DeltaTime, 35.0f);
 				}
 
 				// Make it so
