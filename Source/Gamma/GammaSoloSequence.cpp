@@ -106,10 +106,7 @@ void AGammaSoloSequence::MainSequence(float DeltaTime)
 			AquirePlayer();
 		}
 
-		if (NumDenizens() < MaxLiveUnits)
-		{
-			SpawnDenizen();
-		}
+		SpawnDenizen();
 	}
 }
 
@@ -244,7 +241,7 @@ void AGammaSoloSequence::SpawnDenizen()
 	}
 
 	// OBSTACLE SPAWNING ////////////////////////////////////////////////
-	if (bSpawnObstacles && ObstacleArray.Num() < MaxObstacles)
+	if (bSpawnObstacles && (ObstacleArray.Num() < MaxObstacles))
 	{
 
 		// Random spawning object
@@ -327,7 +324,7 @@ int AGammaSoloSequence::NumDenizens()
 					if (ThisObs != nullptr)
 					{
 						float DistToObs = FVector::Dist(ThisObs->GetActorLocation(), Player->GetActorLocation());
-						if (DistToObs >= 15000.0f)
+						if (DistToObs >= 3500.0f)
 						{
 							ThisObs->Destroy();
 							ThisObs = nullptr;

@@ -534,11 +534,11 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float ScalarSize = FMath::Clamp(BetweenFighters * 0.001f, 0.1f, 10.0f);
 				if ((BetweenFighters <= 250.0f) && !bAlone)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 35.0f, DeltaTime, 30.0f * ScalarSize); // 20*
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 33.0f, DeltaTime, 30.0f * ScalarSize); // 20*
 				}
 				else if ((BetweenFighters <= 1000.0f) && !bAlone)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 40.0f, DeltaTime, 30.0f * ScalarSize); // 25*
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 39.0f, DeltaTime, 30.0f * ScalarSize); // 25*
 				}
 				else
 				{
