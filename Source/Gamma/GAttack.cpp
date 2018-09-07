@@ -476,8 +476,8 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 	//FVector AwayFromAttack = (HitActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	//float TimeDilat = //UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 	//TimeDilat = FMath::Clamp(TimeDilat, 0.01f, 0.15f);
-	float SafeHits = FMath::Clamp(numHits, 1, 3);
-	float HitsScalar = SafeHits; /// 1.0f + (2.0f / SafeHits);
+	float SafeHits = FMath::Clamp(numHits, 1, 5);
+	float HitsScalar = (1.0f / SafeHits); /// 1.0f + (2.0f / SafeHits);
 	float MagnitudeScalar = FMath::Square(1.0f + AttackMagnitude);
 	float KnockScalar = FMath::Abs(KineticForce) * HitsScalar * MagnitudeScalar;
 
@@ -491,14 +491,14 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 
 	// Got the knockback
 	FVector KnockVector = (AwayFromAttack + (AttackForward * 0.5f));
-	KnockVector.Z *= 0.55f;
+	KnockVector.Z *= 0.77f;
 
 	/// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
 	if (Chara != nullptr)
 	{
 		bool bVelocityOverride = bHit;
-		Chara->GetCharacterMovement()->AddImpulse(KnockVector * KnockScalar, bVelocityOverride);
+		Chara->GetCharacterMovement()->AddImpulse(KnockVector * KnockScalar * 3.3f, bVelocityOverride);
 	}
 	else
 	{
@@ -520,7 +520,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 		if ((HitMeshComponent != nullptr)
 			&& HitMeshComponent->IsSimulatingPhysics())
 		{
-			float MassScalar = (HitMeshComponent->GetMass() * HitMeshComponent->GetMassScale()) * 0.01f;
+			float MassScalar = ((HitMeshComponent->GetMass() * HitMeshComponent->GetMassScale())) * 0.05f;
 			HitMeshComponent->AddImpulseAtLocation(KnockVector * KnockScalar * MassScalar, HitPoint);
 		}
 

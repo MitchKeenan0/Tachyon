@@ -169,7 +169,7 @@ void AGammaCharacter::BeginPlay()
 	CameraBoom->SetRelativeLocation(PlayerLocation);
 	PositionOne = PlayerLocation;
 	PositionTwo = PlayerLocation;
-	CameraBoom->TargetArmLength = 9000.0f;
+	CameraBoom->TargetArmLength = 90.0f;
 
 	// Sprite Scaling
 	float ClampedCharge = FMath::Clamp(Charge * 0.7f, 1.0f, ChargeMax);
@@ -400,17 +400,21 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			{
 				
 				// Distance check i.e pair bounds
-				float PairDistanceThreshold = FMath::Clamp(Actor1->GetVelocity().Size(), 5000.0f, 15000.0f); /// formerly 3000.0f
+				float PairDistanceThreshold = FMath::Clamp(Actor1->GetVelocity().Size(), 3000.0f, 15000.0f); /// formerly 3000.0f
 				if (this->ActorHasTag("Spectator"))
 				{
 					PairDistanceThreshold *= 3.3f;
+				}
+				if (!Actor2->ActorHasTag("Player"))
+				{
+					PairDistanceThreshold *= 0.5f;
 				}
 				
 				// Special care taken for vertical as we are probably widescreen
 				float Vertical = FMath::Abs((Actor2->GetActorLocation() - Actor1->GetActorLocation()).Z);
 				bool bInRange = (FVector::Dist(Actor1->GetActorLocation(), Actor2->GetActorLocation()) <= PairDistanceThreshold)
 					&& (Vertical <= (PairDistanceThreshold * 0.55f));
-				bool TargetVisible = Actor2->WasRecentlyRendered(0.5f);
+				bool TargetVisible = Actor2->WasRecentlyRendered(0.2f);
 				
 				if (bInRange && TargetVisible)
 				{
@@ -430,6 +434,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					// Declare Position Two
 					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase * DeltaTime);
 					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, VelocityCameraSpeed);
+
+					// Distance controls
+					ConsideredDistanceScalar *= 1.5f;
 				}
 			}
 			
@@ -455,7 +462,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, VelocityCameraSpeed); // UnDilatedDeltaTime
 				
 				// Distance controls
-				ConsideredDistanceScalar *= 1.5f;
+				ConsideredDistanceScalar *= 2.5f;
 
 				Actor2 = nullptr;
 			}
@@ -463,11 +470,14 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Positions done
 			// Find the midpoint
-			FVector TargetMidpoint = PositionOne + ((PositionTwo - PositionOne) * 0.5f);
-			float DistanceToTargetScalar = FVector::Dist(TargetMidpoint, CameraBoom->GetComponentLocation()) * 0.1f;
+			float MidpointBias = 0.5f;
+			/*if ((Actor2 != nullptr) && !Actor2->ActorHasTag("Player")) {
+				MidpointBias = 0.2f; /// super jerky
+			}*/
+			FVector TargetMidpoint = PositionOne + ((PositionTwo - PositionOne) * MidpointBias);
+			float MidpointInterpSpeed = FMath::Clamp(TargetMidpoint.Size(), 50.0f, 555.5f);
 			
-			Midpoint = TargetMidpoint;
-				///FMath::VInterpTo(Midpoint, TargetMidpoint, DeltaTime, DistanceToTargetScalar);
+			Midpoint = FMath::VInterpTo(Midpoint, TargetMidpoint, DeltaTime, MidpointInterpSpeed);
 			if (Midpoint.Size() > 0.0f)
 			{
 
@@ -534,15 +544,15 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				float ScalarSize = FMath::Clamp(BetweenFighters * 0.001f, 0.1f, 10.0f);
 				if ((BetweenFighters <= 250.0f) && !bAlone)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 33.0f, DeltaTime, 30.0f * ScalarSize); // 20*
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 21.0f, DeltaTime, 20.0f * ScalarSize); // 20*
 				}
 				else if ((BetweenFighters <= 1000.0f) && !bAlone)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 39.0f, DeltaTime, 30.0f * ScalarSize); // 25*
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 26.0f, DeltaTime, 10.0f * ScalarSize); // 25*
 				}
 				else
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 50.0f, DeltaTime, 35.0f * ScalarSize); // 35*
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 36.0f, DeltaTime, 25.0f * ScalarSize); // 35*
 				}
 
 				// Make it so
@@ -673,9 +683,13 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 			for (int i = 0; i < LightsNum; ++i)
 			{
 				UPointLightComponent* CurrentLight = PointLights[i];
-				float NewLightIntensity = (1000.0f * Charge) + 100.0f;
-				CurrentLight->Intensity = NewLightIntensity;
-				///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::White, FString::Printf(TEXT("NewLightIntensity  %f"), NewLightIntensity));
+				
+				float SafeCharge = FMath::Clamp(Charge, 0.1f, ChargeMax);
+				float NewLightIntensity = FMath::Square(SafeCharge) * 2000.0f;
+				float Intensity = FMath::Clamp(NewLightIntensity, 320.0f, 32000.0f);
+				
+				CurrentLight->SetIntensity(Intensity);
+				CurrentLight->UpdateColorAndBrightness();
 			}
 		}
 		
