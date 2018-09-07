@@ -531,17 +531,18 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Narrowing for 'closeup'
 				float BetweenFighters = (PositionOne - PositionTwo).Size();
+				float ScalarSize = FMath::Clamp(BetweenFighters * 0.001f, 0.1f, 10.0f);
 				if ((BetweenFighters <= 250.0f) && !bAlone)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 35.0f, DeltaTime, 20.0f);
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 35.0f, DeltaTime, 30.0f * ScalarSize); // 20*
 				}
-				else if ((BetweenFighters <= 800.0f) && !bAlone)
+				else if ((BetweenFighters <= 1000.0f) && !bAlone)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 40.0f, DeltaTime, 25.0f);
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 40.0f, DeltaTime, 30.0f * ScalarSize); // 25*
 				}
 				else
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 50.0f, DeltaTime, 35.0f);
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 50.0f, DeltaTime, 35.0f * ScalarSize); // 35*
 				}
 
 				// Make it so
