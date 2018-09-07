@@ -218,6 +218,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		PlayerPosition.Z = FMath::Clamp(PlayerPosition.Z, -3000.0f, 10000.0f);
 		SetActorLocation(PlayerPosition);*/
 
+		// Timescale recovery
 		//float GlobalTimeDil = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 		//if (GlobalTimeDil > 0.3f)
 		//{
@@ -227,20 +228,20 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		//	///GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("t: %f"), t));
 		//}
 
-
 		// Set rotation so character faces direction of travel
 		float TravelDirection = FMath::Clamp(InputX, -1.0f, 1.0f);
 		float ClimbDirection = FMath::Clamp(InputZ, -1.0f, 1.0f) * 5.0f;
 		float Roll = FMath::Clamp(InputZ, -1.0f, 1.0f) * 15.0f;
+		float RotatoeSpeed = 15.0f;
 
 		if (TravelDirection < 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 180.0f, Roll), DeltaTime, 21.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 180.0f, Roll), DeltaTime, RotatoeSpeed);
 			Controller->SetControlRotation(Fint);
 		}
 		else if (TravelDirection > 0.0f)
 		{
-			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 0.0f, -Roll), DeltaTime, 21.0f);
+			FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 0.0f, -Roll), DeltaTime, RotatoeSpeed);
 			Controller->SetControlRotation(Fint);
 		}
 
@@ -253,12 +254,12 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 
 			if (Controller->GetControlRotation().Yaw > 90.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 180.0f, -Roll), DeltaTime, 21.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 180.0f, -Roll), DeltaTime, RotatoeSpeed);
 				Controller->SetControlRotation(Fint);
 			}
 			else
 			{
-				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 0.0f, Roll), DeltaTime, 21.0f);
+				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 0.0f, Roll), DeltaTime, RotatoeSpeed);
 				Controller->SetControlRotation(Fint);
 			}
 		}
@@ -269,22 +270,7 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		{
 			LocatorScaling();
 		}
-
-		// AfterImage rotation
-		
 	}
-
-	//// Move timing and clamp
-	//if (GetCharacterMovement() && !bMoved) //  HasAuthority() && 
-	//{
-	//	// Clamp velocity
-	//	/*float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-	//	float TimeScalar = FMath::Abs(SlowmoMoveBoost * (1 / TimeDilat));
-	//	GetCharacterMovement()->Velocity = 
-	//		GetCharacterMovement()->Velocity.GetClampedToSize(0.0f, MaxMoveSpeed * MoveFreshMultiplier * TimeScalar);*/
-
-	//	MoveTimer += GetWorld()->DeltaTimeSeconds;
-	//}
 }
 
 
@@ -421,16 +407,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					bAlone = false;
 
 					//// Framing up with second actor
-					FVector Actor2Velocity = (Actor2->GetVelocity()); // *CustomTimeDilation;
-					//float SafeVelocitySize = FMath::Clamp(Actor2Velocity.Size(), 1.0f, MaxMoveSpeed);
-					//VelocityCameraSpeed = CameraMoveSpeed * (FMath::Sqrt(SafeVelocitySize)) * DeltaTime;
-					//VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 1.0f, CameraMaxSpeed);
-					//
-					//
-					//Actor2Velocity = Actor2Velocity.GetClampedToSize(1.0f, 1500.0f) * 0.5f; // *CustomTimeDilation);
-					/////Actor2Velocity = Actor2Velocity.GetClampedToMaxSize(15000.0f * (CustomTimeDilation + 0.5f));
-					//Actor2Velocity.Z *= 0.85f;
-
+					FVector Actor2Velocity = (Actor2->GetVelocity());
+					
 					// Declare Position Two
 					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase * DeltaTime);
 					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, VelocityCameraSpeed);
@@ -443,19 +421,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			// Lone player gets Velocity Framing
 			if (bAlone || (FramingActors.Num() == 1))
 			{
-				
 				// Framing lone player by their velocity
-				Actor1Velocity = (Actor1->GetVelocity()); //  *CustomTimeDilation;
-
-				// Clamp to max size
-				//Actor1Velocity = Actor1Velocity.GetClampedToSize(105.0f, 1500.0f); // *CustomTimeDilation);
-				//Actor1Velocity.Z *= 0.85f;
-
-				// Smooth-over low velocities with a standard framing
-				/*if (Actor1Velocity.Size() < 300.0f)
-				{
-					Actor1Velocity = GetActorForwardVector() * 521.0f;
-				}*/
+				Actor1Velocity = (Actor1->GetVelocity());
 
 				// Declare Position Two
 				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity * CameraSoloVelocityChase * DeltaTime);
@@ -539,20 +506,20 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				//Midpoint.X -= (CameraTiltZ * DesiredCameraDistance) * DeltaTime;
 				//Midpoint.Z -= (CameraTiltX * DesiredCameraDistance) * DeltaTime;
 
-				// Narrowing for 'closeup'
+				// Narrowing and expanding camera FOV for closeup and outer zones
 				float BetweenFighters = (PositionOne - PositionTwo).Size();
 				float ScalarSize = FMath::Clamp(BetweenFighters * 0.001f, 0.1f, 10.0f);
 				if ((BetweenFighters <= 250.0f) && !bAlone)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 21.0f, DeltaTime, 20.0f * ScalarSize); // 20*
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 21.0f, DeltaTime, 20.0f * ScalarSize);
 				}
 				else if ((BetweenFighters <= 1000.0f) && !bAlone)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 26.0f, DeltaTime, 10.0f * ScalarSize); // 25*
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 26.0f, DeltaTime, 10.0f * ScalarSize);
 				}
 				else
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 36.0f, DeltaTime, 25.0f * ScalarSize); // 35*
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 36.0f, DeltaTime, 25.0f * ScalarSize);
 				}
 
 				// Make it so

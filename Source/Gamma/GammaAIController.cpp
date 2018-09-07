@@ -370,6 +370,7 @@ void AGammaAIController::Tactical(FVector Target)
 				{
 					MyCharacter->RaiseCharge();
 					MyCharacter->CheckPowerSlideOff();
+					GetNewLocationTarget();
 				}
 			}
 		}
@@ -469,14 +470,14 @@ FVector AGammaAIController::GetNewLocationTarget()
 		RandomOffset.Z *= 0.25f;
 
 		// Take care to avoid crossing Player's line of fire
-		float VerticalDistToPlayer = FMath::Abs((Result - MyPawn->GetActorLocation()).Z);
+		/*float VerticalDistToPlayer = FMath::Abs((Result - MyPawn->GetActorLocation()).Z);
 		/// Currently this is really just shaving AI's intended location vertically
 		/// Depending on whether we're closer to world centre. Roookie!
 		if ((VerticalDistToPlayer >= 500.0f)
 			&& ( FMath::Abs(RandomOffset.Z) > FMath::Abs(PlayerVelocity.Z) ))
 		{
 			RandomOffset.Z *= (-0.15f);
-		}
+		}*/
 
 		// And serve
 		Result = (PlayerAtSpeed + RandomOffset);
@@ -506,7 +507,7 @@ void AGammaAIController::NavigateTo(FVector Target)
 
 	// Have we reached target?
 	/// Or are we too far out vertically?
-	if (ToTarget.Size() < 500.0f) /// || (ToTarget.Z > (ToTarget.X * 1.5f))
+	if (ToTarget.Size() < 50.0f) /// || (ToTarget.Z > (ToTarget.X * 1.5f))
 	{
 		LocationTarget = FVector::ZeroVector;
 		bCourseLayedIn = false;
@@ -554,17 +555,18 @@ void AGammaAIController::NavigateTo(FVector Target)
 		float TravelDirection = FMath::Clamp(ValueX, -1.0f, 1.0f);
 		float ClimbDirection = FMath::Clamp(ValueZ, -1.0f, 1.0f) * 5.0f;
 		float Roll = FMath::Clamp(ValueZ, -1.0f, 1.0f) * 15.0f;
+		float RotatoeSpeed = 15.0f;
 
 		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.25f)
 		{
 			if (ValueX < 0.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(ClimbDirection, 180.0f, Roll), GetWorld()->DeltaTimeSeconds, 15.0f);
+				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(ClimbDirection, 180.0f, Roll), GetWorld()->DeltaTimeSeconds, RotatoeSpeed);
 				SetControlRotation(Fint);
 			}
 			else if (ValueX > 0.0f)
 			{
-				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(ClimbDirection, 0.0f, -Roll), GetWorld()->DeltaTimeSeconds, 15.0f);
+				FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(ClimbDirection, 0.0f, -Roll), GetWorld()->DeltaTimeSeconds, RotatoeSpeed);
 				SetControlRotation(Fint);
 			}
 			else
@@ -572,12 +574,12 @@ void AGammaAIController::NavigateTo(FVector Target)
 				// No Input - finish rotation
 				if (GetControlRotation().Yaw > 90.0f)
 				{
-					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(ClimbDirection, 180.0f, -Roll), GetWorld()->DeltaTimeSeconds, 5.0f);
+					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(ClimbDirection, 180.0f, -Roll), GetWorld()->DeltaTimeSeconds, RotatoeSpeed);
 					SetControlRotation(Fint);
 				}
 				else
 				{
-					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(ClimbDirection, 0.0f, Roll), GetWorld()->DeltaTimeSeconds, 5.0f);
+					FRotator Fint = FMath::RInterpTo(GetControlRotation(), FRotator(ClimbDirection, 0.0f, Roll), GetWorld()->DeltaTimeSeconds, RotatoeSpeed);
 					SetControlRotation(Fint);
 				}
 			}
