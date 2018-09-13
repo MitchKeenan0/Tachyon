@@ -114,6 +114,15 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			}
 		}
 	}
+	if (HitActor->ActorHasTag("Shield"))
+	{
+		float GlobalTime = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+		float HitTime = GGTimescale * 10.0f;
+		if (GlobalTime != HitTime)
+		{
+			SetTimeScale(HitTime);
+		}
+	}
 }
 
 

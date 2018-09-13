@@ -49,7 +49,7 @@ void AGAttack::BeginPlay()
 	bHit = false;
 	bLethal = false;
 	SetLifeSpan(DurationTime);
-	AttackDamage = 5.0f;
+	AttackDamage = 10.0f;
 	numHits = 0;
 
 	// Add natural deviancy to sound
@@ -111,7 +111,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		SetLifeSpan(DurationTime);
 
 		// Scale HitsPerSecond by Magnitude
-		HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 1.0f, 100.0f);
+		HitsPerSecond = FMath::Clamp(HitsPerSecond * AttackMagnitude, 1.0f, 1000.0f);
 
 
 		// Update to direction after fire
@@ -272,13 +272,13 @@ void AGAttack::Tick(float DeltaTime)
 
 		// Check for end of game
 		float Timespeed = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
-		if (Timespeed < 0.5f)
+		if (Timespeed < 0.15f)
 		{
 			return;
 		}
 
 		LifeTimer += DeltaTime;
-		HitTimer += (DeltaTime * CustomTimeDilation);
+		HitTimer += (DeltaTime * (1.0f / Timespeed));
 		
 		// Healthy attack activities
 		if (bLethal)
@@ -490,8 +490,10 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 	}
 
 	// Got the knockback
-	FVector KnockVector = (AwayFromAttack + (AttackForward * 0.5f));
-	KnockVector.Z *= 0.77f;
+	FVector KnockVector = (AwayFromAttack + (AttackForward * 0.5f)).GetSafeNormal();
+	float DirRecalc = ShotDirection * ShootingAngle;
+	FRotator FireRotation = KnockVector.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
+	KnockVector = FireRotation.Vector();
 
 	/// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
@@ -628,6 +630,22 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 
 	bool bSuccessfulHit = false;
 
+
+	// Hit-slow on characters
+	AGammaCharacter* HitCharacter = Cast<AGammaCharacter>(HitActor);
+	if ((HitCharacter != nullptr))
+	{
+		HitCharacter->GetMovementComponent()->Velocity *= FireDelay;
+	}
+	//if (HitActor->ActorHasTag("Swarm")
+	if ((ProjectileSpeed != 0.0f)
+		&& (ActorHasTag("Solid")))
+	{
+		float HitSpeedScalarSafe = FMath::Clamp(FireDelay, 0.21f, 1.0f);
+		ProjectileComponent->Velocity *= HitSpeedScalarSafe;
+	}
+
+
 	// Hit another attack?
 	AGAttack* OtherAttack = Cast<AGAttack>(HitActor);
 	if (OtherAttack != nullptr)
@@ -691,19 +709,6 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 		}
 	}
 
-	// Hit-slow
-	AGammaCharacter* HitCharacter = Cast<AGammaCharacter>(HitActor);
-	if ((HitCharacter != nullptr))
-	{
-		HitCharacter->GetMovementComponent()->Velocity *= FireDelay;
-	}
-	//if (HitActor->ActorHasTag("Swarm")
-	if ((ProjectileSpeed != 0.0f)
-		&& (ActorHasTag("Solid")))
-	{
-		float HitSpeedScalarSafe = FMath::Clamp(FireDelay, 0.21f, 1.0f);
-		ProjectileComponent->Velocity *= HitSpeedScalarSafe;
-	}
 
 	// All's good if we got here
 	bSuccessfulHit = true;
@@ -745,11 +750,17 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 			}
 		}
 
+		// Update hit status
 		bHit = true;
 		HitTimer = 0.0f;
+		if (!bSecondary)
+		{
+			HitsPerSecond *= 0.5f;
+		}
+		
 
 		// Extend lifetime
-		if (GetLifeSpan() < 1.0f)
+		if (GetLifeSpan() < DurationTime)
 		{
 			float CurrentLifespan = GetLifeSpan();
 			float LifeAddition = (1.0f / AttackMagnitude) * 0.2f;

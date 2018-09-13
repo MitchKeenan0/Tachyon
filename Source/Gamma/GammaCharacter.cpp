@@ -442,7 +442,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				MidpointBias = 0.2f; /// super jerky
 			}*/
 			FVector TargetMidpoint = PositionOne + ((PositionTwo - PositionOne) * MidpointBias);
-			float MidpointInterpSpeed = FMath::Clamp(TargetMidpoint.Size(), 50.0f, 555.5f);
+			float MidpointInterpSpeed = FMath::Clamp(TargetMidpoint.Size() * 0.01f, 1.0f, 100.0f);
 			
 			Midpoint = FMath::VInterpTo(Midpoint, TargetMidpoint, DeltaTime, MidpointInterpSpeed);
 			if (Midpoint.Size() > 0.0f)
@@ -473,7 +473,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}
 
 				// Last modifier for global time dilation
-				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld()) * 2.1f;
+				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 				float RefinedGScalar = FMath::Clamp(GlobalTimeScale, 0.5f, 1.0f);
 				TargetLength *= RefinedGScalar;
 
@@ -483,8 +483,9 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					CameraMaxDistance);
 
 				// Set Camera Distance
+				float InverseTimeSpeed = FMath::Clamp((1.0f / GlobalTimeScale), 1.0f, 2.0f);
 				float DesiredCameraDistance = FMath::FInterpTo(GetCameraBoom()->TargetArmLength,
-					TargetLengthClamped, DeltaTime, (VelocityCameraSpeed * 0.215f));
+					TargetLengthClamped, DeltaTime, (VelocityCameraSpeed * 0.5f) * InverseTimeSpeed);
 					
 				// Camera tilt
 				FRotator FTarget = FRotator::ZeroRotator;
@@ -507,32 +508,31 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				//Midpoint.Z -= (CameraTiltX * DesiredCameraDistance) * DeltaTime;
 
 				// Narrowing and expanding camera FOV for closeup and outer zones
-				float BetweenFighters = (PositionOne - PositionTwo).Size();
-				float ScalarSize = FMath::Clamp(BetweenFighters * 0.001f, 0.1f, 10.0f);
-				if ((BetweenFighters <= 250.0f) && !bAlone)
+				float ScalarSize = FMath::Clamp(DistBetweenActors * 0.01f, 0.1f, 10.0f);
+				if ((DistBetweenActors <= 100.0f) && !bAlone)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 21.0f, DeltaTime, 20.0f * ScalarSize);
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 20.0f, DeltaTime, 1.0f * ScalarSize);
 				}
-				else if ((BetweenFighters <= 1000.0f) && !bAlone)
+				else if ((DistBetweenActors <= 1000.0f) && !bAlone)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 26.0f, DeltaTime, 10.0f * ScalarSize);
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 25.0f, DeltaTime, 0.5f * ScalarSize);
 				}
 				else
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 36.0f, DeltaTime, 25.0f * ScalarSize);
+					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 35.0f, DeltaTime, 5.0f * ScalarSize);
 				}
 
 				// Make it so
 				CameraBoom->SetWorldLocation(Midpoint);
-				CameraBoom->TargetArmLength = DesiredCameraDistance * FMath::Clamp(GTimeScale, 0.999f, 1.0f);
+				CameraBoom->TargetArmLength = DesiredCameraDistance;
 				SideViewCameraComponent->SetRelativeRotation(FTarget);
 				SideViewCameraComponent->OrthoWidth = (DesiredCameraDistance);
 
 				
 
 				/// debug Velocity size
-				/*GEngine->AddOnScreenDebugMessage(-1, 0.f,
-					FColor::White, FString::Printf(TEXT("distance between fighters:  %f"), BetweenFighters));*/
+				GEngine->AddOnScreenDebugMessage(-1, 0.f,
+					FColor::White, FString::Printf(TEXT("InverseTimeSpeed:  %f"), InverseTimeSpeed));
 			}
 		}
 	}
@@ -557,11 +557,12 @@ void AGammaCharacter::LocatorScaling()
 	if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.01f)
 	{
 		// Scaling down
-		if (Locator->RelativeScale3D.Size() >= 0.01f)
+		float CurrentSize = Locator->RelativeScale3D.Size();
+		if (CurrentSize >= 0.01f)
 		{
 			float DeltaTime = GetWorld()->DeltaTimeSeconds;
 			FVector BottomSize = FVector(0.01f, 0.01f, 0.01f);
-			FVector ShrinkingSize = FMath::VInterpTo(Locator->RelativeScale3D, BottomSize, DeltaTime, 3.0f); //Locator->RelativeScale3D * 0.93f;
+			FVector ShrinkingSize = FMath::VInterpTo(Locator->RelativeScale3D, BottomSize, DeltaTime, CurrentSize * 10.0f); // 3 //Locator->RelativeScale3D * 0.93f;
 			Locator->SetRelativeScale3D(ShrinkingSize);
 
 			float SpinScalar = 1 + (1000 / Locator->RelativeScale3D.Size());
@@ -695,9 +696,9 @@ void AGammaCharacter::Tick(float DeltaSeconds)
 		{
 			KickPropulsion();
 		}
-		else if (GetActiveBoost() != nullptr)
+		else if ((GetActiveBoost() != nullptr) && !bBoosting)
 		{
-			if (GetActiveBoost()->GetGameTimeSinceCreation() > MoveFreshMultiplier)
+			if (GetActiveBoost()->GetGameTimeSinceCreation() > 0.5f)
 			{
 				DisengageKick();
 			}
@@ -923,6 +924,7 @@ void AGammaCharacter::NewMoveKick()
 	else if (!bBoosting)
 	{
 		bBoosting = true;
+		ResetLocator();
 	}
 }
 void AGammaCharacter::ServerNewMoveKick_Implementation()
@@ -946,33 +948,20 @@ void AGammaCharacter::DisengageKick()
 	// Clear existing boost object
 	if (GetActiveBoost() != nullptr)
 	{
-		if (bSliding || (GetActiveBoost()->GetGameTimeSinceCreation() >= MoveFreshMultiplier))
-		{
-			ActiveBoost->Destroy();
-			ActiveBoost = nullptr;
+		ActiveBoost->Destroy();
+		ActiveBoost = nullptr;
 
-			bBoosting = false;
-			bCharging = false;
+		bBoosting = false;
+		bCharging = false;
 
-			GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed;
+		GetCharacterMovement()->MaxFlySpeed = MaxMoveSpeed;
 
-			PlayerSound->Stop();
-
-			// Clear existing charge object
-			if (ActiveChargeParticles != nullptr)
-			{
-				ActiveChargeParticles->Destroy();
-				ActiveChargeParticles = nullptr;
-			}
-		}
+		PlayerSound->Stop();
 	}
 	if (ActiveChargeParticles != nullptr)
 	{
-		if (bSliding || (ActiveChargeParticles->GetGameTimeSinceCreation() >= MoveFreshMultiplier))
-		{
-			ActiveChargeParticles->Destroy();
-			ActiveChargeParticles = nullptr;
-		}
+		ActiveChargeParticles->Destroy();
+		ActiveChargeParticles = nullptr;
 	}
 }
 void AGammaCharacter::ServerDisengageKick_Implementation()
@@ -1009,7 +998,7 @@ void AGammaCharacter::KickPropulsion()
 		|| (MoveInputVector.X == 0.0f))
 	{
 		MoveInputVector.X = GetActorForwardVector().X;
-		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("Wild boosting  %f"), 1.0f));
+		///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("Wild boosting  %f"), 1.0f));
 	}
 
 	// Air-dodge if handbraking
@@ -1024,11 +1013,11 @@ void AGammaCharacter::KickPropulsion()
 	
 	// Force, clamp, & effect chara movement
 	float DeltaTime = GetWorld()->DeltaTimeSeconds;
-	float FreshKickSpeed = 1250000.0f;
+	float FreshKickSpeed = MoveFreshMultiplier * 11000100.0f;
 	KickVector = MoveInputVector * FreshKickSpeed;
 	KickVector.Z *= 0.9f;
 	KickVector.Y = 0.0f;
-	KickVector -= (CurrentVelocity * 0.5f);
+	KickVector -= (CurrentVelocity * 0.33f);
 	KickVector *= DeltaTime;
 
 	///GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Cyan, FString::Printf(TEXT("kick   %f"), KickVector.Size()));
@@ -1050,26 +1039,33 @@ void AGammaCharacter::KickPropulsion()
 		}
 	}
 
-	// Sustained Propulsion
-	if ((GetActiveBoost() != nullptr) && (ActiveChargeParticles != nullptr)
-		&& (GetCharacterMovement() != nullptr))
+	// Sustained burn propulsion
+	else
 	{
-		GetCharacterMovement()->AddImpulse(KickVector * 0.5f);
-
-		//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("MoveInputVector  %f"), MoveInputVector.Size()));
-		//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
-		//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
-		///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("RelativityToMaxSpeed  %f"), RelativityToMaxSpeed));
-		
+		float Diminishing = FMath::Clamp((1.0f / GetActiveBoost()->GetGameTimeSinceCreation()), 0.9f, 90.0f);
+		GetCharacterMovement()->AddImpulse(KickVector * DeltaTime * Diminishing);
 	}
 
-	if (GetActiveBoost() != nullptr)
+	// Sustained Propulsion
+	//if ((GetActiveBoost() != nullptr) && (ActiveChargeParticles != nullptr)
+	//	&& (GetCharacterMovement() != nullptr))
+	//{
+	//	GetCharacterMovement()->AddImpulse(KickVector * 0.5f);
+
+	//	//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("MoveInputVector  %f"), MoveInputVector.Size()));
+	//	//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
+	//	//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
+	//	///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("RelativityToMaxSpeed  %f"), RelativityToMaxSpeed));
+	//	
+	//}
+
+	/*if (GetActiveBoost() != nullptr)
 	{
 		if (GetActiveBoost()->GetGameTimeSinceCreation() > MoveFreshMultiplier)
 		{
 			DisengageKick();
 		}
-	}
+	}*/
 	
 	if (Role < ROLE_Authority)
 	{

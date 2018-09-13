@@ -104,6 +104,11 @@ void AGammaAIController::Tick(float DeltaSeconds)
 					TravelTimer += DeltaSeconds;
 				}
 			}
+			else
+			{
+				GetNewLocationTarget();
+				TravelTimer = 0.0f;
+			}
 		}
 		else
 		{
@@ -173,7 +178,8 @@ bool AGammaAIController::ReactionTiming(float DeltaTime)
 {
 	bool Result = false;
 	float TimeDilat = MyCharacter->CustomTimeDilation;
-	ReactionTimer += (DeltaTime * TimeDilat);
+	float GlobalTime = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+	ReactionTimer += (DeltaTime * (1.0f / GlobalTime));
 	
 	if (ReactionTimer >= ReactionTime)
 	{
