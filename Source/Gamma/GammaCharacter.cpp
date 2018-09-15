@@ -169,7 +169,7 @@ void AGammaCharacter::BeginPlay()
 	CameraBoom->SetRelativeLocation(PlayerLocation);
 	PositionOne = PlayerLocation;
 	PositionTwo = PlayerLocation;
-	CameraBoom->TargetArmLength = 90.0f;
+	CameraBoom->TargetArmLength = 900.0f;
 
 	// Sprite Scaling
 	float ClampedCharge = FMath::Clamp(Charge * 0.7f, 1.0f, ChargeMax);
@@ -509,30 +509,38 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Narrowing and expanding camera FOV for closeup and outer zones
 				float ScalarSize = FMath::Clamp(DistBetweenActors * 0.01f, 0.1f, 10.0f);
+				float FOVTimeScalar = FMath::Clamp(GlobalTimeScale, 0.5f, 1.0f);
+				float FOV = 35.0f;
+				float FOVSpeed = 1.0f;
+
+				// Inner and Mid zones
 				if ((DistBetweenActors <= 100.0f) && !bAlone)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 20.0f, DeltaTime, 1.0f * ScalarSize);
+					FOV = 22.0f;
 				}
 				else if ((DistBetweenActors <= 1000.0f) && !bAlone)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 25.0f, DeltaTime, 0.5f * ScalarSize);
+					FOV = 26.0f;
 				}
-				else
+				// GGTime Timescale adjustment
+				if (GlobalTimeScale < 0.09f)
 				{
-					SideViewCameraComponent->FieldOfView = FMath::FInterpConstantTo(SideViewCameraComponent->FieldOfView, 35.0f, DeltaTime, 5.0f * ScalarSize);
+					FOV *= FOVTimeScalar;
+					FOVSpeed *= 1.5f;
 				}
+
+				// Set FOV
+				SideViewCameraComponent->FieldOfView = FMath::FInterpTo(
+					SideViewCameraComponent->FieldOfView, 
+					FOV, 
+					DeltaTime, 
+					FOVSpeed * ScalarSize);
 
 				// Make it so
 				CameraBoom->SetWorldLocation(Midpoint);
 				CameraBoom->TargetArmLength = DesiredCameraDistance;
 				SideViewCameraComponent->SetRelativeRotation(FTarget);
 				SideViewCameraComponent->OrthoWidth = (DesiredCameraDistance);
-
-				
-
-				/// debug Velocity size
-				GEngine->AddOnScreenDebugMessage(-1, 0.f,
-					FColor::White, FString::Printf(TEXT("InverseTimeSpeed:  %f"), InverseTimeSpeed));
 			}
 		}
 	}
