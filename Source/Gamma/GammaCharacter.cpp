@@ -362,21 +362,20 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			
 
 			// Framing up first actor with their own velocity
-			FVector Actor1Velocity = (Actor1->GetVelocity()); // *CustomTimeDilation;
+			FVector Actor1Velocity = Actor1->GetVelocity();
 			Actor1Velocity.Z *= 0.9f;
-			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size(), 1.0f, MaxMoveSpeed * 0.1f); // Prev. 350
-			VelocityCameraSpeed = CameraMoveSpeed * SafeVelocitySize * DeltaTime;
-			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 1.0f, CameraMaxSpeed);
+			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size() * 0.01f, 0.01f, 10.0f);
+			VelocityCameraSpeed = CameraMoveSpeed * SafeVelocitySize;
+			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 0.01f, CameraMaxSpeed * 0.1f);
 
-			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * CameraVelocityChase * DeltaTime); // *GTimeScale); // * TimeDilationScalarClamped
+			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * DeltaTime * CameraVelocityChase);
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 
 			// Setting up distance and speed dynamics
 			float GTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 			float ChargeScalar = FMath::Clamp((FMath::Sqrt(Charge - 0.9f)), 1.0f, ChargeMax);
-			float SizeScalar = 1.0f; /// GetCapsuleComponent()->GetComponentScale().Size()
-			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.39f;
-			float PersonalScalar = 1.0f + (36.0f * SizeScalar * ChargeScalar * SpeedScalar) * (FMath::Sqrt(SafeVelocitySize) * DeltaTime);
+			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.3f;
+			float PersonalScalar = 1.0f + (36.0f * ChargeScalar * SpeedScalar) * (FMath::Sqrt(SafeVelocitySize));
 			float CameraMinimumDistance = 2500.0f + (PersonalScalar * CameraDistanceScalar); // (1100.0f + PersonalScalar)
 			float CameraMaxDistance = 11551000.0f;
 
@@ -407,14 +406,11 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 					bAlone = false;
 
 					//// Framing up with second actor
-					FVector Actor2Velocity = (Actor2->GetVelocity());
+					FVector Actor2Velocity = Actor2->GetVelocity();
 					
 					// Declare Position Two
-					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * CameraVelocityChase * DeltaTime);
+					FVector PairFraming = Actor2->GetActorLocation() + (Actor2Velocity * DeltaTime * CameraVelocityChase);
 					PositionTwo = FMath::VInterpTo(PositionTwo, PairFraming, DeltaTime, VelocityCameraSpeed);
-
-					// Distance controls
-					ConsideredDistanceScalar *= 1.5f;
 				}
 			}
 			
@@ -422,14 +418,11 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			if (bAlone || (FramingActors.Num() == 1))
 			{
 				// Framing lone player by their velocity
-				Actor1Velocity = (Actor1->GetVelocity());
+				Actor1Velocity = Actor1->GetVelocity();
 
 				// Declare Position Two
-				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity * CameraSoloVelocityChase * DeltaTime);
-				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, VelocityCameraSpeed); // UnDilatedDeltaTime
-				
-				// Distance controls
-				ConsideredDistanceScalar *= 2.5f;
+				FVector VelocityFraming = Actor1->GetActorLocation() + (Actor1Velocity * DeltaTime * CameraSoloVelocityChase);
+				PositionTwo = FMath::VInterpTo(PositionTwo, VelocityFraming, DeltaTime, VelocityCameraSpeed * 0.5f);
 
 				Actor2 = nullptr;
 			}
@@ -508,25 +501,25 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				//Midpoint.Z -= (CameraTiltX * DesiredCameraDistance) * DeltaTime;
 
 				// Narrowing and expanding camera FOV for closeup and outer zones
-				float ScalarSize = FMath::Clamp(DistBetweenActors * 0.01f, 0.1f, 10.0f);
+				float ScalarSize = FMath::Clamp(DistBetweenActors * 0.005f, 0.03f, 1.0f);
 				float FOVTimeScalar = FMath::Clamp(GlobalTimeScale, 0.5f, 1.0f);
-				float FOV = 35.0f;
+				float FOV = 30.0f;
 				float FOVSpeed = 1.0f;
 
-				// Inner and Mid zones
-				if ((DistBetweenActors <= 100.0f) && !bAlone)
+				// Inner and Outer zones
+				if ((DistBetweenActors <= 90.0f) && !bAlone)
 				{
-					FOV = 22.0f;
+					FOV = 20.0f;
 				}
-				else if ((DistBetweenActors <= 1000.0f) && !bAlone)
+				else if ((DistBetweenActors >= 1000.0f) && !bAlone)
 				{
-					FOV = 26.0f;
+					FOV = 35.0f;
 				}
 				// GGTime Timescale adjustment
-				if (GlobalTimeScale < 0.09f)
+				if (GlobalTimeScale < 0.02f)
 				{
 					FOV *= FOVTimeScalar;
-					FOVSpeed *= 1.5f;
+					FOVSpeed *= 1.2f;
 				}
 
 				// Set FOV
@@ -997,22 +990,21 @@ void AGammaCharacter::KickPropulsion()
 	}
 
 	// Basic propulsive ingredients
-	FVector CurrentVelocity = GetCharacterMovement()->Velocity;
+	float DeltaTime = GetWorld()->DeltaTimeSeconds;
+	FVector CurrentVelocity = GetCharacterMovement()->Velocity * DeltaTime;
 	FVector MoveInputVector = FVector(InputX, 0.0f, InputZ * 0.75f).GetSafeNormal();
-	FVector KickVector = MoveInputVector;
-
+	
 	// Basic thrust if no input
 	if ((MoveInputVector == FVector::ZeroVector)
 		|| (MoveInputVector.X == 0.0f))
 	{
 		MoveInputVector.X = GetActorForwardVector().X;
-		///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("Wild boosting  %f"), 1.0f));
 	}
 
 	// Air-dodge if handbraking
 	if (bSliding)
 	{
-		GetCharacterMovement()->AddImpulse(KickVector * 500000.0f);
+		GetCharacterMovement()->AddImpulse(MoveInputVector * 500000.0f);
 		DisengageKick();
 		bBoosting = false;
 		bCharging = false;
@@ -1020,12 +1012,12 @@ void AGammaCharacter::KickPropulsion()
 	}
 	
 	// Force, clamp, & effect chara movement
-	float DeltaTime = GetWorld()->DeltaTimeSeconds;
-	float FreshKickSpeed = MoveFreshMultiplier * 11000100.0f;
+	FVector KickVector = MoveInputVector;
+	float FreshKickSpeed = MoveFreshMultiplier * 111000.0f;
 	KickVector = MoveInputVector * FreshKickSpeed;
+	KickVector -= (CurrentVelocity * 0.33f);
 	KickVector.Z *= 0.9f;
 	KickVector.Y = 0.0f;
-	KickVector -= (CurrentVelocity * 0.33f);
 	KickVector *= DeltaTime;
 
 	///GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Cyan, FString::Printf(TEXT("kick   %f"), KickVector.Size()));
@@ -1051,29 +1043,8 @@ void AGammaCharacter::KickPropulsion()
 	else
 	{
 		float Diminishing = FMath::Clamp((1.0f / GetActiveBoost()->GetGameTimeSinceCreation()), 0.9f, 90.0f);
-		GetCharacterMovement()->AddImpulse(KickVector * DeltaTime * Diminishing);
+		GetCharacterMovement()->AddImpulse(KickVector * Diminishing);
 	}
-
-	// Sustained Propulsion
-	//if ((GetActiveBoost() != nullptr) && (ActiveChargeParticles != nullptr)
-	//	&& (GetCharacterMovement() != nullptr))
-	//{
-	//	GetCharacterMovement()->AddImpulse(KickVector * 0.5f);
-
-	//	//GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("MoveInputVector  %f"), MoveInputVector.Size()));
-	//	//GEngine->AddOnScreenDebugMessage(-1, 10.5f, FColor::Cyan, FString::Printf(TEXT("dot  %f"), DotScalar));
-	//	//GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Cyan, FString::Printf(TEXT("mass  %f"), GetCharacterMovement()->Mass));
-	//	///GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Cyan, FString::Printf(TEXT("RelativityToMaxSpeed  %f"), RelativityToMaxSpeed));
-	//	
-	//}
-
-	/*if (GetActiveBoost() != nullptr)
-	{
-		if (GetActiveBoost()->GetGameTimeSinceCreation() > MoveFreshMultiplier)
-		{
-			DisengageKick();
-		}
-	}*/
 	
 	if (Role < ROLE_Authority)
 	{
