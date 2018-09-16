@@ -89,7 +89,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		// Set local variables
 		OwningShooter = Shooter;
 		AttackMagnitude = Magnitude;
-		ShotDirection = YScale;
+		ShotDirection = FMath::Clamp(YScale, -1.0f, 1.0f);
 
 		/*if (!bSecondary)
 		{
@@ -251,17 +251,28 @@ void AGAttack::Tick(float DeltaTime)
 			}
 
 			// Last-second redirection
-			float ShooterYaw = OwningShooter->GetActorRotation().Yaw;
+			float ShooterYaw = FMath::Abs(OwningShooter->GetActorRotation().Yaw);
+			GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::White, FString::Printf(TEXT("ShooterYaw %f"), ShooterYaw));
+			
+			float Yaw = 0.0f;
+			if ((ShooterYaw > 50.0f))
+			{
+				Yaw = 180.0f;
+			}
+
+			GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::White, FString::Printf(TEXT("Yaw %f"), Yaw));
+			
 			float Pitch = GetActorRotation().Pitch;
 			float Roll = GetActorRotation().Roll;
-			FRotator NewRotation = FRotator(Pitch, ShooterYaw, Roll);
+			FRotator NewRotation = FRotator(Pitch, Yaw, Roll);
 			SetActorRotation(NewRotation);
 		}
 	}
 
 	if (bHit && (!ActorHasTag("Swarm")))
 	{
-		AttackParticles->CustomTimeDilation *= 0.905f; // Interp this with deltatime
+		float AttackTimescale = FMath::FInterpConstantTo(AttackParticles->CustomTimeDilation, 0.0f, DeltaTime, 1.0f);
+		AttackParticles->CustomTimeDilation = AttackTimescale;
 	}
 
 
