@@ -363,7 +363,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Framing up first actor with their own velocity
 			FVector Actor1Velocity = Actor1->GetVelocity();
-			Actor1Velocity.Z *= 0.9f;
 			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size() * 0.01f, 0.01f, 10.0f);
 			VelocityCameraSpeed = CameraMoveSpeed * SafeVelocitySize;
 			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 0.01f, CameraMaxSpeed * 0.1f);
@@ -372,9 +371,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
 
 			// Setting up distance and speed dynamics
-			float GTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 			float ChargeScalar = FMath::Clamp((FMath::Sqrt(Charge - 0.9f)), 1.0f, ChargeMax);
-			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.3f;
+			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.21f;
 			float PersonalScalar = 1.0f + (36.0f * ChargeScalar * SpeedScalar) * (FMath::Sqrt(SafeVelocitySize));
 			float CameraMinimumDistance = 2500.0f + (PersonalScalar * CameraDistanceScalar); // (1100.0f + PersonalScalar)
 			float CameraMaxDistance = 11551000.0f;
@@ -468,11 +466,14 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// Last modifier for global time dilation
 				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 				float RefinedGScalar = FMath::Clamp(GlobalTimeScale, 0.5f, 1.0f);
-				TargetLength *= RefinedGScalar;
+				if (GlobalTimeScale <= 0.1f)
+				{
+					TargetLength *= RefinedGScalar;
+				}
 
 				// Clamp useable distance
 				float TargetLengthClamped = FMath::Clamp(FMath::Sqrt(TargetLength * 215.0f) * ConsideredDistanceScalar,
-					CameraMinimumDistance * RefinedGScalar,
+					CameraMinimumDistance,
 					CameraMaxDistance);
 
 				// Set Camera Distance
@@ -511,7 +512,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				{
 					FOV = 20.0f;
 				}
-				else if ((DistBetweenActors >= 1000.0f) && !bAlone)
+				else if ((DistBetweenActors >= 900.0f) && !bAlone)
 				{
 					FOV = 35.0f;
 				}
@@ -1004,7 +1005,7 @@ void AGammaCharacter::KickPropulsion()
 	// Air-dodge if handbraking
 	if (bSliding)
 	{
-		GetCharacterMovement()->AddImpulse(MoveInputVector * 500000.0f);
+		GetCharacterMovement()->AddImpulse(MoveInputVector * 50000.0f);
 		DisengageKick();
 		bBoosting = false;
 		bCharging = false;

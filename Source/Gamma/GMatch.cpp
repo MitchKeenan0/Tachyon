@@ -16,8 +16,9 @@ AGMatch::AGMatch()
 void AGMatch::BeginPlay()
 {
 	Super::BeginPlay();
+	bReturn = true;
 	
-	SetTimeScale(NaturalTimeScale);
+	UGameplayStatics::SetGlobalTimeDilation(this->GetWorld(), NaturalTimeScale);
 }
 
 // Called every frame
@@ -26,13 +27,28 @@ void AGMatch::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// On gg wait for gg delay before freezing time
-	/*if (bGG && (GGDelayTimer <= GGDelayTime))
+	float GlTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+	float TimeToMatch = GGDelayTime;
+	float ScaledDeltaTime = DeltaTime * (1.0f / GlTimeScale);
+	if (!bGG && (FMath::IsNearlyEqual(GlTimeScale, GGTimescale)))
 	{
-		GGDelayTimer += DeltaTime;
-	}*/
+		GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Green, FString::Printf(TEXT("TimeToMatch: %f"), TimeToMatch));
+		GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Green, FString::Printf(TEXT("ScaledDeltaTime: %f"), ScaledDeltaTime));
+		GGDelayTimer += ScaledDeltaTime;
+		if (GGDelayTimer >= TimeToMatch)
+		{
+			bGG = true;
+			GGDelayTimer = 0.0f;
+			bReturn = true;
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, FString::Printf(TEXT("GG = TRUE %f"), 1.0f));
+		}
+	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("T: %f"), GlTimeScale));
+	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("GGDelayTimer: %f"), GGDelayTimer));
 
 	// Maintain fix on players
-	if (!bGG)
+	if (!bGG && bReturn)
 	{
 		GetPlayers();
 		HandleTimeScale(DeltaTime);
@@ -67,7 +83,6 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			// End of game?
 			if (Reciever->GetHealth() <= 1.0f)
 			{
-				bGG = true;
 
 				//Calcify killed HitActor
 				UPaperFlipbookComponent* ActorFlipbook = Cast<UPaperFlipbookComponent>
@@ -80,6 +95,7 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 
 				// Freezing time to glacial
 				SetTimeScale(GGTimescale);
+				bReturn = false;
 
 				// Erase Bots
 				if (Reciever->ActorHasTag("Bot"))
@@ -106,8 +122,9 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 			&& (!Reciever->ActorHasTag("Swarm")) 
 			&& (Reciever->GetHealth() <= 0.0f))
 		{
-			bGG = true;
 			SetTimeScale(GGTimescale);
+			bReturn = false;
+
 			if (Reciever->ActorHasTag("Bot"))
 			{
 				Reciever->Tags.Add("Doomed");
@@ -129,101 +146,22 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 void AGMatch::HandleTimeScale(float Delta)
 {
 	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-	if (TimeDilat < 1.0f)
+	if (bReturn && (TimeDilat < 1.0f)
+		&& (TimeDilat > GGTimescale))
 	{
 		float ReturnTime = FMath::FInterpConstantTo(TimeDilat, NaturalTimeScale, Delta, TimescaleRecoverySpeed);
 		SetTimeScale(ReturnTime);
-		//TimeToSet = GGTimescale;
-		GGDelayTimer = 0.0f;
 	}
-
-	//else
-	//{
-	//	// Recovery timescale interpolation
-	//	bool bRecovering = false;
-	//	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-	//	if (!bGG && bReturn && TimeDilat < 1.0f)
-	//	{
-	//		// ..Rise timescale back to 1
-	//		float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed);
-	//		TimeToSet = TimeT;
-	//		bRecovering = true;
-	//		///GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, TEXT("recovering.."));
-	//	}
-
-	//	// Return to 1nnocence
-	//	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) >= 1.0f)
-	//	{
-	//		TimeToSet = 1.0f;
-	//		bReturn = false;
-	//		bRecovering = false;
-	//	}
-	//}
-
-
-	//SetTimeScale(TimeToSet);
-
-	
-	// OLD HIT-TIMESCALE SYSTEM
-	//// Handle gameover scenario - timing and score handouts
-	//if ( (bGG && (GGDelayTimer >= GGDelayTime) )
-	//	|| bMinorGG)
-	//{
-
-	//	// Drop timescale to glacial..
-	//	if (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > GGTimescale)
-	//	{
-	//		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("TIMING DOWN ..."));
-
-	//		float DeltaT = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-	//		float TimeT = FMath::FInterpConstantTo(DeltaT, GGTimescale, Delta, TimescaleDropSpeed);
-	//		SetTimeScale(TimeT);
-	//	}
-	//	else
-	//	{
-	//		GGDelayTimer = 0.0f;
-	//		
-	//		if (bMinorGG)
-	//		{
-	//			bMinorGG = false;
-	//		}
-	//	}
-	//}
-	//else if (!bGG)
-	//{
-	//	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, TEXT("reading ground"));
-
-	//	if (bReturn && UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) < 1.0f)
-	//	{
-	//		// ..Rise timescale back to 1
-	//		float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-	//		float TimeT = FMath::FInterpConstantTo(TimeDilat, 1.0f, Delta, TimescaleRecoverySpeed);
-	//		SetTimeScale(TimeT);
-	//	}
-	//	else
-	//	{
-	//		
-
-	//		//// Clear doomed actors
-	//		//TArray<AActor*> DoomedActors;
-	//		//UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Doomed"), DoomedActors);
-	//		//if (DoomedActors.Num() > 0)
-	//		//{
-	//		//	for (int i = 0; i < DoomedActors.Num(); ++i)
-	//		//	{
-	//		//		if (DoomedActors[i] != nullptr)
-	//		//		{
-	//		//			DoomedActors[i]->Destroy();
-	//		//		}
-	//		//	}
-	//		//}
-	//	}
-	//}
 }
 
 void AGMatch::SetTimeScale(float Time)
 {
-	UGameplayStatics::SetGlobalTimeDilation(this->GetWorld(), Time);
+	float TargetTime = Time;
+	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
+	float ScaledDelta = GetWorld()->DeltaTimeSeconds * (1.0f / TimeDilat);
+	TargetTime = FMath::FInterpConstantTo(TimeDilat, Time, ScaledDelta, TimescaleRecoverySpeed * 2.1f);
+	// doesnt get called enough = may just need to set it instantly unless more var added
+	UGameplayStatics::SetGlobalTimeDilation(this->GetWorld(), TargetTime);
 	ForceNetUpdate();
 }
 

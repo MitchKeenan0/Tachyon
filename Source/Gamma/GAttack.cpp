@@ -252,15 +252,12 @@ void AGAttack::Tick(float DeltaTime)
 
 			// Last-second redirection
 			float ShooterYaw = FMath::Abs(OwningShooter->GetActorRotation().Yaw);
-			GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::White, FString::Printf(TEXT("ShooterYaw %f"), ShooterYaw));
 			
 			float Yaw = 0.0f;
 			if ((ShooterYaw > 50.0f))
 			{
 				Yaw = 180.0f;
 			}
-
-			GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::White, FString::Printf(TEXT("Yaw %f"), Yaw));
 			
 			float Pitch = GetActorRotation().Pitch;
 			float Roll = GetActorRotation().Roll;
