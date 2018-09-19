@@ -30,22 +30,21 @@ void AGMatch::Tick(float DeltaTime)
 	float GlTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 	float TimeToMatch = GGDelayTime;
 	float ScaledDeltaTime = DeltaTime * (1.0f / GlTimeScale);
-	if (!bGG && (FMath::IsNearlyEqual(GlTimeScale, GGTimescale)))
+	if (GlTimeScale == GGTimescale)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Green, FString::Printf(TEXT("TimeToMatch: %f"), TimeToMatch));
-		GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Green, FString::Printf(TEXT("ScaledDeltaTime: %f"), ScaledDeltaTime));
 		GGDelayTimer += ScaledDeltaTime;
 		if (GGDelayTimer >= TimeToMatch)
 		{
 			bGG = true;
 			GGDelayTimer = 0.0f;
 			bReturn = true;
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, FString::Printf(TEXT("GG = TRUE %f"), 1.0f));
 		}
 	}
-
-	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("T: %f"), GlTimeScale));
-	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("GGDelayTimer: %f"), GGDelayTimer));
+	/// Edge case - catching stalled timescale interp
+	else if (!bReturn)
+	{
+		SetTimeScale(GGTimescale);
+	}
 
 	// Maintain fix on players
 	if (!bGG && bReturn)
@@ -146,11 +145,12 @@ void AGMatch::ClaimHit(AActor* HitActor, AActor* Winner)
 void AGMatch::HandleTimeScale(float Delta)
 {
 	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-	if (bReturn && (TimeDilat < 1.0f)
+	if ((TimeDilat < 1.0f)
 		&& (TimeDilat > GGTimescale))
 	{
 		float ReturnTime = FMath::FInterpConstantTo(TimeDilat, NaturalTimeScale, Delta, TimescaleRecoverySpeed);
 		SetTimeScale(ReturnTime);
+		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("HandleTimeScale: %f"), TimeDilat));
 	}
 }
 
@@ -158,8 +158,8 @@ void AGMatch::SetTimeScale(float Time)
 {
 	float TargetTime = Time;
 	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
-	float ScaledDelta = GetWorld()->DeltaTimeSeconds * (1.0f / TimeDilat);
-	TargetTime = FMath::FInterpConstantTo(TimeDilat, Time, ScaledDelta, TimescaleRecoverySpeed * 2.1f);
+	float ScaledDelta = GetWorld()->DeltaTimeSeconds;// *(1.0f / TimeDilat);
+	TargetTime = FMath::FInterpConstantTo(TimeDilat, Time, ScaledDelta, TimescaleRecoverySpeed * 1.5f);
 	// doesnt get called enough = may just need to set it instantly unless more var added
 	UGameplayStatics::SetGlobalTimeDilation(this->GetWorld(), TargetTime);
 	ForceNetUpdate();

@@ -163,6 +163,11 @@ void AGammaCharacter::BeginPlay()
 	Charge = FMath::FloorToFloat(ChargeMax / 2.0f);
 	Health = MaxHealth;
 
+	// Init location (obstacles can currently deset players)
+	FVector ActorLoc = GetActorLocation();
+	ActorLoc.Y = 0.0f;
+	SetActorLocation(ActorLoc);
+
 	// Init camera
 	FVector PlayerLocation = GetActorLocation();
 	PlayerLocation.Y = 0.0f;
@@ -177,10 +182,7 @@ void AGammaCharacter::BeginPlay()
 	FVector ChargeSize = FVector(SCharge, SCharge, SCharge);
 	GetCapsuleComponent()->SetWorldScale3D(ChargeSize);
 
-	// Init location (obstacles can currently deset players)
-	FVector ActorLoc = GetActorLocation();
-	ActorLoc.Y = 0.0f;
-	SetActorLocation(ActorLoc);
+	
 }
 
 
@@ -1014,7 +1016,7 @@ void AGammaCharacter::KickPropulsion()
 	
 	// Force, clamp, & effect chara movement
 	FVector KickVector = MoveInputVector;
-	float FreshKickSpeed = MoveFreshMultiplier * 111000.0f;
+	float FreshKickSpeed = MoveFreshMultiplier * 1500.0f;///111000.0f;
 	KickVector = MoveInputVector * FreshKickSpeed;
 	KickVector -= (CurrentVelocity * 0.33f);
 	KickVector.Z *= 0.9f;
@@ -1026,7 +1028,7 @@ void AGammaCharacter::KickPropulsion()
 	// Initial kick for good feels
 	if ((GetActiveBoost() == nullptr) && (BoostClass != nullptr))
 	{
-		GetCharacterMovement()->AddImpulse(KickVector);
+		GetCharacterMovement()->AddImpulse(KickVector, true);
 
 		if (HasAuthority())
 		{
@@ -1044,7 +1046,7 @@ void AGammaCharacter::KickPropulsion()
 	else
 	{
 		float Diminishing = FMath::Clamp((1.0f / GetActiveBoost()->GetGameTimeSinceCreation()), 0.9f, 90.0f);
-		GetCharacterMovement()->AddImpulse(KickVector * Diminishing);
+		GetCharacterMovement()->AddImpulse(KickVector * Diminishing, true);
 	}
 	
 	if (Role < ROLE_Authority)
