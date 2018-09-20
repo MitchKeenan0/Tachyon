@@ -165,7 +165,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		}
 
 		// Burst visual
-		if (BurstClass != nullptr)
+		if ((OwningShooter != nullptr) && (BurstClass != nullptr))
 		{
 			FActorSpawnParameters SpawnParams;
 			AActor* NewBurst = GetWorld()->SpawnActor<AActor>(BurstClass, GetActorLocation(), GetActorRotation(), SpawnParams);
@@ -175,6 +175,19 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 				float MagnitudeScalar = FMath::Clamp(AttackMagnitude * 2.1f, 0.5f, 1.1f);
 				FVector NewBurstScale = NewBurst->GetActorRelativeScale3D() * MagnitudeScalar;
 				NewBurst->SetActorRelativeScale3D(NewBurstScale);
+			}
+
+			// Inherit some velocity from owning shooter
+			if (ProjectileSpeed != 0.0f)
+			{
+				FVector ShooterVelocity = OwningShooter->GetVelocity();
+				FVector ScalarVelocity = FVector::ZeroVector;
+				float VelFloat = ShooterVelocity.Size();
+				if (VelFloat != 0.0f)
+				{
+					ScalarVelocity = ShooterVelocity.GetSafeNormal() * FMath::Sqrt(VelFloat);
+					ProjectileComponent->Velocity += ScalarVelocity;
+				}
 			}
 		}
 
@@ -533,8 +546,6 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 			float MassScalar = ((HitMeshComponent->GetMass() * HitMeshComponent->GetMassScale())) * 0.05f;
 			HitMeshComponent->AddImpulseAtLocation(KnockVector * KnockScalar * MassScalar, HitPoint);
 		}
-
-		///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("Hit for %f!"), 0.1f));
 	}
 }
 
@@ -546,14 +557,14 @@ void AGAttack::ReportHit(AActor* HitActor)
 		/// Track hitscale curvature for increasing knockback and damage
 		if (!ActorHasTag("Obstacle"))
 		{
-			numHits += 1; /// (numHits += (numHits - 1)), 2, 9
+			numHits += 1;
 		}
 
 		/// Damage
 		AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(HitActor);
 		if (PotentialPlayer != nullptr)
 		{
-			float Dmg = -1 * FMath::Clamp((AttackDamage) * numHits, 1.0f, 99.0f);
+			float Dmg = -1 * FMath::Clamp((AttackDamage * numHits), 1.0f, 99.0f);
 			PotentialPlayer->ModifyHealth(Dmg);
 			///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("Hit for %f!"), Dmg));
 
@@ -576,15 +587,6 @@ void AGAttack::ReportHit(AActor* HitActor)
 		{
 			FVector HitActorScale = HitActor->GetActorScale3D();
 			HitActor->SetActorScale3D(HitActorScale * 1.0521f);
-
-			/// Affect object's mass
-			/*TSubclassOf<UStaticMeshComponent> MeshCompTest;
-			UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(HitActor->GetComponentByClass(MeshCompTest));
-			if (MeshComp != nullptr)
-			{
-			float MeshMass = MeshComp->GetMass();
-			MeshComp->SetMassScale(NAME_None, MeshMass * 0.9f);
-			}*/
 		}
 
 		ForceNetUpdate();

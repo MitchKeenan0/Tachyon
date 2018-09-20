@@ -365,7 +365,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Framing up first actor with their own velocity
 			FVector Actor1Velocity = Actor1->GetVelocity();
-			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size() * 0.01f, 0.01f, 10.0f);
+			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size() * 0.005f, 0.01f, 10.0f);
 			VelocityCameraSpeed = CameraMoveSpeed * SafeVelocitySize;
 			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 0.01f, CameraMaxSpeed * 0.1f);
 
@@ -468,6 +468,11 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// Last modifier for global time dilation
 				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 				float RefinedGScalar = FMath::Clamp(GlobalTimeScale, 0.5f, 1.0f);
+				if (GlobalTimeScale < 0.02f)
+				{
+					TargetLength *= 0.5f;
+					VelocityCameraSpeed *= 15.0f;
+				}
 				if (GlobalTimeScale <= 0.1f)
 				{
 					TargetLength *= RefinedGScalar;
@@ -522,7 +527,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				if (GlobalTimeScale < 0.02f)
 				{
 					FOV *= FOVTimeScalar;
-					FOVSpeed *= 1.2f;
+					FOVSpeed *= 2.1f;
 				}
 
 				// Set FOV
@@ -1007,7 +1012,7 @@ void AGammaCharacter::KickPropulsion()
 	// Air-dodge if handbraking
 	if (bSliding)
 	{
-		GetCharacterMovement()->AddImpulse(MoveInputVector * 50000.0f);
+		GetCharacterMovement()->AddImpulse(MoveInputVector * 150000.0f);
 		DisengageKick();
 		bBoosting = false;
 		bCharging = false;
@@ -1016,10 +1021,9 @@ void AGammaCharacter::KickPropulsion()
 	
 	// Force, clamp, & effect chara movement
 	FVector KickVector = MoveInputVector;
-	float FreshKickSpeed = MoveFreshMultiplier * 1500.0f;///111000.0f;
+	float FreshKickSpeed = MoveFreshMultiplier * 1500.0f; ///111000.0f; when vel impulse change was false
 	KickVector = MoveInputVector * FreshKickSpeed;
 	KickVector -= (CurrentVelocity * 0.33f);
-	KickVector.Z *= 0.9f;
 	KickVector.Y = 0.0f;
 	KickVector *= DeltaTime;
 

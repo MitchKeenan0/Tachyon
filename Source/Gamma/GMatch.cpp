@@ -150,7 +150,6 @@ void AGMatch::HandleTimeScale(float Delta)
 	{
 		float ReturnTime = FMath::FInterpConstantTo(TimeDilat, NaturalTimeScale, Delta, TimescaleRecoverySpeed);
 		SetTimeScale(ReturnTime);
-		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, FString::Printf(TEXT("HandleTimeScale: %f"), TimeDilat));
 	}
 }
 
@@ -159,7 +158,16 @@ void AGMatch::SetTimeScale(float Time)
 	float TargetTime = Time;
 	float TimeDilat = UGameplayStatics::GetGlobalTimeDilation(this->GetWorld());
 	float ScaledDelta = GetWorld()->DeltaTimeSeconds;// *(1.0f / TimeDilat);
-	TargetTime = FMath::FInterpConstantTo(TimeDilat, Time, ScaledDelta, TimescaleRecoverySpeed * 1.5f);
+	float InterpSpeed = TimescaleRecoverySpeed * 1.5f;
+	if (TargetTime != GGTimescale)
+	{
+		InterpSpeed *= 2.15f;
+	}
+	else
+	{
+		InterpSpeed *= 0.6f;
+	}
+	TargetTime = FMath::FInterpConstantTo(TimeDilat, Time, ScaledDelta, InterpSpeed);
 	// doesnt get called enough = may just need to set it instantly unless more var added
 	UGameplayStatics::SetGlobalTimeDilation(this->GetWorld(), TargetTime);
 	ForceNetUpdate();
