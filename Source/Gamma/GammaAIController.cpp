@@ -186,6 +186,7 @@ bool AGammaAIController::ReactionTiming(float DeltaTime)
 		Result = true;
 		float RandomOffset = FMath::FRandRange(ReactionTime * -0.5f, ReactionTime * 1.5f);
 		ReactionTimer = RandomOffset;
+		Aggression += FMath::FRandRange(-1.0f, 1.0f);
 	}
 
 	return Result;

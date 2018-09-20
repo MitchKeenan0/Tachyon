@@ -171,9 +171,9 @@ void AGammaCharacter::BeginPlay()
 	// Init camera
 	FVector PlayerLocation = GetActorLocation();
 	PlayerLocation.Y = 0.0f;
-	CameraBoom->SetRelativeLocation(PlayerLocation);
+	CameraBoom->SetWorldLocation(PlayerLocation);
 	PositionOne = PlayerLocation;
-	PositionTwo = PlayerLocation;
+	PositionTwo = PlayerLocation + (FVector::ForwardVector * 100.0f);
 	CameraBoom->TargetArmLength = 900.0f;
 
 	// Sprite Scaling
@@ -181,8 +181,6 @@ void AGammaCharacter::BeginPlay()
 	float SCharge = 0.5f * (FMath::Square(ClampedCharge));
 	FVector ChargeSize = FVector(SCharge, SCharge, SCharge);
 	GetCapsuleComponent()->SetWorldScale3D(ChargeSize);
-
-	
 }
 
 
@@ -374,7 +372,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 			// Setting up distance and speed dynamics
 			float ChargeScalar = FMath::Clamp((FMath::Sqrt(Charge - 0.9f)), 1.0f, ChargeMax);
-			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.21f;
+			float SpeedScalar = FMath::Sqrt(Actor1Velocity.Size() + 0.01f) * 0.1f;
 			float PersonalScalar = 1.0f + (36.0f * ChargeScalar * SpeedScalar) * (FMath::Sqrt(SafeVelocitySize));
 			float CameraMinimumDistance = 2500.0f + (PersonalScalar * CameraDistanceScalar); // (1100.0f + PersonalScalar)
 			float CameraMaxDistance = 11551000.0f;
