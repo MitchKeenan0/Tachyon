@@ -187,6 +187,7 @@ bool AGammaAIController::ReactionTiming(float DeltaTime)
 		float RandomOffset = FMath::FRandRange(ReactionTime * -0.5f, ReactionTime * 1.5f);
 		ReactionTimer = RandomOffset;
 		Aggression += FMath::FRandRange(-1.0f, 1.0f);
+		Aggression = FMath::Clamp(Aggression, -5.0f, 5.0f);
 	}
 
 	return Result;
@@ -464,7 +465,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 		FVector PlayerAtSpeed = PlayerVelocity;
 		if (PlayerAtSpeed.Size() > 100.0f)
 		{
-			PlayerAtSpeed = PlayerLocation + (PlayerVelocity * 0.5f) / Aggression;
+			PlayerAtSpeed = PlayerLocation + ((PlayerVelocity * 0.9f) / Aggression);
 		}
 		else
 		{

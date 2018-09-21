@@ -1045,9 +1045,9 @@ void AGammaCharacter::KickPropulsion()
 	}
 
 	// Sustained burn propulsion
-	else
+	else if ((GetActiveBoost() != nullptr) && (GetActiveBoost()->GetGameTimeSinceCreation() > 0.025f))
 	{
-		float Diminishing = FMath::Clamp((1.0f / GetActiveBoost()->GetGameTimeSinceCreation()), 0.9f, 90.0f);
+		float Diminishing = FMath::Clamp((2.1f / GetActiveBoost()->GetGameTimeSinceCreation()), 0.9f, 100.0f); // 90.0f
 		GetCharacterMovement()->AddImpulse(KickVector * Diminishing, true);
 	}
 	

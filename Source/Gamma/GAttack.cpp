@@ -272,7 +272,7 @@ void AGAttack::Tick(float DeltaTime)
 				Yaw = 180.0f;
 			}
 			
-			float Pitch = GetActorRotation().Pitch;
+			float Pitch = FMath::Clamp(GetActorRotation().Pitch, -ShootingAngle, ShootingAngle);
 			float Roll = GetActorRotation().Roll;
 			FRotator NewRotation = FRotator(Pitch, Yaw, Roll);
 			SetActorRotation(NewRotation);
@@ -305,6 +305,17 @@ void AGAttack::Tick(float DeltaTime)
 		if (bLethal)
 		{
 			UpdateAttack(DeltaTime);
+		}
+		else if (GetGameTimeSinceCreation() > 0.22f)
+		{
+			if (AttackSprite != nullptr)
+			{
+				AttackSprite->SetVisibility(false);
+			}
+			else
+			{
+				AttackParticles->CustomTimeDilation = 0.0f;
+			}
 		}
 
 		// Life-tracking activities
