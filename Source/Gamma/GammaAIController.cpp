@@ -179,15 +179,19 @@ bool AGammaAIController::ReactionTiming(float DeltaTime)
 	bool Result = false;
 	float TimeDilat = MyCharacter->CustomTimeDilation;
 	float GlobalTime = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
-	ReactionTimer += (DeltaTime * (1.0f / GlobalTime));
+	float TimeScalar = (1.0f / GlobalTime);
+	ReactionTimer += (DeltaTime * TimeScalar);
 	
 	if (ReactionTimer >= ReactionTime)
 	{
 		Result = true;
-		float RandomOffset = FMath::FRandRange(ReactionTime * -0.5f, ReactionTime * 1.5f);
-		ReactionTimer = RandomOffset;
+		float RandomOffset = FMath::FRandRange(ReactionTime * -0.1f, ReactionTime * 0.9f);
+		ReactionTimer = FMath::Clamp(RandomOffset, -0.1f, (ReactionTime * TimeScalar));
 		Aggression += FMath::FRandRange(-1.0f, 1.0f);
 		Aggression = FMath::Clamp(Aggression, -5.0f, 5.0f);
+
+		///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("ReactionTimer  %f"), ReactionTimer));
+		///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("Aggression  %f"), Aggression));
 	}
 
 	return Result;
@@ -415,23 +419,25 @@ void AGammaAIController::Tactical(FVector Target)
 					MyCharacter->SetZ(VerticalNorm, 1.0f);
 				}
 
-				// Aim input
-				float XTarget = FMath::Clamp(ToPlayer.X, -1.0f, 1.0f);
-				MyCharacter->SetX(XTarget, 1.0f);
+				// Aim input -- seems unnecessary
+				/*float XTarget = FMath::Clamp(ToPlayer.X, -1.0f, 1.0f);
+				MyCharacter->SetX(XTarget, 1.0f);*/
 				
-				// Init Attack
+				// Attacking
 				if (ToPlayer.Size() <= PrimaryRange)
 				{
+					float DesiredWindupTime = FMath::Abs(FMath::FRand() * Aggression * 0.01f);
 					if (MyCharacter->GetActiveFlash() == nullptr)
 					{
 						MyCharacter->CheckAttackOn();
 					}
-					else if ((MyCharacter->GetActiveFlash() != nullptr) && (MyCharacter->GetPrefireTime() >= 0.1f))
+					else if ((MyCharacter->GetActiveFlash() != nullptr) 
+						&& (DesiredWindupTime >= 1.0f))
 					{
 						MyCharacter->CheckAttackOff(); /// will trigger an attack if prefire-timer > 0
 					}
 				}
-				else if (MyCharacter->GetPrefireTime() >= 0.1f)
+				else if (MyCharacter->GetPrefireTime() >= 5.0f)
 				{
 					MyCharacter->CheckAttackOff();
 				}

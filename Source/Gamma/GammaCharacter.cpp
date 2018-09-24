@@ -148,8 +148,8 @@ void AGammaCharacter::BeginPlay()
 	// Camera needs some movement to wake up
 	if (Controller && Controller->IsLocalController())
 	{
-		AddMovementInput(FVector(0.0f, 0.0f, 1.0f), 100.0f);
-		GetCharacterMovement()->AddImpulse(FVector::UpVector * 100.0f);
+		/*AddMovementInput(FVector(0.0f, 0.0f, 1.0f), 100.0f);
+		GetCharacterMovement()->AddImpulse(FVector::UpVector * 100.0f);*/
 	}
 	else
 	{
@@ -448,6 +448,11 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				{
 					VerticalDist *= 1.2f;
 				}
+				else
+				{
+					ProcessedDist *= 1.5f;
+					CameraMinimumDistance *= 1.5f;
+				}
 
 				// Handle horizontal bias
 				float DistancePreClamp = ProcessedDist + FMath::Sqrt(VerticalDist);
@@ -508,26 +513,27 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Narrowing and expanding camera FOV for closeup and outer zones
 				float ScalarSize = FMath::Clamp(DistBetweenActors * 0.005f, 0.05f, 1.5f);
-				float FOVTimeScalar = FMath::Clamp(GlobalTimeScale, 0.5f, 1.0f);
-				float FOV = 30.0f;
+				float FOVTimeScalar = FMath::Clamp(GlobalTimeScale, 0.3f, 1.0f);
+				float FOV = 23.0f;
 				float FOVSpeed = 1.0f;
 				float Verticality = FMath::Abs((PositionOne - PositionTwo).Z);
 
 				// Inner and Outer zones
 				if ((DistBetweenActors <= 90.0f) && !bAlone)
 				{
-					FOV = 20.0f;
+					FOV = 19.0f;
 				}
 				else if (((DistBetweenActors >= 700.0f) || (Verticality >= 300.0f)) 
 					&& !bAlone)
 				{
-					FOV = 40.0f;
+					float WideAngleFOV = FMath::Clamp((0.02f * DistBetweenActors), 40.0f, 75.0f);
+					FOV = WideAngleFOV; // 40
 				}
 				// GGTime Timescale adjustment
 				if (GlobalTimeScale < 0.02f)
 				{
 					FOV *= FOVTimeScalar;
-					FOVSpeed *= 2.1f;
+					FOVSpeed *= 0.9f;
 				}
 
 				// Set FOV
@@ -1012,7 +1018,7 @@ void AGammaCharacter::KickPropulsion()
 	// Air-dodge if handbraking
 	if (bSliding)
 	{
-		GetCharacterMovement()->AddImpulse(MoveInputVector * 1500.0f, true);
+		GetCharacterMovement()->AddImpulse(MoveInputVector * 3005.0f, true);
 		DisengageKick();
 		bBoosting = false;
 		bCharging = false;
@@ -1204,7 +1210,7 @@ void AGammaCharacter::InitAttack()
 	{
 		ServerInitAttack();
 	}
-	else
+	else if (!ActorHasTag("Spectator"))
 	{
 		// If we're shooting dry, trigger ChargeBar warning by going sub-zero
 		if (Charge <= 0.0f)
@@ -1300,6 +1306,7 @@ void AGammaCharacter::ReleaseAttack()
 			{
 				FireRotation.Yaw = 0.0f;
 			}
+			FireRotation.Pitch = FMath::Clamp(FireRotation.Pitch, -21.0f, 21.0f); ///////////////////////////////////////////////////////////
 
 			// Scale prefire output's minimum by missing HP
 			float MissingLife = FMath::Clamp((MaxHealth - Health), 0.1f, MaxHealth);
@@ -1393,7 +1400,7 @@ bool AGammaCharacter::ServerReleaseAttack_Validate()
 // SECONDARY
 void AGammaCharacter::FireSecondary()
 {
-	if (SecondaryClass && (ActiveSecondary == nullptr)
+	if ((!ActorHasTag("Spectator")) && SecondaryClass && (ActiveSecondary == nullptr)
 		&& (UGameplayStatics::GetGlobalTimeDilation(this->GetWorld()) > 0.01f))
 	{
 		// Cancel the Flash and Attack

@@ -133,6 +133,7 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 			{
 				FireRotation.Yaw = 180.0f;
 			}
+			FireRotation.Pitch = FMath::Clamp(FireRotation.Pitch, -ShootingAngle, ShootingAngle);
 			SetActorRotation(FireRotation);
 			///GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::White, FString::Printf(TEXT("FireRotation.Yaw:  %f"), FireRotation.Yaw));
 		}
@@ -279,7 +280,7 @@ void AGAttack::Tick(float DeltaTime)
 		}
 	}
 
-	if (bHit && (!ActorHasTag("Swarm")))
+	if (bHit && (!ActorHasTag("Swarm")) && (!ActorHasTag("Obstacle")))
 	{
 		float AttackTimescale = FMath::FInterpConstantTo(AttackParticles->CustomTimeDilation, 0.0f, DeltaTime, 1.0f);
 		AttackParticles->CustomTimeDilation = AttackTimescale;
@@ -537,7 +538,9 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 	float DirRecalc = ShotDirection * ShootingAngle;
 	FRotator FireRotation = KnockVector.Rotation() + FRotator(DirRecalc, 0.0f, 0.0f);
 	KnockVector = FireRotation.Vector();
+	KnockVector.Z *= 0.8f;
 
+	/// Vector done -> Effect the force
 	/// Get character movement to kick on
 	ACharacter* Chara = Cast<ACharacter>(HitActor);
 	if (Chara != nullptr)
@@ -608,7 +611,9 @@ void AGAttack::ReportHit(AActor* HitActor)
 		if (HitActor->ActorHasTag("Grow"))
 		{
 			FVector HitActorScale = HitActor->GetActorScale3D();
-			HitActor->SetActorScale3D(HitActorScale * 1.0521f);
+			FVector TargetScale = HitActorScale * 1.0521f;
+			FVector GrowScale = FMath::VInterpTo(HitActorScale, TargetScale, GetWorld()->DeltaTimeSeconds, 2.1f);
+			HitActor->SetActorScale3D(GrowScale);
 		}
 
 		ForceNetUpdate();
@@ -701,30 +706,24 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 				return;
 			}
 
-			// Collide off shield
+			// Get countered on shield
 			if (OtherAttack->ActorHasTag("Shield")
 				|| OtherAttack->ActorHasTag("Obstacle"))
 			{
+				if (!ActorHasTag("Obstacle"))
+				{
+					bLethal = false;
+					HitsPerSecond = 0.0f;
+					bHit = true;
+				}
+
 				// Spawn blocked fx
 				if (BlockedClass != nullptr)
 				{
 					FActorSpawnParameters SpawnParams;
 					AActor* BlockedFX = GetWorld()->SpawnActor<AActor>(
 						BlockedClass, GetActorLocation(), GetActorRotation(), SpawnParams);
-				}
-
-				// ApplyKnockback(OtherAttack, HitPoint);
-				//ApplyKnockback(OwningShooter, GetActorLocation());
-
-				// Nerf the attack
-				
-				
-
-				if (!ActorHasTag("Obstacle"))
-				{
-					bLethal = false;
-					HitsPerSecond = 0.0f;
-					bHit = true;
+					BlockedFX->SetLifeSpan(0.15f);
 				}
 			}
 			
@@ -735,7 +734,6 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 				AGammaCharacter* PotentialPlayer = Cast<AGammaCharacter>(OtherAttack->OwningShooter);
 				if (PotentialPlayer != nullptr)
 				{
-					ApplyKnockback(PotentialPlayer, HitPoint);
 					ApplyKnockback(PotentialPlayer, HitPoint); // Pending Refactor - add scalar argument to ApKnk!
 				}
 			}
@@ -784,7 +782,10 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 		}
 
 		// Update hit status
-		bHit = true;
+		if (!ActorHasTag("Obstacle"))
+		{
+			bHit = true;
+		}
 		HitTimer = 0.0f;
 		if (!bSecondary)
 		{
