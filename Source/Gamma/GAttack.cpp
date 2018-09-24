@@ -214,7 +214,7 @@ void AGAttack::Tick(float DeltaTime)
 			ACharacter* Chara = Cast<ACharacter>(OwningShooter);
 			if (Chara != nullptr)
 			{
-				float RecoilScalar = (FMath::Abs(KineticForce) * (-500.0f * FMath::Clamp(AttackMagnitude, 0.2f, 1.0f)));
+				float RecoilScalar = KineticForce * (-500.0f * FMath::Clamp(AttackMagnitude, 0.2f, 1.0f)); // (FMath::Abs(KineticForce)
 				FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
 				FRotator RecoilRotator = LocalForward.Rotation() + FRotator(ShotDirection * ShootingAngle, 0.0f, 0.0f);
 				Chara->GetCharacterMovement()->AddImpulse(RecoilRotator.Vector() * RecoilScalar);
@@ -403,14 +403,25 @@ void AGAttack::DetectHit(FVector RaycastVector)
 		
 
 		// Swords, etc, get tangible ray space
-		if (bRaycastOnMesh && (AttackSprite->GetSprite() != nullptr))
+		if (bRaycastOnMesh)
 		{
-			float SpriteLength = (AttackSprite->Bounds.BoxExtent.X) * (1.0f + AttackMagnitude);
-			float AttackBodyLength = SpriteLength * RaycastHitRange;
-			Start = AttackSprite->GetComponentLocation() + (GetActorForwardVector() * (-SpriteLength / 2.1f));
-			Start.Y = 0.0f;
-			End = Start + (RaycastVector * AttackBodyLength);
-			End.Y = 0.0f;
+			if (AttackSprite->GetSprite() != nullptr)
+			{
+				float SpriteLength = (AttackSprite->Bounds.BoxExtent.X) * (1.0f + AttackMagnitude);
+				float AttackBodyLength = SpriteLength * RaycastHitRange;
+				Start = AttackSprite->GetComponentLocation() + (GetActorForwardVector() * (-SpriteLength / 2.1f));
+				Start.Y = 0.0f;
+				End = Start + (RaycastVector * AttackBodyLength);
+				End.Y = 0.0f;
+			}
+			else if (AttackParticles != nullptr)
+			{
+				float AttackBodyLength = RaycastHitRange;
+				Start = AttackParticles->GetComponentLocation() + (GetActorForwardVector() * (-AttackBodyLength / 2.1f));
+				Start.Y = 0.0f;
+				End = Start + (RaycastVector * AttackBodyLength);
+				End.Y = 0.0f;
+			}
 		}
 
 		TArray<FHitResult> Hits;
@@ -426,7 +437,7 @@ void AGAttack::DetectHit(FVector RaycastVector)
 			EDrawDebugTrace::None,
 			Hits,
 			true,
-			FLinearColor::White, FLinearColor::Red, 5.0f);
+			FLinearColor::Gray, FLinearColor::Red, 5.0f);
 
 		if (HitResult)
 		{
@@ -555,7 +566,7 @@ void AGAttack::ApplyKnockback(AActor* HitActor, FVector HitPoint)
 			&& HitMeshComponent->IsSimulatingPhysics())
 		{
 			float MassScalar = ((HitMeshComponent->GetMass() * HitMeshComponent->GetMassScale())) * 0.05f;
-			HitMeshComponent->AddImpulseAtLocation(KnockVector * KnockScalar * MassScalar, HitPoint);
+			HitMeshComponent->AddImpulseAtLocation(KnockVector * (KnockScalar * 0.5f) * MassScalar, HitPoint);
 		}
 	}
 }
@@ -644,7 +655,8 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	FVector ToHitPoint = (HitPoint - OwningShooter->GetActorLocation()).GetSafeNormal();
 	FVector AttackForward = GetActorForwardVector().GetSafeNormal();
 	float DotToHit = FVector::DotProduct(ShooterForward, ToHitPoint);
-	if ((!ActorHasTag("Solid")) && (DotToHit < 0.0f))
+	float HitDist = FVector::Dist(ShooterForward, HitPoint);
+	if ((!ActorHasTag("Solid")) && (DotToHit < 0.0f) && (HitDist <= 99.9f))
 	{
 		return;
 	}
@@ -658,7 +670,7 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 	{
 		HitCharacter->GetMovementComponent()->Velocity *= FireDelay;
 	}
-	//if (HitActor->ActorHasTag("Swarm")
+	// Self-slow for solid attacks
 	if ((ProjectileSpeed != 0.0f)
 		&& (ActorHasTag("Solid")))
 	{
@@ -776,7 +788,14 @@ void AGAttack::HitEffects(AActor* HitActor, FVector HitPoint)
 		HitTimer = 0.0f;
 		if (!bSecondary)
 		{
-			HitsPerSecond *= 0.5f;
+			if (AngleSweep != 0.0f)
+			{
+				HitsPerSecond *= 0.7f;
+			}
+			else
+			{
+				HitsPerSecond *= 0.5f;
+			}
 		}
 		
 

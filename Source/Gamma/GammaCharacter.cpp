@@ -507,19 +507,21 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				//Midpoint.Z -= (CameraTiltX * DesiredCameraDistance) * DeltaTime;
 
 				// Narrowing and expanding camera FOV for closeup and outer zones
-				float ScalarSize = FMath::Clamp(DistBetweenActors * 0.005f, 0.03f, 1.0f);
+				float ScalarSize = FMath::Clamp(DistBetweenActors * 0.005f, 0.05f, 1.5f);
 				float FOVTimeScalar = FMath::Clamp(GlobalTimeScale, 0.5f, 1.0f);
 				float FOV = 30.0f;
 				float FOVSpeed = 1.0f;
+				float Verticality = FMath::Abs((PositionOne - PositionTwo).Z);
 
 				// Inner and Outer zones
 				if ((DistBetweenActors <= 90.0f) && !bAlone)
 				{
 					FOV = 20.0f;
 				}
-				else if ((DistBetweenActors >= 900.0f) && !bAlone)
+				else if (((DistBetweenActors >= 700.0f) || (Verticality >= 300.0f)) 
+					&& !bAlone)
 				{
-					FOV = 35.0f;
+					FOV = 40.0f;
 				}
 				// GGTime Timescale adjustment
 				if (GlobalTimeScale < 0.02f)
@@ -1010,7 +1012,7 @@ void AGammaCharacter::KickPropulsion()
 	// Air-dodge if handbraking
 	if (bSliding)
 	{
-		GetCharacterMovement()->AddImpulse(MoveInputVector * 150000.0f);
+		GetCharacterMovement()->AddImpulse(MoveInputVector * 1500.0f, true);
 		DisengageKick();
 		bBoosting = false;
 		bCharging = false;
