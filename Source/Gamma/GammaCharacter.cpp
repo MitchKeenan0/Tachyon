@@ -939,7 +939,11 @@ void AGammaCharacter::NewMoveKick()
 	else if (!bBoosting)
 	{
 		bBoosting = true;
-		ResetLocator();
+
+		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) <= 0.3f)
+		{
+			ResetLocator();
+		}
 	}
 }
 void AGammaCharacter::ServerNewMoveKick_Implementation()
