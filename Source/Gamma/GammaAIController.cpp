@@ -465,7 +465,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 
 		// Getting spicy
 		float MyVelocity = MyCharacter->GetCharacterMovement()->Velocity.Size();
-		float VelocityScalar = FMath::Clamp((1 / (1 / MyVelocity)), 1.0f, MoveRange);
+		float VelocityScalar = FMath::Clamp((1.0f / (1.0f / MyVelocity)), 1.0f, MoveRange);
 		float DynamicMoveRange = MoveRange + VelocityScalar; /// usually 100 :P
 		FVector PlayerVelocity = Player->GetCharacterMovement()->Velocity;
 		FVector PlayerAtSpeed = PlayerVelocity;
@@ -479,7 +479,7 @@ FVector AGammaAIController::GetNewLocationTarget()
 		}
 		
 		// Randomness in movement
-		FVector RandomOffset = (FMath::VRand() * DynamicMoveRange) * (1 / Aggression) / Aggression;
+		FVector RandomOffset = (FMath::VRand() * DynamicMoveRange) * (1.0f / Aggression) * Aggression;
 		RandomOffset.Y = 0.0f;
 		RandomOffset.Z *= 0.25f;
 

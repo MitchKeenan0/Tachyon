@@ -158,11 +158,11 @@ void AGAttack::InitAttack(AActor* Shooter, float Magnitude, float YScale)
 		}
 
 		// Get match obj
-		TArray<AActor*> Actors;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGMatch::StaticClass(), Actors);
-		if (Actors.Num() >= 1)
+		TArray<AActor*> PotentialMatches;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGMatch::StaticClass(), PotentialMatches);
+		if (PotentialMatches.Num() >= 1)
 		{
-			CurrentMatch = Cast<AGMatch>(Actors[0]);
+			CurrentMatch = Cast<AGMatch>(PotentialMatches[0]);
 		}
 
 		// Burst visual
@@ -208,17 +208,32 @@ void AGAttack::Tick(float DeltaTime)
 	if (!bLethal && (GetGameTimeSinceCreation() > RefireTime)
 		&& (GetGameTimeSinceCreation() < 0.215f)) /// for attacks being blocked later
 	{
-		// Recoil &
-		// Init Success
+		// Init One-Timer
 		if (!bHit && (OwningShooter != nullptr) && (CurrentMatch != nullptr))
 		{
+			
+			// Last-second redirection
+			float ShooterYaw = FMath::Abs(OwningShooter->GetActorRotation().Yaw);
+
+			float Yaw = 0.0f;
+			if ((ShooterYaw > 50.0f))
+			{
+				Yaw = 180.0f;
+			}
+
+			float Pitch = FMath::Clamp(GetActorRotation().Pitch, -ShootingAngle, ShootingAngle);
+			float Roll = GetActorRotation().Roll;
+			FRotator NewRotation = FRotator(Pitch, Yaw, Roll);
+			SetActorRotation(NewRotation);
+
+			// Recoil
 			ACharacter* Chara = Cast<ACharacter>(OwningShooter);
 			if (Chara != nullptr)
 			{
-				float RecoilScalar = KineticForce * (-500.0f * FMath::Clamp(AttackMagnitude, 0.2f, 1.0f)); // (FMath::Abs(KineticForce)
-				FVector LocalForward = GetActorForwardVector().ProjectOnToNormal(FVector::ForwardVector);
+				float RecoilScalar = KineticForce * (-500.0f * FMath::Clamp(AttackMagnitude, 0.1f, 0.5f)); // (FMath::Abs(KineticForce)
+				FVector LocalForward = GetActorForwardVector(); /// .ProjectOnToNormal(FVector::ForwardVector);
 				FRotator RecoilRotator = LocalForward.Rotation() + FRotator(ShotDirection * ShootingAngle, 0.0f, 0.0f);
-				Chara->GetCharacterMovement()->AddImpulse(RecoilRotator.Vector() * RecoilScalar);
+				Chara->GetCharacterMovement()->AddImpulse(LocalForward * RecoilScalar); /// RecoilRotator.Vector()
 
 				// Take the first shot
 				HitTimer = (1.0f / HitsPerSecond);
@@ -263,20 +278,6 @@ void AGAttack::Tick(float DeltaTime)
 					//GEngine->AddOnScreenDebugMessage(-1, 20.5f, FColor::White, FString::Printf(TEXT("Activated Sprite!  %f"), 1.0f));
 				}
 			}
-
-			// Last-second redirection
-			float ShooterYaw = FMath::Abs(OwningShooter->GetActorRotation().Yaw);
-			
-			float Yaw = 0.0f;
-			if ((ShooterYaw > 50.0f))
-			{
-				Yaw = 180.0f;
-			}
-			
-			float Pitch = FMath::Clamp(GetActorRotation().Pitch, -ShootingAngle, ShootingAngle);
-			float Roll = GetActorRotation().Roll;
-			FRotator NewRotation = FRotator(Pitch, Yaw, Roll);
-			SetActorRotation(NewRotation);
 		}
 	}
 

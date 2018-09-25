@@ -162,6 +162,8 @@ void AGammaCharacter::BeginPlay()
 	// Init charge & health
 	Charge = FMath::FloorToFloat(ChargeMax / 2.0f);
 	Health = MaxHealth;
+	InputX = 0.0f;
+	InputZ = 0.0f;
 
 	// Init location (obstacles can currently deset players)
 	FVector ActorLoc = GetActorLocation();
@@ -446,7 +448,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				// If paired, widescreen edges are vulnerable to overshoot
 				if (!bAlone)
 				{
-					VerticalDist *= 1.2f;
+					VerticalDist *= 1.5f;
 				}
 				else
 				{
@@ -513,7 +515,7 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 
 				// Narrowing and expanding camera FOV for closeup and outer zones
 				float ScalarSize = FMath::Clamp(DistBetweenActors * 0.005f, 0.05f, 1.5f);
-				float FOVTimeScalar = FMath::Clamp(GlobalTimeScale, 0.3f, 1.0f);
+				float FOVTimeScalar = FMath::Clamp(GlobalTimeScale, 0.1f, 1.0f);
 				float FOV = 23.0f;
 				float FOVSpeed = 1.0f;
 				float Verticality = FMath::Abs((PositionOne - PositionTwo).Z);
@@ -523,17 +525,17 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				{
 					FOV = 19.0f;
 				}
-				else if (((DistBetweenActors >= 700.0f) || (Verticality >= 300.0f)) 
+				else if (((DistBetweenActors >= 700.0f) || (Verticality >= 250.0f))
 					&& !bAlone)
 				{
-					float WideAngleFOV = FMath::Clamp((0.02f * DistBetweenActors), 40.0f, 75.0f);
+					float WideAngleFOV = FMath::Clamp((0.02f * DistBetweenActors), 42.0f, 71.0f);
 					FOV = WideAngleFOV; // 40
 				}
 				// GGTime Timescale adjustment
 				if (GlobalTimeScale < 0.02f)
 				{
 					FOV *= FOVTimeScalar;
-					FOVSpeed *= 0.9f;
+					FOVSpeed *= 0.5f;
 				}
 
 				// Set FOV
@@ -1002,8 +1004,12 @@ void AGammaCharacter::KickPropulsion()
 		float AttackLiveTime = ActiveAttack->GetGameTimeSinceCreation();
 		if (AttackLiveTime >= 1.0f)
 		{
-			ActiveAttack->Destroy();
-			ActiveAttack = nullptr;
+			//ActiveAttack->Nullify(0);
+			if (ActiveAttack != nullptr)
+			{
+				ActiveAttack->Destroy();
+			}
+			NullifyAttack();
 		}
 	}
 
@@ -1145,7 +1151,8 @@ void AGammaCharacter::RaiseCharge()
 			if ((Charge <= (ChargeMax))
 				&& ((ActiveAttack == nullptr) || ActiveAttack->IsPendingKillOrUnreachable()))
 			{
-				Charge += (Charge / 100.0f) + (ChargeGain * GetWorld()->DeltaTimeSeconds);
+				float GainSpeed = FMath::Clamp((ChargeGain * Charge), 0.5f, 100000.0f);
+				Charge = FMath::FInterpTo(Charge, ChargeMax, GetWorld()->DeltaTimeSeconds, GainSpeed);
 
 				if (Charge < ChargeMax)
 				{
@@ -1417,7 +1424,7 @@ void AGammaCharacter::FireSecondary()
 		if (ActiveAttack != nullptr)
 		{
 			ActiveAttack->Destroy();
-			ActiveAttack = nullptr;
+			NullifyAttack();
 		}
 
 		// Direction & setting up
@@ -1831,7 +1838,7 @@ void AGammaCharacter::PowerSlideEngage()
 		if (ActiveAttack != nullptr)
 		{
 			ActiveAttack->Destroy();
-			ActiveAttack = nullptr;
+			NullifyAttack();
 		}
 		PrefireTimer = 0.0f;
 		bShooting = false;
