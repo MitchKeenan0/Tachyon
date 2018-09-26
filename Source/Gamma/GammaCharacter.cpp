@@ -250,22 +250,17 @@ void AGammaCharacter::UpdateCharacter(float DeltaTime)
 		// No lateral Input - finish rotation
 		else
 		{
-			//// Incorporate velocity into rotation
-			//FVector PlayerVelocity = GetCharacterMovement()->Velocity * GetActorForwardVector();
-			//ClimbDirection = (PlayerVelocity.X * DeltaTime);
-
-			if (Controller->GetControlRotation().Yaw > 90.0f)
+			if (FMath::Abs(Controller->GetControlRotation().Yaw) > 90.0f)
 			{
 				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 180.0f, -Roll), DeltaTime, RotatoeSpeed);
 				Controller->SetControlRotation(Fint);
 			}
-			else
+			else if (FMath::Abs(Controller->GetControlRotation().Yaw) < 90.0f)
 			{
 				FRotator Fint = FMath::RInterpTo(Controller->GetControlRotation(), FRotator(ClimbDirection, 0.0f, Roll), DeltaTime, RotatoeSpeed);
 				Controller->SetControlRotation(Fint);
 			}
 		}
-
 
 		// Locator scaling
 		if (UGameplayStatics::GetGlobalTimeDilation(GetWorld()) > 0.01f)
@@ -283,6 +278,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 	// Start by checking valid actor
 	AActor* Actor1 = nullptr;
 	AActor* Actor2 = nullptr;
+
+	float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 
 	// Poll for framing actors
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("FramingActor"), FramingActors);
@@ -366,8 +363,8 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 			// Framing up first actor with their own velocity
 			FVector Actor1Velocity = Actor1->GetVelocity();
 			float SafeVelocitySize = FMath::Clamp(Actor1Velocity.Size() * 0.005f, 0.01f, 10.0f);
-			VelocityCameraSpeed = CameraMoveSpeed * SafeVelocitySize;
-			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 0.01f, CameraMaxSpeed * 0.1f);
+			VelocityCameraSpeed = CameraMoveSpeed * SafeVelocitySize * FMath::Sqrt(1.0f / GlobalTimeScale);
+			VelocityCameraSpeed = FMath::Clamp(VelocityCameraSpeed, 0.1f, CameraMaxSpeed * 0.1f);
 
 			FVector LocalPos = Actor1->GetActorLocation() + (Actor1Velocity * DeltaTime * CameraVelocityChase);
 			PositionOne = FMath::VInterpTo(PositionOne, LocalPos, DeltaTime, VelocityCameraSpeed);
@@ -471,7 +468,6 @@ void AGammaCharacter::UpdateCamera(float DeltaTime)
 				}
 
 				// Last modifier for global time dilation
-				float GlobalTimeScale = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
 				float RefinedGScalar = FMath::Clamp(GlobalTimeScale, 0.5f, 1.0f);
 				if (GlobalTimeScale < 0.02f)
 				{
